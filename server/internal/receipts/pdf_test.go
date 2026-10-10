@@ -106,6 +106,11 @@ func TestBuildReceiptPDFMatchesDetailPatterns(t *testing.T) {
 	if !strings.Contains(body, "Payment method: ") {
 		t.Fatal("expected spaced Payment method label (bold-width must not collide)")
 	}
+	// Amount paid must use the same hairline weight as Subtotal/VAT/Total (0.4 w),
+	// not a thicker 1.2 w emphasis stroke.
+	if strings.Contains(body, "1.2 w\n0.20 0.20 0.20 RG") {
+		t.Fatal("expected no thick Amount paid separator; use same 0.4w hairline as other totals")
+	}
 }
 
 func TestApproxTextWidthFontBoldPaymentMethod(t *testing.T) {
@@ -117,8 +122,8 @@ func TestApproxTextWidthFontBoldPaymentMethod(t *testing.T) {
 	if got <= naive {
 		t.Fatalf("bold AFM width %.2f should exceed naive %.2f", got, naive)
 	}
-	// Value must start after label (+ safety gap used by writeLabeled).
-	if got+1.5 < 85 {
+	// Value must start after label (+ 3% pad + 4pt safety used by writeLabeled).
+	if got*1.03+4.0 < 90 {
 		t.Fatalf("unexpectedly narrow bold label width: %.2f", got)
 	}
 }
