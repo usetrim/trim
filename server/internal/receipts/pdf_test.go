@@ -2,6 +2,7 @@ package receipts
 
 import (
 	"bytes"
+	"os"
 	"strings"
 	"testing"
 )
@@ -73,6 +74,11 @@ func TestBuildReceiptPDFMatchesDetailPatterns(t *testing.T) {
 	if len(pdf) < 500 || !bytes.HasPrefix(pdf, []byte("%PDF")) {
 		t.Fatalf("expected PDF bytes, got %d", len(pdf))
 	}
+	if out := strings.TrimSpace(os.Getenv("TRIM_RECEIPT_PDF_OUT")); out != "" {
+		if err := os.WriteFile(out, pdf, 0o644); err != nil {
+			t.Fatalf("write sample pdf: %v", err)
+		}
+	}
 	body := string(pdf)
 	if !strings.Contains(body, "/SMask") {
 		t.Fatal("expected soft-mask logo (transparent mark), got opaque flatten")
@@ -83,15 +89,22 @@ func TestBuildReceiptPDFMatchesDetailPatterns(t *testing.T) {
 	if !strings.Contains(body, "Card statements may show Paddle") {
 		t.Fatal("footer text was truncated")
 	}
-	if !strings.Contains(body, "9th October 2026 - $1.00") {
+	// Header meta is separate Tj runs (muted date + sep + bold amount).
+	if !strings.Contains(body, "(9th October 2026)") || !strings.Contains(body, "($1.00)") {
+		t.Fatal("expected header paid date and total amount")
+	}
+	if !strings.Contains(body, "( - )") {
 		t.Fatal("header meta separator spaces were stripped")
 	}
 	if !strings.Contains(body, "FlateDecode") {
 		t.Fatal("expected FlateDecode RGB mark stream")
 	}
-	// Footer brand under mark (detail page: TrimWordmark + company name).
+	// Locality line under footer mark includes company legal name (detail page).
 	if !strings.Contains(body, "(Trim)") {
-		t.Fatal("expected company brand under footer mark")
+		t.Fatal("expected company brand in PDF letterhead/footer locality")
+	}
+	if !strings.Contains(body, "Payment method: ") {
+		t.Fatal("expected spaced Payment method label (bold-width must not collide)")
 	}
 }
 
