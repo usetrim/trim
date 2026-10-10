@@ -25,7 +25,7 @@ type TrimWordmarkProps = {
   priority?: boolean;
   /**
    * `auto` follows painted theme (black in light, white in dark).
-   * `black` forces the black mark — use for receipt print / light paper.
+   * `black` forces the black mark - use for receipt print / light paper.
    */
   ink?: "auto" | "black";
 };
