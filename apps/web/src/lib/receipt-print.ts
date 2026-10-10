@@ -55,7 +55,7 @@ export function downloadReceiptArticlePdf(
   const clone = root.cloneNode(true) as HTMLElement;
 
   doc.open();
-  doc.write(`<!DOCTYPE html><html><head><meta charset="utf-8"/><title>${escapeHtml(
+  doc.write(`<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><title>${escapeHtml(
     filename || title,
   )}</title>${styles}
 <style>
@@ -88,16 +88,24 @@ export function downloadReceiptArticlePdf(
     --trim-border: #e8e8e8;
     --trim-panel: #ffffff;
     --trim-panel-2: #f4f4f5;
+    --receipt-band: #f4f4f5;
     --trim-status: #27a644;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
-  [data-receipt-print] header,
-  [data-receipt-print] footer {
+  [data-receipt-print] > header,
+  [data-receipt-print] > footer {
     background-color: #f4f4f5 !important;
+  }
+  /* Strip dark: utility paints so Save-as-PDF always matches Print paper. */
+  [data-receipt-print],
+  [data-receipt-print] * {
+    color-scheme: light !important;
   }
 </style></head><body></body></html>`);
   doc.close();
+  doc.documentElement.classList.remove("dark");
+  doc.documentElement.style.colorScheme = "light";
   doc.body.appendChild(doc.importNode(clone, true));
 
   const trigger = () => {
@@ -115,10 +123,39 @@ export function downloadReceiptArticlePdf(
     }
   };
 
-  // Wait a tick for styles/images (wordmark) to paint before print.
-  w.requestAnimationFrame(() => {
-    window.setTimeout(trigger, 250);
-  });
+  const waitReady = async () => {
+    const links = Array.from(doc.querySelectorAll('link[rel="stylesheet"]'));
+    await Promise.all(
+      links.map(
+        (link) =>
+          new Promise<void>((resolve) => {
+            const el = link as HTMLLinkElement;
+            if (el.sheet) {
+              resolve();
+              return;
+            }
+            el.addEventListener("load", () => resolve(), { once: true });
+            el.addEventListener("error", () => resolve(), { once: true });
+            window.setTimeout(() => resolve(), 1_500);
+          }),
+      ),
+    );
+    try {
+      if (doc.fonts?.ready) {
+        await doc.fonts.ready;
+      }
+    } catch {
+      /* ignore */
+    }
+    // Paint wordmark / layout before print dialog.
+    await new Promise<void>((r) => {
+      w.requestAnimationFrame(() => {
+        window.setTimeout(() => r(), 200);
+      });
+    });
+  };
+
+  void waitReady().then(trigger);
 }
 
 function escapeHtml(s: string): string {

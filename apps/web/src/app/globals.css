@@ -284,11 +284,12 @@
 }
 
 /*
- * Tax-invoice article (OUTSIDE @layer so it always wins over web hex --trim-*).
- * Root cause of web≠admin dark mode: web --trim-panel-2 is #08090a (same as page
- * bg) so header/footer bands vanish; admin maps panel-2 → hsl(muted) elevated gray.
- * Lock the same shadcn HSL chain admin uses, then mirror into --trim-* for any
- * remaining trim utility classes.
+ * Tax-invoice article (OUTSIDE @layer - must beat web hex --trim-*).
+ *
+ * Root cause (web≠admin dark bands): web --trim-panel-2 is #08090a (same as
+ * --trim-bg), so header/footer painted with panel-2 / collapsing muted vanish.
+ * Admin maps panel-2 → elevated muted gray. Lock explicit letterhead hex that
+ * matches admin screenshots (zinc-100 light / #2a2a2e dark) with !important.
  */
 [data-receipt-print] {
   --background: 0 0% 100%;
@@ -298,20 +299,23 @@
   --muted: 240 4.8% 95.9%;
   --muted-foreground: 240 3.8% 46.1%;
   --border: 240 5.9% 90%;
-  --trim-bg: hsl(var(--background));
-  --trim-fg: hsl(var(--foreground));
-  --trim-muted: hsl(var(--muted-foreground));
-  --trim-subtle: hsl(var(--muted-foreground) / 0.85);
-  --trim-border: hsl(var(--border));
-  --trim-border-strong: hsl(var(--border));
-  --trim-panel: hsl(var(--card));
-  --trim-panel-2: hsl(var(--muted));
+  --trim-bg: #ffffff;
+  --trim-fg: #171717;
+  --trim-muted: #5c5c5c;
+  --trim-subtle: #8a8a8a;
+  --trim-border: #e8e8e8;
+  --trim-border-strong: #cfcfcf;
+  --trim-panel: #ffffff;
+  /* Elevated letterhead - never equal page bg */
+  --trim-panel-2: #f4f4f5;
   --trim-status: #27a644;
   --trim-status-bg: rgba(39, 166, 68, 0.12);
-  color: hsl(var(--foreground));
-  background-color: hsl(var(--card));
+  --receipt-band: #f4f4f5;
+  color: #171717;
+  background-color: #ffffff;
 }
 
+.dark [data-receipt-print],
 html.dark [data-receipt-print] {
   --background: 240 10% 3.9%;
   --foreground: 0 0% 98%;
@@ -320,23 +324,32 @@ html.dark [data-receipt-print] {
   --muted: 240 3.7% 15.9%;
   --muted-foreground: 240 5% 64.9%;
   --border: 240 3.7% 15.9%;
-  --trim-bg: hsl(var(--background));
-  --trim-fg: hsl(var(--foreground));
-  --trim-muted: hsl(var(--muted-foreground));
-  --trim-subtle: hsl(var(--muted-foreground) / 0.85);
-  --trim-border: hsl(var(--border));
-  --trim-border-strong: hsl(var(--border));
-  --trim-panel: hsl(var(--card));
-  --trim-panel-2: hsl(var(--muted));
+  --trim-bg: transparent;
+  --trim-fg: #f7f8f8;
+  --trim-muted: #a1a6b0;
+  --trim-subtle: #8a8f98;
+  --trim-border: rgba(255, 255, 255, 0.12);
+  --trim-border-strong: rgba(255, 255, 255, 0.18);
+  --trim-panel: transparent;
+  /* Same elevated band as admin muted (~hsl(240 3.7% 15.9%)) */
+  --trim-panel-2: #2a2a2e;
   --trim-status: #27a644;
   --trim-status-bg: rgba(39, 166, 68, 0.18);
-  color: hsl(var(--foreground));
-  background-color: hsl(var(--card));
+  --receipt-band: #2a2a2e;
+  color: #f7f8f8;
+  background-color: transparent;
 }
 
-[data-receipt-print] header,
-[data-receipt-print] footer {
-  background-color: hsl(var(--muted));
+[data-receipt-print] > header,
+[data-receipt-print] > footer {
+  background-color: var(--receipt-band, #f4f4f5) !important;
+}
+
+.dark [data-receipt-print] > header,
+.dark [data-receipt-print] > footer,
+html.dark [data-receipt-print] > header,
+html.dark [data-receipt-print] > footer {
+  background-color: #2a2a2e !important;
 }
 
 /*
@@ -382,9 +395,15 @@ html.dark [data-receipt-print] {
     --trim-border: #e8e8e8;
     --trim-panel: #ffffff;
     --trim-panel-2: #f4f4f5; /* zinc-100 - same as print:bg-zinc-100 */
+    --receipt-band: #f4f4f5;
     --trim-status: #27a644;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+
+  [data-receipt-print] > header,
+  [data-receipt-print] > footer {
+    background-color: #f4f4f5 !important;
   }
 
   [data-sonner-toaster],
