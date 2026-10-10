@@ -89,6 +89,10 @@ func TestBuildReceiptPDFMatchesDetailPatterns(t *testing.T) {
 	if !strings.Contains(body, "FlateDecode") {
 		t.Fatal("expected FlateDecode RGB mark stream")
 	}
+	// Footer brand under mark (detail page: TrimWordmark + company name).
+	if !strings.Contains(body, "(Trim)") {
+		t.Fatal("expected company brand under footer mark")
+	}
 }
 
 func TestCountryDisplayName(t *testing.T) {

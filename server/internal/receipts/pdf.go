@@ -107,13 +107,27 @@ func BuildReceiptPDF(d ReceiptDetail) ([]byte, error) {
 	rule := func() {
 		ops = append(ops, pdfOp{kind: "rule"})
 	}
-	pair := func(label, value string, size int, bold bool) {
+	// muted mirrors detail page: Subtotal/VAT use --trim-muted; Total/Amount paid use fg.
+	pair := func(label, value string, size int, bold, muted bool) {
 		label = strings.TrimSpace(label)
 		value = strings.TrimSpace(value)
 		if label == "" || value == "" {
 			return
 		}
-		ops = append(ops, pdfOp{kind: "right_pair", left: label, right: value, size: size, bold: bold})
+		r, g, b := 0.0, 0.0, 0.0
+		if muted {
+			r, g, b = 0.40, 0.40, 0.40
+		}
+		ops = append(ops, pdfOp{
+			kind:  "right_pair",
+			left:  label,
+			right: value,
+			size:  size,
+			bold:  bold,
+			r:     r,
+			g:     g,
+			b:     b,
+		})
 	}
 	inline := func(label, value string, size int) {
 		label = strings.TrimSpace(label)
@@ -176,9 +190,9 @@ func BuildReceiptPDF(d ReceiptDetail) ([]byte, error) {
 		right: headerMeta,
 		lines: []string{strings.TrimSpace(d.CompanyLegalName), strings.TrimSpace(d.MerchantVia)},
 		logo:  headerLogo,
-		r:     0.961, // zinc-100 ≈ #f5f5f5 - matches print:bg-zinc-100
-		g:     0.961,
-		b:     0.961,
+		r:     0.949, // #f2f2f2 - matches --trim-panel-2 / print letterhead
+		g:     0.949,
+		b:     0.949,
 	})
 	blank(16)
 
@@ -303,12 +317,13 @@ func BuildReceiptPDF(d ReceiptDetail) ([]byte, error) {
 			cells: [5]string{"", fmt.Sprintf("%d", li.Quantity), unitStr, taxPercent, amtStr},
 		})
 	}
-	blank(6)
+	blank(4)
 
-	pair(d.LabelSubtotal, subtotalStr, 10, false)
-	pair(d.LabelTax, taxStr, 10, false)
-	pair(d.LabelTotal, totalStr, 10, false)
-	pair(d.LabelAmountPaid, totalStr, 12, true)
+	// Match detail page totals column (muted subtotal/VAT, fg total, bold amount paid).
+	pair(d.LabelSubtotal, subtotalStr, 10, false, true)
+	pair(d.LabelTax, taxStr, 10, false, true)
+	pair(d.LabelTotal, totalStr, 10, false, false)
+	pair(d.LabelAmountPaid, totalStr, 12, true, false)
 	blank(16)
 
 	if strings.TrimSpace(d.SectionTaxBreakdown) != "" {
@@ -340,20 +355,21 @@ func BuildReceiptPDF(d ReceiptDetail) ([]byte, error) {
 	if lg, err := blackLetterheadImage(0.7); err == nil && lg != nil {
 		footerLogo = lg
 	}
-	// Reserve height: padding + wrapped footer (~2 lines) + logo + address.
-	footerH := 88.0
+	// Reserve height: padding + wrapped footer (~2 lines) + mark + brand + address.
+	footerH := 96.0
 	if footerLogo != nil {
-		footerH = 108
+		footerH = 118
 	}
 	ops = append(ops, pdfOp{
 		kind:  "footer_block",
 		h:     footerH,
+		text:  strings.TrimSpace(d.CompanyLegalName), // brand under mark (detail page)
 		lines: footerLines,
 		left:  addrLine,
 		logo:  footerLogo,
-		r:     0.961,
-		g:     0.961,
-		b:     0.961,
+		r:     0.949, // #f2f2f2
+		g:     0.949,
+		b:     0.949,
 	})
 
 	return writeReceiptPDF(ops)
@@ -614,7 +630,17 @@ func normalizeLogoImage(raw []byte) (*pdfImage, error) {
 	return &pdfImage{JPEG: buf.Bytes(), Width: w, Height: h}, nil
 }
 
-var tableColX = [5]float64{pdfMarginL, 300, 350, 420, 470}
+// Column left edges; numeric columns right-align to tableColX[i]+tableColW.
+// Amount column right edge == pdfContentR (same as totals values).
+const tableColW = 60.0
+
+var tableColX = [5]float64{
+	pdfMarginL,
+	300,
+	360,
+	440,
+	pdfContentR - tableColW,
+}
 
 func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 	var content bytes.Buffer
@@ -818,7 +844,14 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 				content.WriteString(fmt.Sprintf("q\n%.2f 0 0 %.2f %.2f %.2f cm\n/%s Do\nQ\n", dw, dh, (pdfPageW-dw)/2, cy-dh, imgName))
 				content.WriteString("BT\n")
 				setFont(curSize, curBold)
-				cy -= dh + 8
+				cy -= dh + 6
+			}
+			// Brand under mark (matches TrimWordmark + name on detail/print).
+			if brand := strings.TrimSpace(op.text); brand != "" {
+				if cy >= contentBottom+12 {
+					writeTextCentered(cy, 9, false, brand, 0.45, 0.45, 0.45)
+					cy -= 12
+				}
 			}
 			if addr := strings.TrimSpace(op.left); addr != "" {
 				for _, part := range wrapWords(addr, 70) {
@@ -839,7 +872,7 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 			y -= h
 		case "rule":
 			content.WriteString("ET\n")
-			content.WriteString(fmt.Sprintf("0.5 w\n0.85 0.85 0.85 RG\n%.2f %.2f m\n%.2f %.2f l\nS\n0 0 0 RG\n", pdfMarginL, y, pdfContentR, y))
+			content.WriteString(fmt.Sprintf("0.5 w\n0.910 0.910 0.910 RG\n%.2f %.2f m\n%.2f %.2f l\nS\n0 0 0 RG\n", pdfMarginL, y, pdfContentR, y))
 			content.WriteString("BT\n")
 			setFont(curSize, curBold)
 			y -= 8
@@ -923,19 +956,22 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 			if size < 1 {
 				size = 10
 			}
+			// Amount paid: stronger rule above (detail page emphasis).
+			if op.bold {
+				content.WriteString("ET\n")
+				content.WriteString(fmt.Sprintf("0.9 w\n0.22 0.22 0.22 RG\n360 %.2f m\n%.2f %.2f l\nS\n0 0 0 RG\n", y-1, pdfContentR, y-1))
+				content.WriteString("BT\n")
+				setFont(curSize, curBold)
+				y -= 5
+			}
 			y -= float64(size + 6)
 			if y < 48 {
 				continue
 			}
-			muted := !op.bold
-			lr, lg, lb := 0.0, 0.0, 0.0
-			if muted {
-				lr, lg, lb = 0.40, 0.40, 0.40
-			}
-			writeTextAt(360, y, size, op.bold, op.left, lr, lg, lb)
-			writeTextRight(pdfContentR, y, size, op.bold, op.right, lr, lg, lb)
+			writeTextAt(360, y, size, op.bold, op.left, op.r, op.g, op.b)
+			writeTextRight(pdfContentR, y, size, op.bold, op.right, op.r, op.g, op.b)
 			content.WriteString("ET\n")
-			content.WriteString(fmt.Sprintf("0.4 w\n0.88 0.88 0.88 RG\n360 %.2f m\n%.2f %.2f l\nS\n0 0 0 RG\n", y-3, pdfContentR, y-3))
+			content.WriteString(fmt.Sprintf("0.4 w\n0.910 0.910 0.910 RG\n360 %.2f m\n%.2f %.2f l\nS\n0 0 0 RG\n", y-3, pdfContentR, y-3))
 			content.WriteString("BT\n")
 			setFont(curSize, curBold)
 			y -= 3
@@ -955,11 +991,11 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 				if i == 0 {
 					writeTextAt(tableColX[i], y, size, true, cell, 0, 0, 0)
 				} else {
-					writeTextRight(tableColX[i]+60, y, size, true, cell, 0, 0, 0)
+					writeTextRight(tableColX[i]+tableColW, y, size, true, cell, 0, 0, 0)
 				}
 			}
 			content.WriteString("ET\n")
-			content.WriteString(fmt.Sprintf("0.5 w\n0.85 0.85 0.85 RG\n%.2f %.2f m\n%.2f %.2f l\nS\n0 0 0 RG\n", pdfMarginL, y-3, pdfContentR, y-3))
+			content.WriteString(fmt.Sprintf("0.5 w\n0.910 0.910 0.910 RG\n%.2f %.2f m\n%.2f %.2f l\nS\n0 0 0 RG\n", pdfMarginL, y-3, pdfContentR, y-3))
 			content.WriteString("BT\n")
 			setFont(curSize, curBold)
 			y -= 6
@@ -973,25 +1009,25 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 			taxPctV, taxAmtV := op.cells[2], op.cells[3]
 			taxTotalL := op.cells[4]
 			taxTotalV := op.right
-			col2 := pdfMarginL + 110
+			taxRight := pdfMarginL + 240
 			y -= float64(size + 3)
 			writeTextAt(pdfMarginL, y, size, true, taxPctH, 0, 0, 0)
-			writeTextRight(col2+40, y, size, true, taxAmtH, 0, 0, 0)
+			writeTextRight(taxRight, y, size, true, taxAmtH, 0, 0, 0)
 			content.WriteString("ET\n")
-			content.WriteString(fmt.Sprintf("0.4 w\n0.85 0.85 0.85 RG\n%.2f %.2f m\n%.2f %.2f l\nS\n0 0 0 RG\n", pdfMarginL, y-3, col2+40, y-3))
+			content.WriteString(fmt.Sprintf("0.4 w\n0.910 0.910 0.910 RG\n%.2f %.2f m\n%.2f %.2f l\nS\n0 0 0 RG\n", pdfMarginL, y-3, taxRight, y-3))
 			content.WriteString("BT\n")
 			setFont(curSize, curBold)
 			y -= float64(size + 8)
 			writeTextAt(pdfMarginL, y, size, false, taxPctV, 0.25, 0.25, 0.25)
-			writeTextRight(col2+40, y, size, false, taxAmtV, 0.25, 0.25, 0.25)
+			writeTextRight(taxRight, y, size, false, taxAmtV, 0.25, 0.25, 0.25)
 			content.WriteString("ET\n")
-			content.WriteString(fmt.Sprintf("0.4 w\n0.90 0.90 0.90 RG\n%.2f %.2f m\n%.2f %.2f l\nS\n0 0 0 RG\n", pdfMarginL, y-3, col2+40, y-3))
+			content.WriteString(fmt.Sprintf("0.4 w\n0.910 0.910 0.910 RG\n%.2f %.2f m\n%.2f %.2f l\nS\n0 0 0 RG\n", pdfMarginL, y-3, taxRight, y-3))
 			content.WriteString("BT\n")
 			setFont(curSize, curBold)
 			if strings.TrimSpace(taxTotalL) != "" {
 				y -= float64(size + 8)
 				writeTextAt(pdfMarginL, y, size, true, taxTotalL, 0, 0, 0)
-				writeTextRight(col2+40, y, size, true, taxTotalV, 0, 0, 0)
+				writeTextRight(taxRight, y, size, true, taxTotalV, 0, 0, 0)
 			}
 			y -= 4
 		case "product_row":
@@ -1003,7 +1039,7 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 			if len(stack) == 0 {
 				stack = []string{op.cells[0]}
 			}
-			rowH := float64(len(stack))*(float64(size)+3) + 8
+			rowH := float64(len(stack))*(float64(size)+3) + 10
 			y -= float64(size + 4)
 			topY := y
 			for i, line := range stack {
@@ -1013,9 +1049,11 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 				if i == 0 {
 					writeTextAt(tableColX[0], y, size, true, line, 0, 0, 0)
 				} else if i == 1 {
+					// period - muted (detail: text-[var(--trim-subtle)])
 					writeTextAt(tableColX[0], y, 8, false, line, 0.45, 0.45, 0.45)
 				} else {
-					writeTextAt(tableColX[0], y, 8, false, line, 0.08, 0.45, 0.70)
+					// price name - sky link tone on print
+					writeTextAt(tableColX[0], y, 8, false, line, 0.08, 0.40, 0.65)
 				}
 				if i+1 < len(stack) {
 					y -= float64(size + 2)
@@ -1032,11 +1070,11 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 					r, g, b = 0, 0, 0
 					bold = true
 				}
-				writeTextRight(tableColX[i]+60, topY, size, bold, cell, r, g, b)
+				writeTextRight(tableColX[i]+tableColW, topY, size, bold, cell, r, g, b)
 			}
 			y = topY - rowH + float64(size+4)
 			content.WriteString("ET\n")
-			content.WriteString(fmt.Sprintf("0.4 w\n0.90 0.90 0.90 RG\n%.2f %.2f m\n%.2f %.2f l\nS\n0 0 0 RG\n", pdfMarginL, y+2, pdfContentR, y+2))
+			content.WriteString(fmt.Sprintf("0.4 w\n0.910 0.910 0.910 RG\n%.2f %.2f m\n%.2f %.2f l\nS\n0 0 0 RG\n", pdfMarginL, y+2, pdfContentR, y+2))
 			content.WriteString("BT\n")
 			setFont(curSize, curBold)
 		default: // text

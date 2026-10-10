@@ -15,7 +15,7 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 type Detail = {
-  id: string; 
+  id: string;
   paddle_transaction_id: string;
   paddle_invoice_number: string | null;
   paddle_invoice_pdf_url: string | null;
@@ -203,7 +203,6 @@ export function ReceiptView({
   const periodLabel = (receipt.period_label || "").trim();
   const totalFmt = formatMoney(receipt.total_cents, receipt.currency_code, moneyLocale);
   const metaSep = (receipt.header_meta_sep || " - ").trim() || " - ";
-  const headerMeta = [paidLabel, totalFmt].filter(Boolean).join(metaSep);
   const productCol = (receipt.col_product || receipt.col_description || "").trim();
   const taxPercent = (receipt.tax_rate_percent || "").trim();
   const billToCountry = countryDisplayName(receipt.bill_to_country, moneyLocale);
@@ -314,7 +313,7 @@ export function ReceiptView({
                   </span>
                 ) : null}
               </div>
-              {headerMeta ? (
+              {paidLabel || totalFmt ? (
                 <p className="text-[13px] text-[var(--trim-subtle)] print:text-zinc-500">
                   {paidLabel}
                   {paidLabel && totalFmt ? metaSep : null}
@@ -515,7 +514,7 @@ export function ReceiptView({
                 <dt>{receipt.label_total}</dt>
                 <dd className="tabular-nums">{totalFmt}</dd>
               </div>
-              <div className="flex items-center justify-between gap-8 border-b border-[var(--trim-border)] py-2.5 text-[15px] font-bold text-[var(--trim-fg)] print:border-zinc-200 print:text-zinc-900">
+              <div className="flex items-center justify-between gap-8 border-t-2 border-[var(--trim-fg)]/25 py-2.5 text-[15px] font-bold text-[var(--trim-fg)] print:border-zinc-800 print:text-zinc-900">
                 <dt>{receipt.label_amount_paid}</dt>
                 <dd className="tabular-nums">{totalFmt}</dd>
               </div>
