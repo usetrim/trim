@@ -259,8 +259,64 @@
 }
 
 /*
+ * Invoice article - lock apps/admin shadcn surfaces on the receipt only.
+ * Admin: body bg-background + article bg-card + header/footer bg-muted.
+ * Web chrome keeps --trim-bg; without this lock, letterhead bands can collapse
+ * into the dashboard page and look like one flat dark block.
+ */
+[data-receipt-print] {
+  --background: 0 0% 100%;
+  --foreground: 240 10% 3.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 240 10% 3.9%;
+  --muted: 240 4.8% 95.9%;
+  --muted-foreground: 240 3.8% 46.1%;
+  --border: 240 5.9% 90%;
+  --secondary: 240 4.8% 95.9%;
+  --accent: 240 4.8% 95.9%;
+  --trim-fg: hsl(var(--foreground));
+  --trim-muted: hsl(var(--muted-foreground));
+  --trim-subtle: hsl(var(--muted-foreground) / 0.85);
+  --trim-border: hsl(var(--border));
+  --trim-panel: hsl(var(--card));
+  --trim-panel-2: hsl(var(--muted));
+  --trim-status: #27a644;
+  --trim-status-bg: rgba(39, 166, 68, 0.12);
+  color: hsl(var(--foreground));
+  background-color: hsl(var(--card));
+}
+
+.dark [data-receipt-print],
+html.dark [data-receipt-print] {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --card: 240 10% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --border: 240 3.7% 15.9%;
+  --secondary: 240 3.7% 15.9%;
+  --accent: 240 3.7% 15.9%;
+  --trim-fg: hsl(var(--foreground));
+  --trim-muted: hsl(var(--muted-foreground));
+  --trim-subtle: hsl(var(--muted-foreground) / 0.85);
+  --trim-border: hsl(var(--border));
+  --trim-panel: hsl(var(--card));
+  --trim-panel-2: hsl(var(--muted));
+  --trim-status: #27a644;
+  --trim-status-bg: rgba(39, 166, 68, 0.18);
+  color: hsl(var(--foreground));
+  background-color: hsl(var(--card));
+}
+
+/* Same as admin bg-muted letterhead - must win over utility order */
+[data-receipt-print] > header,
+[data-receipt-print] > footer {
+  background-color: hsl(var(--muted)) !important;
+}
+
+/*
  * Receipt print / Save-as-PDF - identical to apps/admin/src/app/globals.css.
- * On-screen invoice uses the same bg-muted / bg-card as admin (no web-only overrides).
  */
 @media print {
   @page {
@@ -295,6 +351,12 @@
     background: #fff !important;
     color: #171717 !important;
     /* Force light invoice paper even when the app theme is dark. */
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --border: 240 5.9% 90%;
     --trim-fg: #171717;
     --trim-muted: #5c5c5c;
     --trim-subtle: #8a8a8a;
@@ -304,6 +366,11 @@
     --trim-status: #27a644;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+
+  [data-receipt-print] > header,
+  [data-receipt-print] > footer {
+    background-color: #f4f4f5 !important;
   }
 
   [data-sonner-toaster],
