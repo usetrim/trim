@@ -5,7 +5,7 @@ import { ReceiptDetailSkeleton } from "@/components/skeletons/page-skeletons";
 import { Button } from "@/components/ui/button";
 import { FetchProgressBar } from "@/components/ui/fetch-progress";
 import { useAdminReceipt } from "@/hooks/queries/billing";
-import { downloadReceiptArticlePdf, printReceiptArticle } from "@/lib/receipt-print";
+import { printReceiptArticle } from "@/lib/receipt-print";
 import { formatMoney } from "@/lib/utils";
 import Link from "next/link";
 import { useRef, useState } from "react";
@@ -234,25 +234,14 @@ export function ReceiptView({
                   toast.error(failed);
                   return;
                 }
-                // Download = Print (same live article → Save as PDF). No Go PDF.
-                const displayId = (receipt.display_id || receipt.id || "invoice").trim();
-                const fmt = (receipt.download_pdf_filename_fmt || "").trim();
-                const filename = fmt.includes("%s")
-                  ? fmt.replace("%s", displayId)
-                  : fmt || `trim-invoice-${displayId}`;
+                // Download ≡ Print: same function, same title, same live article.
+                // Never fetch Go /api/.../pdf.
                 setPrinting(true);
-                downloadReceiptArticlePdf(el, {
-                  title: receipt.document_title || undefined,
-                  filename,
-                });
                 const done = receipt.download_pdf_done_message || "";
-                if (done) toast.success(done);
-                const raw = receipt.print_pending_ms?.trim() || "";
-                const ms = Number.parseInt(raw, 10);
-                window.setTimeout(
-                  () => setPrinting(false),
-                  Number.isFinite(ms) && ms > 0 ? ms : 800,
-                );
+                printReceiptArticle(el, receipt.document_title || undefined, () => {
+                  if (done) toast.success(done);
+                  setPrinting(false);
+                });
               }}
             >
               {receipt.download_pdf_action_label}
@@ -267,14 +256,9 @@ export function ReceiptView({
               const el = invoiceRef.current;
               if (!el) return;
               setPrinting(true);
-              printReceiptArticle(el, receipt.document_title || undefined);
-              const raw = receipt.print_pending_ms?.trim() || "";
-              const ms = Number.parseInt(raw, 10);
-              if (Number.isFinite(ms) && ms > 0) {
-                window.setTimeout(() => setPrinting(false), ms);
-              } else {
+              printReceiptArticle(el, receipt.document_title || undefined, () => {
                 setPrinting(false);
-              }
+              });
             }}
           >
             {receipt.print_action_label}

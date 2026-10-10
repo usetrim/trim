@@ -6,55 +6,59 @@
   :root {
     color-scheme: light;
 
-    /* Neutral HSL (no blue cast) - keep in sync with --trim-* below */
-    --background: 0 0% 98%;
-    --foreground: 0 0% 9%;
+    /* shadcn HSL — identical to apps/admin (invoice bg-muted / bg-card / text-*) */
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 9%;
+    --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 9%;
-    --primary: 0 0% 9%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 240 5.9% 10%;
     --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 40%;
-    --accent: 0 0% 96%;
-    --accent-foreground: 0 0% 9%;
-    --destructive: 0 72% 48%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 91%;
-    --input: 0 0% 91%;
-    --ring: 0 0% 9%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5.9% 10%;
     --radius: 0.5rem;
 
-    /* App surfaces (light) - solid borders + white panels (Vercel/Linear light) */
+    /*
+     * trim-* mirrors admin (hsl of shadcn), EXCEPT --trim-bg:
+     * page body stays web chrome (#fafafa) — intentionally not admin bg-background.
+     */
     --trim-bg: #fafafa;
-    --trim-fg: #171717;
-    --trim-muted: #5c5c5c;
-    --trim-subtle: #8a8a8a;
-    --trim-border: #e8e8e8;
-    --trim-border-strong: #cfcfcf;
-    --trim-panel: #ffffff;
-    --trim-panel-2: #f2f2f2;
-    --trim-ink: #171717;
-    --trim-ink-inverse: #fafafa;
-    --trim-code: #f2f2f2;
-    --trim-hover: rgba(23, 23, 23, 0.05);
-    --trim-scrollbar: rgba(23, 23, 23, 0.28);
+    --trim-fg: hsl(var(--foreground));
+    --trim-muted: hsl(var(--muted-foreground));
+    --trim-subtle: hsl(var(--muted-foreground) / 0.85);
+    --trim-border: hsl(var(--border));
+    --trim-border-strong: hsl(var(--border));
+    --trim-panel: hsl(var(--card));
+    --trim-panel-2: hsl(var(--muted));
+    --trim-ink: hsl(var(--foreground));
+    --trim-ink-inverse: hsl(var(--background));
+    --trim-code: hsl(var(--muted));
+    --trim-hover: hsl(var(--foreground) / 0.05);
+    --trim-scrollbar: hsl(var(--foreground) / 0.28);
     --trim-status: #27a644;
     --trim-status-bg: rgba(39, 166, 68, 0.12);
-    --trim-overlay: rgba(23, 23, 23, 0.4);
+    --trim-overlay: hsl(var(--foreground) / 0.4);
     --trim-shimmer: color-mix(in srgb, var(--trim-fg) 8%, transparent);
-    --trim-track: #ebebeb;
-    --trim-thumb-shadow: 0 0 0 1px rgba(23, 23, 23, 0.08), 0 1px 2px rgba(23, 23, 23, 0.1);
-    --trim-float-shadow: 0 8px 30px rgba(23, 23, 23, 0.08), 0 2px 8px rgba(23, 23, 23, 0.04);
-    --trim-card-shadow: 0 1px 2px rgba(23, 23, 23, 0.04);
+    --trim-track: hsl(var(--muted));
+    --trim-thumb-shadow: 0 0 0 1px hsl(var(--foreground) / 0.08), 0 1px 2px hsl(var(--foreground) / 0.1);
+    --trim-float-shadow: 0 8px 30px hsl(var(--foreground) / 0.08), 0 2px 8px hsl(var(--foreground) / 0.04);
+    --trim-card-shadow: 0 1px 2px hsl(var(--foreground) / 0.04);
   }
 
   .dark {
     color-scheme: dark;
 
+    /* shadcn HSL — identical to apps/admin */
     --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
     --card: 240 10% 3.9%;
@@ -75,26 +79,22 @@
     --input: 240 3.7% 15.9%;
     --ring: 240 4.9% 83.9%;
 
-    /* App surfaces (dark) */
+    /* Same admin trim mapping; keep web page body --trim-bg only */
     --trim-bg: #08090a;
-    --trim-fg: #f7f8f8;
-    --trim-muted: #8a8f98;
-    --trim-subtle: #71717a;
-    --trim-border: rgba(255, 255, 255, 0.06);
-    --trim-border-strong: rgba(255, 255, 255, 0.14);
-    --trim-panel: #0f1011;
-    /*
-     * Elevated surface (matches admin --trim-panel-2 → hsl(muted) ≈ #28282c).
-     * Never equal --trim-bg or invoice letterhead bands vanish.
-     */
-    --trim-panel-2: #28282c;
-    --trim-ink: #f7f8f8;
-    --trim-ink-inverse: #08090a;
-    --trim-code: #0f1011;
-    --trim-hover: rgba(255, 255, 255, 0.04);
-    --trim-scrollbar: rgba(255, 255, 255, 0.18);
+    --trim-fg: hsl(var(--foreground));
+    --trim-muted: hsl(var(--muted-foreground));
+    --trim-subtle: hsl(var(--muted-foreground) / 0.85);
+    --trim-border: hsl(var(--border));
+    --trim-border-strong: hsl(var(--border));
+    --trim-panel: hsl(var(--card));
+    --trim-panel-2: hsl(var(--muted));
+    --trim-ink: hsl(var(--foreground));
+    --trim-ink-inverse: hsl(var(--background));
+    --trim-code: hsl(var(--card));
+    --trim-hover: hsl(var(--foreground) / 0.04);
+    --trim-scrollbar: hsl(var(--foreground) / 0.18);
     --trim-status: #27a644;
-    --trim-status-bg: rgba(39, 166, 68, 0.12);
+    --trim-status-bg: rgba(39, 166, 68, 0.18);
     --trim-overlay: rgba(0, 0, 0, 0.72);
     --trim-shimmer: color-mix(in srgb, var(--trim-fg) 14%, transparent);
     --trim-track: color-mix(in srgb, var(--trim-fg) 12%, transparent);
@@ -107,8 +107,9 @@
     @apply border-border;
   }
 
+  /* Page body: keep web --trim-bg (not admin bg-background). Text matches admin fg. */
   body {
-    @apply bg-[var(--trim-bg)] text-[var(--trim-fg)] antialiased;
+    @apply bg-[var(--trim-bg)] text-foreground antialiased;
   }
 
   ::selection {
@@ -128,43 +129,13 @@
     border-color: var(--trim-border);
   }
 
-  /* Explicit light surfaces so nested demos never inherit a dark forced look. */
+  /* Inherit root theme tokens (now admin-aligned); only pin page-body --trim-bg. */
   :root:not(.dark) .trim-product-frame {
     --trim-bg: #fafafa;
-    --trim-fg: #171717;
-    --trim-muted: #5c5c5c;
-    --trim-subtle: #8a8a8a;
-    --trim-border: #e8e8e8;
-    --trim-border-strong: #cfcfcf;
-    --trim-panel: #ffffff;
-    --trim-panel-2: #f2f2f2;
-    --trim-hover: rgba(23, 23, 23, 0.05);
-    --trim-code: #f2f2f2;
-    --trim-card-shadow: 0 1px 2px rgba(23, 23, 23, 0.04);
   }
 
   .dark .trim-product-frame {
     --trim-bg: #08090a;
-    --trim-fg: #f7f8f8;
-    --trim-muted: #a1a6b0;
-    --trim-subtle: #71717a;
-    --trim-border: rgba(255, 255, 255, 0.08);
-    --trim-border-strong: rgba(255, 255, 255, 0.16);
-    --trim-panel: #0f1011;
-    --trim-panel-2: #28282c;
-    --trim-ink: #f7f8f8;
-    --trim-ink-inverse: #08090a;
-    --trim-code: #0f1011;
-    --trim-hover: rgba(255, 255, 255, 0.06);
-    --trim-scrollbar: rgba(255, 255, 255, 0.22);
-    --trim-status: #27a644;
-    --trim-status-bg: rgba(39, 166, 68, 0.14);
-    --trim-overlay: rgba(0, 0, 0, 0.72);
-    --trim-shimmer: color-mix(in srgb, var(--trim-fg) 14%, transparent);
-    --trim-track: color-mix(in srgb, var(--trim-fg) 12%, transparent);
-    --trim-thumb-shadow: none;
-    --trim-float-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
-    --trim-card-shadow: none;
   }
 }
 
@@ -274,94 +245,22 @@
   }
 }
 
-/* react-day-picker: theme-aware accents (light + dark) */
+/* react-day-picker v9: theme tokens — identical to apps/admin */
 .rdp-root {
-  --rdp-accent-color: var(--trim-ink);
-  --rdp-accent-background-color: var(--trim-hover);
-  --rdp-range_middle-background-color: var(--trim-hover);
-  --rdp-range_start-date-background-color: var(--trim-ink);
-  --rdp-range_end-date-background-color: var(--trim-ink);
-  --rdp-range_start-color: var(--trim-ink-inverse);
-  --rdp-range_end-color: var(--trim-ink-inverse);
-  --rdp-selected-border: var(--trim-ink);
-  --rdp-today-color: var(--trim-fg);
+  --rdp-accent-color: hsl(var(--primary));
+  --rdp-accent-background-color: hsl(var(--accent));
+  --rdp-range_middle-background-color: hsl(var(--accent));
+  --rdp-range_start-date-background-color: hsl(var(--primary));
+  --rdp-range_end-date-background-color: hsl(var(--primary));
+  --rdp-range_start-color: hsl(var(--primary-foreground));
+  --rdp-range_end-color: hsl(var(--primary-foreground));
+  --rdp-selected-border: hsl(var(--primary));
+  --rdp-today-color: hsl(var(--foreground));
 }
 
 /*
- * Tax-invoice letterhead bands (OUTSIDE @layer).
- *
- * ROOT CAUSE (web ≠ admin): web dark --trim-panel-2 was #08090a - identical to
- * --trim-bg - so header/footer painted with panel-2 (or collapsing into page)
- * were invisible. Admin maps --trim-panel-2 → hsl(var(--muted)) ≈ #28282c
- * (elevated gray on black). Match that surface + force bands via data attr.
- */
-:root {
-  --receipt-band: #f4f4f5; /* zinc-100 - light letterhead */
-}
-
-.dark,
-html.dark {
-  --receipt-band: #28282c; /* admin muted / --trim-panel-2 dark */
-}
-
-[data-receipt-print] {
-  --background: 0 0% 100%;
-  --foreground: 240 10% 3.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 240 10% 3.9%;
-  --muted: 240 4.8% 95.9%;
-  --muted-foreground: 240 3.8% 46.1%;
-  --border: 240 5.9% 90%;
-  --trim-fg: #171717;
-  --trim-muted: #5c5c5c;
-  --trim-subtle: #8a8a8a;
-  --trim-border: #e8e8e8;
-  --trim-panel: #ffffff;
-  --trim-panel-2: var(--receipt-band);
-  --trim-status: #27a644;
-  --trim-status-bg: rgba(39, 166, 68, 0.12);
-  --receipt-band: #f4f4f5;
-  color: hsl(var(--foreground));
-  background-color: hsl(var(--card));
-}
-
-.dark [data-receipt-print],
-html.dark [data-receipt-print] {
-  --background: 240 10% 3.9%;
-  --foreground: 0 0% 98%;
-  --card: 240 10% 3.9%;
-  --card-foreground: 0 0% 98%;
-  --muted: 240 3.7% 15.9%;
-  --muted-foreground: 240 5% 64.9%;
-  --border: 240 3.7% 15.9%;
-  --trim-fg: #f7f8f8;
-  --trim-muted: #a1a6b0;
-  --trim-subtle: #8a8f98;
-  --trim-border: rgba(255, 255, 255, 0.12);
-  --trim-panel: transparent;
-  --trim-panel-2: #28282c;
-  --trim-status: #27a644;
-  --trim-status-bg: rgba(39, 166, 68, 0.18);
-  --receipt-band: #28282c;
-  color: hsl(var(--foreground));
-  background-color: transparent;
-}
-
-/* data-receipt-band: nuclear paint - wins over utility class wars */
-[data-receipt-print] [data-receipt-band] {
-  background-color: #f4f4f5 !important;
-  -webkit-print-color-adjust: exact;
-  print-color-adjust: exact;
-}
-
-.dark [data-receipt-print] [data-receipt-band],
-html.dark [data-receipt-print] [data-receipt-band] {
-  background-color: #28282c !important;
-}
-
-/*
- * Receipt print / Save-as-PDF: exact same tax-invoice article as on-screen.
- * Hides dashboard chrome only; keeps invoice card layout, type, and colors.
+ * Receipt print / Save-as-PDF — identical to apps/admin/src/app/globals.css.
+ * On-screen invoice uses the same bg-muted / bg-card as admin (no web-only overrides).
  */
 @media print {
   @page {
@@ -395,21 +294,16 @@ html.dark [data-receipt-print] [data-receipt-band] {
     border: none !important;
     background: #fff !important;
     color: #171717 !important;
-    /* Force light invoice paper even when the app theme is dark (match admin). */
+    /* Force light invoice paper even when the app theme is dark. */
     --trim-fg: #171717;
     --trim-muted: #5c5c5c;
     --trim-subtle: #8a8a8a;
     --trim-border: #e8e8e8;
     --trim-panel: #ffffff;
     --trim-panel-2: #f4f4f5; /* zinc-100 - same as print:bg-zinc-100 */
-    --receipt-band: #f4f4f5;
     --trim-status: #27a644;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
-  }
-
-  [data-receipt-print] [data-receipt-band] {
-    background-color: #f4f4f5 !important;
   }
 
   [data-sonner-toaster],

@@ -120,51 +120,11 @@ export function useReceiptPDFReissue(token: string) {
   });
 }
 
-function filenameStem(displayId: string | undefined): string {
-  return (displayId || "")
-    .trim()
-    .replace(/[^\w.-]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
-function filenameFromContentDisposition(cd: string): string {
-  const raw = (cd || "").trim();
-  if (!raw) return "";
-  const match = /filename\*=(?:UTF-8''|utf-8'')([^;]+)|filename="([^"]+)"|filename=([^;]+)/i.exec(
-    raw,
-  );
-  const value = (match?.[1] || match?.[2] || match?.[3] || "").trim();
-  if (!value) return "";
-  try {
-    return decodeURIComponent(value.replace(/^["']|["']$/g, ""));
-  } catch {
-    return value.replace(/^["']|["']$/g, "");
-  }
-}
-
-function filenameFromChrome(fmt: string | undefined, displayId: string | undefined): string {
-  const stem = filenameStem(displayId);
-  const f = (fmt || "").trim();
-  if (f.includes("%s") && stem) return f.replace("%s", stem);
-  if (stem) return `receipt-${stem}.pdf`;
-  return "receipt.pdf";
-}
-
-async function readErrorMessage(res: Response, fallback: string): Promise<string> {
-  try {
-    const body = (await res.json()) as { error?: unknown; message?: unknown };
-    const err = typeof body.error === "string" ? body.error.trim() : "";
-    if (err) return err;
-    const msg = typeof body.message === "string" ? body.message.trim() : "";
-    if (msg) return msg;
-  } catch {
-    /* keep fallback */
-  }
-  return fallback;
-}
-
-/** Download first-party admin tax-invoice PDF as a real file (not print). */
-export function useDownloadAdminReceiptPdf(token: string) {
+/**
+ * @deprecated Invoice Download must use printReceiptArticle (live article →
+ * Save as PDF). Do not call the Go /pdf endpoint — layout diverges from Print.
+ */
+export function useDownloadAdminReceiptPdf(_token: string) {
   return useMutation({
     mutationFn: async (args: {
       href: string;
@@ -172,58 +132,14 @@ export function useDownloadAdminReceiptPdf(token: string) {
       filenameFmt?: string;
       displayId?: string;
     }) => {
-      const href = (args.href || "").trim();
-      const failed = args.failedMessage || "";
-      if (!href.startsWith("/") || !token) {
-        throw new Error(failed);
-      }
-      const headers = new Headers();
-      headers.set("Accept", "application/pdf");
-      headers.set("Authorization", `Bearer ${token}`);
-      const base = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "";
-      if (!base) {
-        throw new Error(failed);
-      }
-      let res: Response;
-      try {
-        res = await fetch(`${base}${href}`, {
-          headers,
-          signal: AbortSignal.timeout(60_000),
-        });
-      } catch {
-        throw new Error(failed);
-      }
-      if (!res.ok) {
-        throw new Error(await readErrorMessage(res, failed));
-      }
-      const buf = await res.arrayBuffer();
-      if (!buf || buf.byteLength < 5) {
-        throw new Error(failed);
-      }
-      const head = new TextDecoder("ascii").decode(
-        new Uint8Array(buf, 0, Math.min(8, buf.byteLength)),
+      void _token;
+      void args.href;
+      void args.filenameFmt;
+      void args.displayId;
+      throw new Error(
+        args.failedMessage ||
+          "Invoice PDF download uses Print → Save as PDF (not the Go /pdf API).",
       );
-      if (!head.startsWith("%PDF")) {
-        throw new Error(failed);
-      }
-      const filename =
-        (res.headers.get("X-Trim-Download-Filename") || "").trim() ||
-        filenameFromContentDisposition(res.headers.get("Content-Disposition") || "") ||
-        filenameFromChrome(args.filenameFmt, args.displayId);
-      const blob = new Blob([buf], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
-      try {
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = filename;
-        a.rel = "noopener";
-        a.style.display = "none";
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-      } finally {
-        URL.revokeObjectURL(url);
-      }
     },
     meta: { skipToast: true },
   });
