@@ -268,8 +268,8 @@ export function ReceiptView({
   }
 
   return (
-    // Canvas bg-background matches admin page surface so muted letterhead bands contrast.
-    <div className="mx-auto w-full max-w-[920px] bg-background px-3 py-6 text-foreground sm:px-6 sm:py-10 print:max-w-none print:bg-transparent print:px-0 print:py-0">
+    // Same outer chrome as admin - no elevated canvas behind the whole invoice.
+    <div className="mx-auto w-full max-w-[920px] px-3 py-6 sm:px-6 sm:py-10 print:max-w-none print:px-0 print:py-0">
       <FetchProgressBar active={isFetching && !isPending} className="mb-4 print:hidden" />
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3 print:hidden">
         <Button asChild variant="outline" size="sm">
@@ -321,13 +321,24 @@ export function ReceiptView({
         </div>
       </div>
 
-      {/* Exact admin invoice surfaces: bg-card + bg-muted header/footer */}
+      {/*
+        Admin parity (inline wins over utilities):
+        - article body = admin bg-card (black paper in dark)
+        - header/footer ONLY = admin bg-muted letterhead bands
+      */}
       <article
         ref={invoiceRef}
         data-receipt-print
-        className="bg-card text-foreground print:bg-white print:text-zinc-900"
+        className="text-foreground print:bg-white print:text-zinc-900"
+        style={{
+          backgroundColor: "hsl(var(--card))",
+          color: "hsl(var(--foreground))",
+        }}
       >
-        <header className="bg-muted px-5 py-6 sm:px-8 sm:py-7 print:bg-zinc-100">
+        <header
+          className="px-5 py-6 sm:px-8 sm:py-7 print:bg-zinc-100"
+          style={{ backgroundColor: "hsl(var(--muted))" }}
+        >
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0 space-y-1.5">
               <div className="flex flex-wrap items-center gap-2.5">
@@ -582,7 +593,10 @@ export function ReceiptView({
         </section>
 
         {receipt.footer ? (
-          <footer className="mt-4 bg-muted px-5 py-7 text-center sm:px-8 print:bg-zinc-100">
+          <footer
+            className="mt-4 px-5 py-7 text-center sm:px-8 print:bg-zinc-100"
+            style={{ backgroundColor: "hsl(var(--muted))" }}
+          >
             <div className="mx-auto flex max-w-lg flex-col items-center gap-3">
               <p className="text-[12px] leading-relaxed text-muted-foreground print:text-zinc-600">
                 {receipt.footer}

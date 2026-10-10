@@ -259,10 +259,9 @@
 }
 
 /*
- * Invoice article - lock apps/admin shadcn surfaces on the receipt only.
- * Admin: body bg-background + article bg-card + header/footer bg-muted.
- * Web chrome keeps --trim-bg; without this lock, letterhead bands can collapse
- * into the dashboard page and look like one flat dark block.
+ * Invoice - exact admin surfaces (apps/admin receipt-view).
+ * Paper/body = bg-card (black in dark). Letterhead ONLY = header + footer bg-muted.
+ * Do NOT paint muted/grey on the article body or mid sections.
  */
 [data-receipt-print] {
   --background: 0 0% 100%;
@@ -283,7 +282,8 @@
   --trim-status: #27a644;
   --trim-status-bg: rgba(39, 166, 68, 0.12);
   color: hsl(var(--foreground));
-  background-color: hsl(var(--card));
+  /* Invoice body paper - admin bg-card (NOT muted grey) */
+  background-color: hsl(var(--card)) !important;
 }
 
 .dark [data-receipt-print],
@@ -306,13 +306,18 @@ html.dark [data-receipt-print] {
   --trim-status: #27a644;
   --trim-status-bg: rgba(39, 166, 68, 0.18);
   color: hsl(var(--foreground));
-  background-color: hsl(var(--card));
+  background-color: hsl(var(--card)) !important;
 }
 
-/* Same as admin bg-muted letterhead - must win over utility order */
+/* Letterhead bands ONLY - same as admin bg-muted */
 [data-receipt-print] > header,
 [data-receipt-print] > footer {
   background-color: hsl(var(--muted)) !important;
+}
+
+/* Mid invoice sections must stay on black paper (never muted/panel grey) */
+[data-receipt-print] > section {
+  background-color: transparent !important;
 }
 
 /*
