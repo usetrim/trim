@@ -1,0 +1,57 @@
+# Example: two API replicas sharing one Postgres + Redis (Day-2 HA sketch).
+# Not a live multi-cloud anycast setup. Replace URLs with real managed endpoints.
+# Do not invent region hostnames in application code.
+#
+# Usage (after filling server/.env.region-a and server/.env.region-b):
+#   docker compose -f docker-compose.multi-region.example.yml --profile demo up -d --build
+#
+# Production: deploy the same server/Dockerfile image twice (us / eu) behind
+# Cloudflare latency DNS. Keep Paddle webhooks on a single primary URL.
+
+services:
+  api-a:
+    profiles: ["demo"]
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+      args:
+        ENABLE_TREESITTER: ${ENABLE_TREESITTER:-0}
+    image: trim-api:${TRIM_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - "${TRIM_API_PORT_A:-8080}:8080"
+    env_file:
+      - ${TRIM_ENV_FILE_A:-./server/.env}
+    environment:
+      DEPLOYMENT_MODE: cloud
+      # Ops label only (logs / metrics). Quotas stay Redis/Postgres server-side.
+      TRIM_REGION_LABEL: ${TRIM_REGION_LABEL_A:-region-a}
+    healthcheck:
+      test: ["CMD", "/api", "-readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  api-b:
+    profiles: ["demo"]
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+      args:
+        ENABLE_TREESITTER: ${ENABLE_TREESITTER:-0}
+    image: trim-api:${TRIM_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - "${TRIM_API_PORT_B:-8081}:8080"
+    env_file:
+      - ${TRIM_ENV_FILE_B:-./server/.env}
+    environment:
+      DEPLOYMENT_MODE: cloud
+      TRIM_REGION_LABEL: ${TRIM_REGION_LABEL_B:-region-b}
+    healthcheck:
+      test: ["CMD", "/api", "-readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s

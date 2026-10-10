@@ -1,0 +1,28 @@
+-- Full local uninstall chrome (CLI + docs). Fail-closed: no invent copy in the binary.
+insert into public.site_messages (code, body) values
+  ('CLI_HELP_UNINSTALL_SHORT', 'Stop Trim and remove local install artifacts'),
+  ('CLI_HELP_UNINSTALL_LONG', 'Stops the proxy, removes the OS login daemon, clears credentials, reverts IDE Base URL overrides from trim setup, and with --purge deletes local config, Deep Mode caches, and the CLI binary when possible.'),
+  ('CLI_HELP_UNINSTALL_FLAG_PURGE', 'Also delete ~/.trim, ~/.config/trim, Deep Mode caches, sidecars, and the CLI binary/PATH entry when possible'),
+  ('CLI_UNINSTALL_STARTING', 'Uninstalling Trim from this machine…'),
+  ('CLI_UNINSTALL_STOPPED', 'Local proxy stop attempted.'),
+  ('CLI_UNINSTALL_DAEMON_OK', 'OS login daemon removed (when supported).'),
+  ('CLI_UNINSTALL_LOGOUT_OK', 'CLI credentials cleared.'),
+  ('CLI_UNINSTALL_SETUP_REVERTED_FMT', 'Reverted IDE/local proxy Base URL in %s'),
+  ('CLI_UNINSTALL_SETUP_NONE', 'No trim setup Base URL overrides found to revert.'),
+  ('CLI_UNINSTALL_CONFIG_REMOVED_FMT', 'Removed local data: %s'),
+  ('CLI_UNINSTALL_LOGS_REMOVED', 'Removed Trim log files (when present).'),
+  ('CLI_UNINSTALL_DEEP_OK', 'Deep Mode local caches and pip packages cleaned (when present).'),
+  ('CLI_UNINSTALL_DEEP_SKIPPED', 'Deep Mode purge skipped: CLI_UNINSTALL_HF_HUB_DIRS / CLI_UNINSTALL_PIP_PACKAGES not configured in site_messages.'),
+  ('CLI_UNINSTALL_SIDECAR_REMOVED_FMT', 'Removed Deep Mode sidecar: %s'),
+  ('CLI_UNINSTALL_BINARY_REMOVED_FMT', 'Removed CLI binary: %s'),
+  ('CLI_UNINSTALL_BINARY_MANUAL_FMT', 'Could not remove the running binary automatically. Delete manually: %s'),
+  ('CLI_UNINSTALL_PATH_REMOVED', 'Removed Trim install directory from the user PATH (Windows).'),
+  ('CLI_UNINSTALL_DONE', 'Trim local uninstall finished.'),
+  ('CLI_UNINSTALL_NEXT_EXT', 'IDE extension: Command Palette → Extensions → uninstall Trim IDE, then Clear API Key if the key remains.'),
+  ('CLI_UNINSTALL_NEXT_PKG_BREW', 'If installed via Homebrew: brew uninstall trim'),
+  ('CLI_UNINSTALL_NEXT_PKG_SCOOP', 'If installed via Scoop: scoop uninstall trim'),
+  ('CLI_UNINSTALL_NEXT_PKG_WINGET', 'If installed via winget: winget uninstall Trim.CLI'),
+  ('CLI_UNINSTALL_HF_HUB_DIRS', 'models--microsoft--llmlingua-2-bert-base-multilingual-cased-meetingbank'),
+  ('CLI_UNINSTALL_PIP_PACKAGES', 'llmlingua'),
+  ('CLI_UNINSTALL_SIDECAR_NAMES', 'trim-deep,trim-deep.exe,optimizer,optimizer.exe,optimizer.py,requirements-deep.txt,requirements.txt')
+on conflict (code) do nothing;

@@ -1,0 +1,126 @@
+# Trim IDE - package & publish (VS Marketplace + Open VSX)
+#
+# Open VSX (best practice - Trusted Publishing / OIDC):
+#   1. Bootstrap once with a short-lived OVSX PAT (create-namespace + first version)
+#   2. Claim verified ownership of namespace `usetrim` (EclipseFdn/open-vsx.org issue)
+#   3. Register Trusted Publisher: GitHub usetrim/trim + workflow publish-trim-ide.yml
+#   4. Remove secret OVSX_PAT - CI uses id-token + `ovsx publish --trusted-publishing`
+#
+# VS Marketplace:
+#   Optional secret VSCE_PAT (Azure DevOps Marketplace PAT). Soft-skips when unset.
+#   Manual .vsix upload on marketplace.visualstudio.com is supported when Azure is unavailable.
+#
+# Docs: extensions/trim-ide/PUBLISH.md
+# Official: https://blogs.eclipse.org/post/tamas-cservenak/trusted-publishing-open-vsx
+
+name: Trim IDE extension
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "extensions/trim-ide/**"
+      - ".github/workflows/publish-trim-ide.yml"
+      - "scripts/check-ide-nls-sync.mjs"
+  pull_request:
+    paths:
+      - "extensions/trim-ide/**"
+      - ".github/workflows/publish-trim-ide.yml"
+      - "scripts/check-ide-nls-sync.mjs"
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish to VS Marketplace + Open VSX"
+        type: boolean
+        default: false
+  release:
+    types: [published]
+
+defaults:
+  run:
+    working-directory: extensions/trim-ide
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: extensions/trim-ide/package-lock.json
+      - name: Sync check (EN package.nls ↔ site_messages builtins)
+        working-directory: .
+        run: node scripts/check-ide-nls-sync.mjs
+      - name: Install
+        run: npm ci
+      - name: Format check
+        run: npx biome format .
+      - name: Lint
+        run: npm run lint
+      - name: Compile + unit tests
+        run: npm test
+      - name: Package VSIX
+        run: npm run package
+      - name: Upload VSIX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: trim-ide-vsix
+          path: extensions/trim-ide/*.vsix
+          if-no-files-found: error
+
+  publish:
+    needs: build-test
+    if: >
+      github.event_name == 'release' ||
+      (github.event_name == 'workflow_dispatch' && inputs.publish == true)
+    runs-on: ubuntu-latest
+    # Pin deployment environment (Eclipse Trusted Publishing guidance):
+    # registrations are not branch-scoped - any ref running this workflow is trusted
+    # unless an environment is required. Create repo Environment `open-vsx` and
+    # register the same name on Open VSX Trusted Publishers.
+    environment: open-vsx
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: extensions/trim-ide/package-lock.json
+      - name: Install
+        run: npm ci
+      - name: Package
+        run: npm run package
+
+      - name: Publish to Visual Studio Marketplace
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: |
+          set -euo pipefail
+          if [ -z "${VSCE_PAT:-}" ]; then
+            echo "::notice::VSCE_PAT unset - skip Marketplace CI publish (manual .vsix upload OK)."
+            exit 0
+          fi
+          npx vsce publish --no-dependencies -p "$VSCE_PAT"
+
+      - name: Publish to Open VSX
+        env:
+          # Bootstrap only. If set, PAT wins over OIDC (ovsx precedence).
+          # Delete OVSX_PAT after Trusted Publisher is registered + validated.
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        run: |
+          set -euo pipefail
+          # ovsx from package.json must be >= 1.1 for --trusted-publishing (we pin ^1.2).
+          if [ -n "${OVSX_PAT:-}" ]; then
+            echo "::notice::Open VSX: using OVSX_PAT bootstrap. Remove this secret after Trusted Publishing works."
+            npx ovsx publish --no-dependencies -p "$OVSX_PAT"
+          else
+            echo "Open VSX: Trusted Publishing (OIDC) - no long-lived token."
+            npx ovsx publish --no-dependencies --trusted-publishing
+          fi

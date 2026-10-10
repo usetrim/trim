@@ -1,0 +1,19 @@
+.vscode/**
+.vscode-test/**
+src/**
+node_modules/**
+.gitignore
+tsconfig.json
+biome.json
+**/*.map
+**/*.ts
+*.vsix
+media/README.md
+media/SCREENSHOTS.md
+media/captures/**
+PUBLISH.md
+out/test/**
+**/*.test.js
+# Ship only compiled extension entrypoints (not unit tests)
+!out/extension.js
+!out/util.js

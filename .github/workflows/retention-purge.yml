@@ -1,0 +1,40 @@
+# Retention purge batch (trim_events monthly partition DROP + leftover DELETE + admin_audit_log TTL).
+# Calls POST /internal/retention-purge with X-Cron-Secret.
+# Set repo secrets: TRIM_API_BASE_URL, CRON_SECRET.
+# Requires admin_retention_settings TTL days > 0; also ensures future month partitions.
+name: Retention purge
+
+on:
+  schedule:
+    - cron: "30 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  purge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run retention purge
+        env:
+          TRIM_API_BASE_URL: ${{ secrets.TRIM_API_BASE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "${TRIM_API_BASE_URL:-}" ] || [ -z "${CRON_SECRET:-}" ]; then
+            echo "Missing TRIM_API_BASE_URL or CRON_SECRET secrets; skip."
+            exit 0
+          fi
+          BASE="${TRIM_API_BASE_URL%/}"
+          code=$(curl -sS -o /tmp/purge-body.json -w "%{http_code}" \
+            -X POST "${BASE}/internal/retention-purge" \
+            -H "X-Cron-Secret: ${CRON_SECRET}" \
+            -H "Content-Type: application/json")
+          echo "HTTP ${code}"
+          cat /tmp/purge-body.json || true
+          case "$code" in
+            200|204) exit 0 ;;
+            409)
+              echo "TTL not configured; treat as skip."
+              exit 0
+              ;;
+            *) exit 1 ;;
+          esac

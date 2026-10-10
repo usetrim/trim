@@ -1,0 +1,119 @@
+name: Build trim-deep (optional freeze)
+
+# Zero-deps Deep Mode binary (PyInstaller + llmlingua).
+# Chained by default from release.yml on every v* tag (soft-fail / continue-on-error).
+# Opt out of tag attach: repository variable TRIM_SKIP_DEEP_ON_RELEASE=true.
+# Manual: Actions → Build trim-deep → Run workflow, or set TRIM_OPTIMIZER_BIN.
+#
+# Artifacts: trim-deep-{linux-amd64|darwin-arm64|windows-amd64}
+
+on:
+  workflow_dispatch:
+    inputs:
+      upload_to_release:
+        description: "If set to a v* tag, upload trim-deep binaries to that GitHub Release"
+        required: false
+        default: ""
+      platforms:
+        description: "Comma list: linux,darwin,windows (default all)"
+        required: false
+        default: "linux,darwin,windows"
+  # Called from release.yml deep-attach (default on; skip via TRIM_SKIP_DEEP_ON_RELEASE=true)
+  workflow_call:
+    inputs:
+      upload_to_release:
+        description: "v* tag to attach trim-deep binaries onto"
+        required: true
+        type: string
+      platforms:
+        description: "Comma list: linux,darwin,windows"
+        required: false
+        type: string
+        default: "linux,darwin,windows"
+
+permissions:
+  contents: write
+
+jobs:
+  freeze:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            artifact: trim-deep-linux-amd64
+            binary: trim-deep
+          - os: macos-14
+            platform: darwin
+            artifact: trim-deep-darwin-arm64
+            binary: trim-deep
+          - os: windows-latest
+            platform: windows
+            artifact: trim-deep-windows-amd64
+            binary: trim-deep.exe
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Gate platform
+        shell: bash
+        run: |
+          set -euo pipefail
+          want="${{ inputs.platforms }}"
+          if [ -z "${want}" ]; then
+            want="linux,darwin,windows"
+          fi
+          case ",${want}," in
+            *,${{ matrix.platform }},*) echo "building ${{ matrix.platform }}" ;;
+            *) echo "skip ${{ matrix.platform }}"; exit 0 ;;
+          esac
+          echo "RUN_BUILD=1" >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@v7
+        if: env.RUN_BUILD == '1'
+
+      - uses: actions/setup-python@v7
+        if: env.RUN_BUILD == '1'
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: cli/optimizer/requirements-deep.txt
+
+      - name: Build trim-deep via PyInstaller
+        if: env.RUN_BUILD == '1'
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/build-deep-optimizer.sh
+          test -f "cli/optimizer/dist/${{ matrix.binary }}" || test -x "cli/optimizer/dist/trim-deep"
+
+      - name: Normalize artifact name
+        if: env.RUN_BUILD == '1'
+        shell: bash
+        run: |
+          set -euo pipefail
+          src="cli/optimizer/dist/${{ matrix.binary }}"
+          if [[ ! -f "$src" ]]; then
+            src="cli/optimizer/dist/trim-deep"
+          fi
+          cp "$src" "${{ matrix.artifact }}"
+          if [[ "${{ matrix.platform }}" != "windows" ]]; then
+            chmod +x "${{ matrix.artifact }}"
+          fi
+
+      - name: Upload workflow artifact
+        if: env.RUN_BUILD == '1'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.artifact }}
+          if-no-files-found: error
+
+      - name: Attach to GitHub Release (optional)
+        if: env.RUN_BUILD == '1' && inputs.upload_to_release != ''
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ inputs.upload_to_release }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release upload "${TAG}" "${{ matrix.artifact }}" --clobber

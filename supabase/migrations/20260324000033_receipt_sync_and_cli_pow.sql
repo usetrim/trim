@@ -1,0 +1,12 @@
+-- Documents site_messages codes for receipt sync chrome, PoW CLI errors,
+-- TLS setup env chrome, and TUI timeout unset (seeded via SeedAndRefreshSiteMessages builtins).
+-- BILLING_SYNC_SYNCED_FMT
+-- RECEIPTS_BILL_TO_EMAIL_REQUIRED
+-- CLI_SETUP_TLS_ENV_REQUIRED
+-- CLI_SETUP_TLS_DAYS_INVALID
+-- CLI_POW_CLIENT_REQUIRED
+-- CLI_POW_428_MISSING
+-- CLI_POW_SOLVE_FAILED
+-- CLI_POW_PARSE_FAILED_FMT
+-- LOCAL_TUI_HTTP_TIMEOUT_UNSET
+select 1;

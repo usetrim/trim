@@ -1,0 +1,113 @@
+# Secrets - only *.env.example templates may be committed.
+# Patterns apply from this directory (trim/) when this repo is nested
+# under a parent monorepo, and from repo root when trim is its own remote.
+.env
+.env.*
+**/.env
+**/.env.local
+**/.env.*.local
+!**/.env.example
+!.env.example
+
+# Keys / certs / cloud credentials
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.p8
+id_rsa
+id_rsa.pub
+**/credentials.json
+**/service-account*.json
+**/google-services.json
+**/*secret*.json
+!**/.env.example
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+.pnpm-store/
+.turbo/
+.vercel/
+.netlify/
+
+# VS Code extension packaging (sideload artifacts; CI builds its own)
+*.vsix
+
+# Go / local CLI build output (never commit binaries)
+*.exe
+*.exe~
+*.dll
+*.pdb
+*.test
+/bin/
+/trim
+/trim-new
+/trim-audit
+/api-new
+/server/bin/
+/cli/bin/
+/cli/trim
+/cli/trim.exe
+/cli/trim-new
+/cli/trim-new.exe
+/server/api
+/server/api.exe
+/server/trim-api-local.exe
+coverage.txt
+coverage.out
+
+# GoReleaser
+dist/
+
+# Supabase CLI local cache
+supabase/.temp/
+
+# Python (local Deep Mode optimizer)
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# DB / backup dumps (never commit)
+*.dump
+*.sql.gz
+*.sqlite
+*.sqlite3
+backups/
+
+# Editors and OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Local audit / lint / e2e / manual-run captures (not shipped)
+*.log
+_*.txt
+_*.log
+*_out.txt
+*_err.txt
+*-audit.txt
+**/*-audit.txt
+**/lint_*.txt
+**/lint_out*.txt
+biome-*-lint.json
+**/biome-*-lint.json
+scripts/_*.txt
+scripts/_audit_*.txt
+scripts/_e2e_*.log
+scripts/_e2e_*.html
+scripts/_e2e_*.json
+scripts/_e2e_*.txt
+cli/_*
+cli/_e2e_*
+**/e2e-dev.*.log
+**/api*.err.log
+**/api-e2e.err.log

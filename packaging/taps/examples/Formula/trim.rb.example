@@ -1,0 +1,31 @@
+# Example Homebrew formula shape after GoReleaser publishes to usetrim/homebrew-tap.
+# Do not commit a live formula here. Create github.com/usetrim/homebrew-tap and set
+# HOMEBREW_TAP_TOKEN; GoReleaser writes Formula/trim.rb on each v* tag.
+#
+# Users: brew install usetrim/tap/trim
+
+class Trim < Formula
+  desc "AST-aware local LLM context optimization proxy"
+  homepage "https://use-trim.com"
+  # url / sha256 filled by GoReleaser from GitHub Release assets
+  license "MIT"
+
+  def install
+    bin.install "trim"
+    bin.install "optimizer.py" if File.exist?("optimizer.py")
+    doc.install "requirements-deep.txt" if File.exist?("requirements-deep.txt")
+    doc.install "requirements.txt" if File.exist?("requirements.txt")
+  end
+
+  def caveats
+    <<~EOS
+      Deep Mode uses Microsoft LLMLingua locally (not on Render).
+      First time: trim compress --bootstrap
+      Then: trim compress <file> --deep
+    EOS
+  end
+
+  test do
+    assert_match version.to_s, shell_output("#{bin}/trim version")
+  end
+end

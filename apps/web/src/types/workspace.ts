@@ -1,0 +1,214 @@
+import type { PaginationMeta } from "./common";
+
+export type Workspace = {
+  id: string;
+  name: string;
+  plan_tier: string;
+  allocated_seats: number;
+  role: string;
+  monthly_shared_credits: number;
+  credits_consumed: number;
+  member_count: number;
+  created_at: string;
+  summary_line?: string;
+};
+
+export type WorkspaceMember = {
+  id: string;
+  user_id: string;
+  email: string;
+  full_name: string;
+  role: string;
+  role_label?: string;
+  joined_at: string;
+};
+
+export type WorkspaceInvite = {
+  id: string;
+  email: string;
+  role: string;
+  role_label?: string;
+  status: string;
+  expires_at: string;
+  created_at: string;
+  summary_line?: string;
+};
+
+export type WorkspaceRoleOption = {
+  id: string;
+  label: string;
+};
+
+export type WorkspacesListResponse = {
+  items: Workspace[];
+  meta: PaginationMeta;
+  create_action_label: string;
+  create_pending_label: string;
+  invite_action_label: string;
+  invite_pending_label: string;
+  remove_action_label: string;
+  remove_pending_label: string;
+  leave_action_label: string;
+  leave_pending_label: string;
+  leave_confirm_message?: string;
+  remove_confirm_message?: string;
+  rename_action_label?: string;
+  rename_pending_label?: string;
+  rename_save_action_label?: string;
+  rename_save_pending_label?: string;
+  rename_title?: string;
+  delete_action_label?: string;
+  delete_pending_label?: string;
+  delete_confirm_message?: string;
+  bulk_delete_confirm_message?: string;
+  role_change_action_label?: string;
+  role_change_pending_label?: string;
+  role_change_title?: string;
+  role_label?: string;
+  role_description?: string;
+  invite_roles?: WorkspaceRoleOption[];
+  member_roles?: WorkspaceRoleOption[];
+  back_action_label?: string;
+  back_href?: string;
+  page_eyebrow?: string;
+  page_title?: string;
+  page_description?: string;
+  list_title?: string;
+  name_placeholder?: string;
+  name_label?: string;
+  name_description?: string;
+  members_title?: string;
+  invites_title?: string;
+  invite_email_placeholder?: string;
+  invite_email_label?: string;
+  invite_email_description?: string;
+  select_hint?: string;
+  empty_message?: string;
+  invite_url_label?: string;
+  invites_empty_message?: string;
+  revoke_action_label: string;
+  revoke_pending_label: string;
+  copy_invite_action_label: string;
+  copy_invite_pending_label: string;
+  copied_invite_action_label: string;
+  table_select_all?: string;
+  table_select_row?: string;
+  table_selected_fmt?: string;
+  table_row_actions?: string;
+  table_bulk_revoke?: string;
+  table_bulk_remove?: string;
+  table_bulk_delete?: string;
+  table_clear_selection?: string;
+  search_placeholder?: string;
+  search_description?: string;
+  q?: string;
+};
+
+export type WorkspaceMembersResponse = {
+  items: WorkspaceMember[];
+  meta: PaginationMeta;
+  owner_count: number;
+  invite_action_label: string;
+  invite_pending_label: string;
+  remove_action_label: string;
+  remove_pending_label: string;
+  leave_action_label: string;
+  leave_pending_label: string;
+  leave_confirm_message?: string;
+  remove_confirm_message?: string;
+  role_change_action_label?: string;
+  role_change_pending_label?: string;
+  role_change_title?: string;
+  role_label?: string;
+  role_description?: string;
+  invite_roles?: WorkspaceRoleOption[];
+  member_roles?: WorkspaceRoleOption[];
+  revoke_action_label: string;
+  revoke_pending_label: string;
+  copy_invite_action_label: string;
+  copy_invite_pending_label: string;
+  copied_invite_action_label: string;
+  table_select_all?: string;
+  table_select_row?: string;
+  table_selected_fmt?: string;
+  table_row_actions?: string;
+  table_bulk_revoke?: string;
+  table_bulk_remove?: string;
+  table_clear_selection?: string;
+  empty_message?: string;
+  search_placeholder?: string;
+  search_description?: string;
+  q?: string;
+};
+
+export type WorkspaceInvitesResponse = {
+  items: WorkspaceInvite[];
+  meta: PaginationMeta;
+  revoke_action_label: string;
+  revoke_pending_label: string;
+  invite_action_label: string;
+  invite_pending_label: string;
+  copy_invite_action_label: string;
+  copy_invite_pending_label: string;
+  copied_invite_action_label: string;
+  table_select_all?: string;
+  table_select_row?: string;
+  table_selected_fmt?: string;
+  table_row_actions?: string;
+  table_bulk_revoke?: string;
+  table_bulk_remove?: string;
+  table_clear_selection?: string;
+  search_placeholder?: string;
+  search_description?: string;
+  q?: string;
+};
+
+export type InviteMemberResponse = {
+  status: string;
+  invite_id: string;
+  email: string;
+  invite_url: string;
+  expires_at: string;
+  message: string;
+  action_label: string;
+  pending_label: string;
+  copy_action_label: string;
+  copy_pending_label: string;
+  copied_action_label: string;
+};
+
+export type InvitePreviewResponse = {
+  workspace_id: string;
+  workspace_name: string;
+  email_masked: string;
+  role: string;
+  role_label?: string;
+  status: string;
+  status_label?: string;
+  expires_at: string;
+  expires_at_label?: string;
+  accept_action_label: string;
+  accept_pending_label: string;
+  sign_in_action_label: string;
+  sign_in_pending_label: string;
+  sign_in_href?: string;
+  invite_path_prefix?: string;
+  open_team_action_label?: string;
+  open_team_href?: string;
+  eyebrow_label?: string;
+  status_title?: string;
+  body_message?: string;
+  role_prefix?: string;
+  for_prefix?: string;
+  status_prefix?: string;
+  expires_prefix?: string;
+};
+
+export type AcceptInviteResponse = {
+  status: string;
+  workspace_id: string;
+  role: string;
+  action_label: string;
+  pending_label: string;
+  redirect_href?: string;
+};

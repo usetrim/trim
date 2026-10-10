@@ -1,0 +1,25 @@
+-- Operator chrome for status select, product flags, enterprise, audit export, disputes.
+insert into public.site_messages (code, body) values
+  ('ADMIN_STATUS_ACTIVE', 'Active'),
+  ('ADMIN_STATUS_SUSPENDED', 'Suspended'),
+  ('ADMIN_STATUS_BANNED', 'Banned'),
+  ('ADMIN_STATUS_PENDING_DELETE', 'Pending delete'),
+  ('ADMIN_STATUS_SHADOWBANNED', 'Shadowbanned'),
+  ('ADMIN_PRODUCT_MODE_LABEL', 'Default compression mode'),
+  ('ADMIN_PRODUCT_ENGINE_LABEL', 'Default deep engine'),
+  ('ADMIN_PRODUCT_TREESITTER', 'Tree-sitter required'),
+  ('ADMIN_PRODUCT_DEEP_ATTACH', 'Deep attach default'),
+  ('ADMIN_PRODUCT_MODEL_ROUTING', 'Model routing enabled'),
+  ('ADMIN_PRODUCT_RUNTIME_TITLE', 'Runtime (read-only)'),
+  ('ADMIN_ENTERPRISE_STATUS_NEW', 'New'),
+  ('ADMIN_ENTERPRISE_STATUS_CONTACTED', 'Contacted'),
+  ('ADMIN_ENTERPRISE_STATUS_CLOSED', 'Closed'),
+  ('ADMIN_ACTION_EXPORT', 'Export'),
+  ('ADMIN_DISPUTE_TITLE', 'Dispute note'),
+  ('ADMIN_DISPUTE_TX_LABEL', 'Paddle transaction id'),
+  ('ADMIN_DISPUTE_USER_LABEL', 'User id'),
+  ('ADMIN_DISPUTE_NOTE_LABEL', 'Note'),
+  ('ADMIN_DISPUTE_STATUS_LABEL', 'Status'),
+  ('ADMIN_DISPUTE_STATUS_OPEN', 'Open'),
+  ('ADMIN_DISPUTE_STATUS_CLOSED', 'Closed')
+on conflict (code) do nothing;

@@ -1,0 +1,29 @@
+# Optional hosting / VPN ASN blocklist for Trim anti-fraud (Layer 1).
+# Mount as TRIM_GEOLITE_ASN_MMDB_PATH (plain text is supported; see geolite.go).
+# One ASN per line. Comments start with #.
+# Without this file, ASN hosting risk comes only from GeoLite Anonymous MMDB
+# and/or ipwho.is security flags (no invent ASN map in Go).
+
+# Amazon
+16509
+14618
+# Google
+15169
+# Microsoft
+8075
+# DigitalOcean
+14061
+62567
+# Vultr / Choopa
+20473
+# OVH
+16276
+# Hetzner
+24940
+# Linode / Akamai
+63949
+# CDN77 / Datacamp
+60068
+212238
+# M247 (common VPN exit)
+9009

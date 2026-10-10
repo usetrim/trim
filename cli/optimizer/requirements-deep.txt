@@ -1,0 +1,3 @@
+# Local Deep Mode only. Bootstrapped by: trim compress --bootstrap
+# Never deploy these models on Render.
+llmlingua>=0.2.2

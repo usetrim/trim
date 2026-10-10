@@ -1,0 +1,17 @@
+# Example offline IP risk blocklist for Trim (CIDR + ASN).
+# Copy to the host and set:
+#   TRIM_GEOLITE_ANONYMOUS_MMDB_PATH=/path/to/this/file
+# Or place beside GeoLite2-Anonymous-IP.mmdb as:
+#   GeoLite2-Anonymous-IP.mmdb.cidr.txt
+#
+# Lines:
+#   1.2.3.0/24
+#   AS9009
+#   # comments allowed
+
+# Common VPN / hosting ASNs (extend from your GeoLite export)
+AS9009
+AS212238
+AS60068
+AS24940
+AS14061

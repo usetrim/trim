@@ -1,0 +1,37 @@
+-- SEO + custom 404 / error page chrome (public web + admin). Fail closed if unset.
+-- Public origin for absolute metadata comes from deploy env (NEXT_PUBLIC_APP_URL), not invent.
+
+insert into public.site_messages (code, body) values
+  ('SEO_TITLE_TEMPLATE', '%s · Trim'),
+  ('SEO_DEFAULT_TITLE', 'Trim'),
+  ('SEO_DEFAULT_DESCRIPTION', 'Local context optimization middleware for AI coding tools - compress prompts on your machine, meter cloud usage with Trim.'),
+  ('SEO_OG_SITE_NAME', 'Trim'),
+  ('SEO_OG_TYPE', 'website'),
+  ('SEO_TWITTER_CARD', 'summary_large_image'),
+  ('SEO_ROBOTS_INDEX', 'index, follow'),
+  ('SEO_ROBOTS_NOINDEX', 'noindex, nofollow'),
+  ('PAGE_404_CODE', '404'),
+  ('PAGE_404_TITLE', 'Page not found · Trim'),
+  ('PAGE_404_HEADING', 'This page could not be found'),
+  ('PAGE_404_BODY', 'The link may be broken, or the page may have moved. Try the home page or documentation.'),
+  ('PAGE_404_HOME_CTA', 'Back to home'),
+  ('PAGE_404_DOCS_CTA', 'Read the docs'),
+  ('PAGE_404_DOCS_HREF', '/docs'),
+  ('PAGE_ERROR_TITLE', 'Something went wrong · Trim'),
+  ('PAGE_ERROR_HEADING', 'Something went wrong'),
+  ('PAGE_ERROR_BODY', 'An unexpected error occurred. Try again, or return home.'),
+  ('PAGE_ERROR_RETRY_CTA', 'Try again'),
+  ('PAGE_ERROR_HOME_CTA', 'Back to home'),
+  ('ADMIN_PAGE_404_TITLE', 'Page not found · Trim Admin'),
+  ('ADMIN_PAGE_404_HEADING', 'This page could not be found'),
+  ('ADMIN_PAGE_404_BODY', 'That admin route does not exist, or you do not have access. Return to the console home.'),
+  ('ADMIN_PAGE_404_HOME_CTA', 'Admin home'),
+  ('ADMIN_PAGE_ERROR_TITLE', 'Something went wrong · Trim Admin'),
+  ('ADMIN_PAGE_ERROR_HEADING', 'Something went wrong'),
+  ('ADMIN_PAGE_ERROR_BODY', 'An unexpected error occurred in the admin console. Try again, or return home.'),
+  ('ADMIN_PAGE_ERROR_RETRY_CTA', 'Try again'),
+  ('ADMIN_PAGE_ERROR_HOME_CTA', 'Admin home'),
+  ('ADMIN_SEO_DEFAULT_TITLE', 'Trim Admin'),
+  ('ADMIN_SEO_DEFAULT_DESCRIPTION', 'Trim platform administration console.'),
+  ('ADMIN_SEO_ROBOTS', 'noindex, nofollow')
+on conflict (code) do update set body = excluded.body, updated_at = now();

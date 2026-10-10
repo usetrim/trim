@@ -1,0 +1,644 @@
+name: Release CLI
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  goreleaser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Install Syft (SBOM)
+        uses: anchore/sbom-action/download-syft@v0
+
+      # Apple notarization / codesign (macOS runner + paid Developer ID).
+      # Keep skipped until APPLE_DEVELOPER_ID_* secrets and a macos-latest job exist.
+      # Typical flow after GoReleaser builds darwin archives:
+      #   codesign --force --options runtime --sign "$APPLE_DEVELOPER_ID_APPLICATION" dist/trim_darwin_*/*
+      #   ditto -c -k --keepParent dist/trim_darwin_arm64 trim_darwin_arm64.zip
+      #   xcrun notarytool submit trim_darwin_arm64.zip --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD" --wait
+      #   xcrun stapler staple dist/trim_darwin_arm64/trim
+      # Windows EV signing similarly needs a paid cert + signtool on windows-latest.
+
+      - uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Optional: leave unset until the remote tap/bucket/fork exists.
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          SCOOP_BUCKET_TOKEN: ${{ secrets.SCOOP_BUCKET_TOKEN }}
+          WINGET_GITHUB_TOKEN: ${{ secrets.WINGET_GITHUB_TOKEN }}
+
+      - name: Sign checksums and release archives with Cosign (keyless)
+        if: success()
+        run: |
+          set -euo pipefail
+          if [ -f dist/checksums.txt ]; then
+            cosign sign-blob --yes --output-signature dist/checksums.txt.sig dist/checksums.txt
+            gh release upload "${GITHUB_REF_NAME}" dist/checksums.txt.sig --clobber || true
+          fi
+          # Sign each published archive / binary blob for supply-chain attestation.
+          shopt -s nullglob
+          for artifact in dist/*.tar.gz dist/*.zip dist/*.txt; do
+            base="$(basename "$artifact")"
+            case "$base" in
+              checksums.txt|*.sig|*.spdx.json|*.openvex.json) continue ;;
+            esac
+            cosign sign-blob --yes --output-signature "${artifact}.sig" "$artifact"
+            gh release upload "${GITHUB_REF_NAME}" "${artifact}.sig" --clobber || true
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish OpenVEX baseline statement
+        if: success()
+        run: |
+          set -euo pipefail
+          TS="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          cat > dist/trim.openvex.json <<EOF
+          {
+            "@context": "https://openvex.dev/ns/v0.2.0",
+            "@id": "https://use-trim.com/vex/${GITHUB_REF_NAME}",
+            "author": "Trim Security <security@use-trim.com>",
+            "role": "product vendor",
+            "timestamp": "${TS}",
+            "version": 1,
+            "statements": []
+          }
+          EOF
+          gh release upload "${GITHUB_REF_NAME}" dist/trim.openvex.json --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Always attach brew/scoop/winget manifests as release assets so operators can
+      # publish taps without waiting for HOMEBREW_TAP_TOKEN / SCOOP / WINGET secrets.
+      - name: Upload package-manager manifests to release
+        if: success()
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          uploaded=0
+          for f in dist/*.rb dist/*.json dist/*.yaml dist/*.yml; do
+            base="$(basename "$f")"
+            case "$base" in
+              checksums.txt|*.sig|*.spdx.json|*.openvex.json|artifacts.json|config.yaml|metadata.json) continue ;;
+            esac
+            gh release upload "${GITHUB_REF_NAME}" "$f" --clobber
+            uploaded=$((uploaded + 1))
+          done
+          # GoReleaser may nest Formula / scoop / winget under dist/
+          for f in dist/Formula/*.rb dist/scoop/*.json dist/winget/**/*.yaml dist/winget/**/*.yml; do
+            [ -f "$f" ] || continue
+            dest="packaging-$(echo "$f" | sed 's|^dist/||; s|/|-|g')"
+            cp "$f" "dist/${dest}"
+            gh release upload "${GITHUB_REF_NAME}" "dist/${dest}" --clobber
+            uploaded=$((uploaded + 1))
+          done
+          echo "Uploaded ${uploaded} package-manager manifest asset(s)"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Tree-sitter CGO must build on a matching OS/arch (no linux→darwin CGO cross).
+  # Publishes trim_darwin_{amd64,arm64}_treesitter.tar.gz beside ubuntu artifacts.
+  treesitter-darwin:
+    needs: goreleaser
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            arch: arm64
+          - os: macos-13
+            arch: amd64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - name: Build darwin Tree-sitter CLI archive (${{ matrix.arch }})
+        working-directory: cli
+        run: |
+          set -euo pipefail
+          go get github.com/smacker/go-tree-sitter@v0.0.0-20240827094217-dd81d9e9be82
+          go mod tidy
+          VER="${GITHUB_REF_NAME#v}"
+          arch="${{ matrix.arch }}"
+          out="trim_darwin_${arch}_treesitter"
+          mkdir -p "dist/${out}"
+          CGO_ENABLED=1 GOOS=darwin GOARCH="${arch}" go build -tags treesitter \
+            -ldflags="-s -w -X github.com/usetrim/trim/cli/internal/cli.Version=${VER}" \
+            -o "dist/${out}/trim" ./cmd/trim
+          cp optimizer/optimizer.py "dist/${out}/optimizer.py"
+          cp optimizer/requirements-deep.txt "dist/${out}/requirements-deep.txt"
+          cp optimizer/requirements.txt "dist/${out}/requirements.txt"
+          cp ../LICENSE* "dist/${out}/" 2>/dev/null || true
+          cp ../README.md "dist/${out}/" 2>/dev/null || true
+          tar -C dist -czf "dist/${out}.tar.gz" "${out}"
+
+      - name: Upload darwin Tree-sitter archive to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh release upload "${GITHUB_REF_NAME}" \
+            "cli/dist/trim_darwin_${{ matrix.arch }}_treesitter.tar.gz" \
+            --clobber
+
+  # Windows Tree-sitter CGO (needs MinGW on the runner; no cross from linux).
+  treesitter-windows:
+    needs: goreleaser
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: mingw-w64-x86_64-gcc mingw-w64-x86_64-pkg-config make zip
+
+      - name: Build windows Tree-sitter CLI zip
+        shell: msys2 {0}
+        working-directory: cli
+        run: |
+          set -euo pipefail
+          export PATH="/mingw64/bin:$PATH"
+          go get github.com/smacker/go-tree-sitter@v0.0.0-20240827094217-dd81d9e9be82
+          go mod tidy
+          VER="${GITHUB_REF_NAME#v}"
+          out="trim_windows_amd64_treesitter"
+          mkdir -p "dist/${out}"
+          CGO_ENABLED=1 GOOS=windows GOARCH=amd64 go build -tags treesitter \
+            -ldflags="-s -w -X github.com/usetrim/trim/cli/internal/cli.Version=${VER}" \
+            -o "dist/${out}/trim.exe" ./cmd/trim
+          cp optimizer/optimizer.py "dist/${out}/optimizer.py"
+          cp optimizer/requirements-deep.txt "dist/${out}/requirements-deep.txt"
+          cp optimizer/requirements.txt "dist/${out}/requirements.txt"
+          cp ../LICENSE* "dist/${out}/" 2>/dev/null || true
+          cp ../README.md "dist/${out}/" 2>/dev/null || true
+          (cd dist && zip -r "${out}.zip" "${out}")
+
+      - name: Upload windows Tree-sitter zip to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release upload "${GITHUB_REF_NAME}" \
+            "cli/dist/trim_windows_amd64_treesitter.zip" \
+            --clobber
+
+  # linux/arm64 Tree-sitter on native arm runners (no amd64→arm64 CGO cross).
+  treesitter-linux-arm64:
+    needs: goreleaser
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - name: Build linux/arm64 Tree-sitter CLI archive
+        working-directory: cli
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq gcc libc6-dev
+          go get github.com/smacker/go-tree-sitter@v0.0.0-20240827094217-dd81d9e9be82
+          go mod tidy
+          VER="${GITHUB_REF_NAME#v}"
+          out="trim_linux_arm64_treesitter"
+          mkdir -p "dist/${out}"
+          CGO_ENABLED=1 GOOS=linux GOARCH=arm64 go build -tags treesitter \
+            -ldflags="-s -w -X github.com/usetrim/trim/cli/internal/cli.Version=${VER}" \
+            -o "dist/${out}/trim" ./cmd/trim
+          cp optimizer/optimizer.py "dist/${out}/optimizer.py"
+          cp optimizer/requirements-deep.txt "dist/${out}/requirements-deep.txt"
+          cp optimizer/requirements.txt "dist/${out}/requirements.txt"
+          cp ../LICENSE* "dist/${out}/" 2>/dev/null || true
+          cp ../README.md "dist/${out}/" 2>/dev/null || true
+          tar -C dist -czf "dist/${out}.tar.gz" "${out}"
+
+      - name: Upload linux/arm64 Tree-sitter archive to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh release upload "${GITHUB_REF_NAME}" \
+            "cli/dist/trim_linux_arm64_treesitter.tar.gz" \
+            --clobber
+
+  # linux/amd64 Tree-sitter on native amd64 runners (parity with arm64 / darwin / windows).
+  treesitter-linux-amd64:
+    needs: goreleaser
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - name: Build linux/amd64 Tree-sitter CLI archive
+        working-directory: cli
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq gcc libc6-dev
+          go get github.com/smacker/go-tree-sitter@v0.0.0-20240827094217-dd81d9e9be82
+          go mod tidy
+          VER="${GITHUB_REF_NAME#v}"
+          out="trim_linux_amd64_treesitter"
+          mkdir -p "dist/${out}"
+          CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -tags treesitter \
+            -ldflags="-s -w -X github.com/usetrim/trim/cli/internal/cli.Version=${VER}" \
+            -o "dist/${out}/trim" ./cmd/trim
+          cp optimizer/optimizer.py "dist/${out}/optimizer.py"
+          cp optimizer/requirements-deep.txt "dist/${out}/requirements-deep.txt"
+          cp optimizer/requirements.txt "dist/${out}/requirements.txt"
+          cp ../LICENSE* "dist/${out}/" 2>/dev/null || true
+          cp ../README.md "dist/${out}/" 2>/dev/null || true
+          tar -C dist -czf "dist/${out}.tar.gz" "${out}"
+
+      - name: Upload linux/amd64 Tree-sitter archive to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh release upload "${GITHUB_REF_NAME}" \
+            "cli/dist/trim_linux_amd64_treesitter.tar.gz" \
+            --clobber
+
+  # Optional Zig grammar Tree-sitter (linux/amd64). Larger binary; opt-in via TRIM_WITH_ZIG_TREESITTER=1.
+  treesitter-linux-amd64-zig:
+    needs: goreleaser
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - name: Build linux/amd64 Tree-sitter+Zig CLI archive
+        working-directory: cli
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq gcc libc6-dev
+          go get github.com/smacker/go-tree-sitter@v0.0.0-20240827094217-dd81d9e9be82
+          go get github.com/tree-sitter-grammars/tree-sitter-zig@latest
+          go mod tidy
+          VER="${GITHUB_REF_NAME#v}"
+          out="trim_linux_amd64_treesitter_zig"
+          mkdir -p "dist/${out}"
+          CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -tags "treesitter,zigts" \
+            -ldflags="-s -w -X github.com/usetrim/trim/cli/internal/cli.Version=${VER}" \
+            -o "dist/${out}/trim" ./cmd/trim
+          cp optimizer/optimizer.py "dist/${out}/optimizer.py"
+          cp optimizer/requirements-deep.txt "dist/${out}/requirements-deep.txt"
+          cp optimizer/requirements.txt "dist/${out}/requirements.txt"
+          cp ../LICENSE* "dist/${out}/" 2>/dev/null || true
+          cp ../README.md "dist/${out}/" 2>/dev/null || true
+          tar -C dist -czf "dist/${out}.tar.gz" "${out}"
+
+      - name: Upload linux/amd64 Tree-sitter+Zig archive to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh release upload "${GITHUB_REF_NAME}" \
+            "cli/dist/trim_linux_amd64_treesitter_zig.tar.gz" \
+            --clobber
+
+  # Optional Zig grammar Tree-sitter (linux/arm64 native runner; no amd64→arm64 CGO cross).
+  treesitter-linux-arm64-zig:
+    needs: goreleaser
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - name: Build linux/arm64 Tree-sitter+Zig CLI archive
+        working-directory: cli
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq gcc libc6-dev
+          go get github.com/smacker/go-tree-sitter@v0.0.0-20240827094217-dd81d9e9be82
+          go get github.com/tree-sitter-grammars/tree-sitter-zig@latest
+          go mod tidy
+          VER="${GITHUB_REF_NAME#v}"
+          out="trim_linux_arm64_treesitter_zig"
+          mkdir -p "dist/${out}"
+          CGO_ENABLED=1 GOOS=linux GOARCH=arm64 go build -tags "treesitter,zigts" \
+            -ldflags="-s -w -X github.com/usetrim/trim/cli/internal/cli.Version=${VER}" \
+            -o "dist/${out}/trim" ./cmd/trim
+          cp optimizer/optimizer.py "dist/${out}/optimizer.py"
+          cp optimizer/requirements-deep.txt "dist/${out}/requirements-deep.txt"
+          cp optimizer/requirements.txt "dist/${out}/requirements.txt"
+          cp ../LICENSE* "dist/${out}/" 2>/dev/null || true
+          cp ../README.md "dist/${out}/" 2>/dev/null || true
+          tar -C dist -czf "dist/${out}.tar.gz" "${out}"
+
+      - name: Upload linux/arm64 Tree-sitter+Zig archive to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh release upload "${GITHUB_REF_NAME}" \
+            "cli/dist/trim_linux_arm64_treesitter_zig.tar.gz" \
+            --clobber
+
+  # Optional Zig grammar on darwin (CGO + zigts; larger binary).
+  treesitter-darwin-zig:
+    needs: goreleaser
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            arch: arm64
+          - os: macos-13
+            arch: amd64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - name: Build darwin Tree-sitter+Zig CLI archive (${{ matrix.arch }})
+        working-directory: cli
+        run: |
+          set -euo pipefail
+          go get github.com/smacker/go-tree-sitter@v0.0.0-20240827094217-dd81d9e9be82
+          go get github.com/tree-sitter-grammars/tree-sitter-zig@latest
+          go mod tidy
+          VER="${GITHUB_REF_NAME#v}"
+          arch="${{ matrix.arch }}"
+          out="trim_darwin_${arch}_treesitter_zig"
+          mkdir -p "dist/${out}"
+          CGO_ENABLED=1 GOOS=darwin GOARCH="${arch}" go build -tags "treesitter,zigts" \
+            -ldflags="-s -w -X github.com/usetrim/trim/cli/internal/cli.Version=${VER}" \
+            -o "dist/${out}/trim" ./cmd/trim
+          cp optimizer/optimizer.py "dist/${out}/optimizer.py"
+          cp optimizer/requirements-deep.txt "dist/${out}/requirements-deep.txt"
+          cp optimizer/requirements.txt "dist/${out}/requirements.txt"
+          cp ../LICENSE* "dist/${out}/" 2>/dev/null || true
+          cp ../README.md "dist/${out}/" 2>/dev/null || true
+          tar -C dist -czf "dist/${out}.tar.gz" "${out}"
+
+      - name: Upload darwin Tree-sitter+Zig archive to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh release upload "${GITHUB_REF_NAME}" \
+            "cli/dist/trim_darwin_${{ matrix.arch }}_treesitter_zig.tar.gz" \
+            --clobber
+
+  # Optional Zig grammar on Windows amd64.
+  treesitter-windows-zig:
+    needs: goreleaser
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: mingw-w64-x86_64-gcc mingw-w64-x86_64-pkg-config make zip
+
+      - name: Build windows Tree-sitter+Zig CLI zip
+        shell: msys2 {0}
+        working-directory: cli
+        run: |
+          set -euo pipefail
+          export PATH="/mingw64/bin:$PATH"
+          go get github.com/smacker/go-tree-sitter@v0.0.0-20240827094217-dd81d9e9be82
+          go get github.com/tree-sitter-grammars/tree-sitter-zig@latest
+          go mod tidy
+          VER="${GITHUB_REF_NAME#v}"
+          out="trim_windows_amd64_treesitter_zig"
+          mkdir -p "dist/${out}"
+          CGO_ENABLED=1 GOOS=windows GOARCH=amd64 go build -tags "treesitter,zigts" \
+            -ldflags="-s -w -X github.com/usetrim/trim/cli/internal/cli.Version=${VER}" \
+            -o "dist/${out}/trim.exe" ./cmd/trim
+          cp optimizer/optimizer.py "dist/${out}/optimizer.py"
+          cp optimizer/requirements-deep.txt "dist/${out}/requirements-deep.txt"
+          cp optimizer/requirements.txt "dist/${out}/requirements.txt"
+          cp ../LICENSE* "dist/${out}/" 2>/dev/null || true
+          cp ../README.md "dist/${out}/" 2>/dev/null || true
+          (cd dist && zip -r "${out}.zip" "${out}")
+
+      - name: Upload windows Tree-sitter+Zig zip to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release upload "${GITHUB_REF_NAME}" \
+            "cli/dist/trim_windows_amd64_treesitter_zig.zip" \
+            --clobber
+
+  # Apple notarization (ops). Soft-skips when APPLE_DEVELOPER_ID_APPLICATION is unset.
+  # Requires paid Apple Developer Program + identity on the runner keychain.
+  sign-darwin:
+    needs: [goreleaser, treesitter-darwin]
+    runs-on: macos-14
+    env:
+      APPLE_DEVELOPER_ID_APPLICATION: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION }}
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Gate on Apple signing secrets
+        id: gate
+        run: |
+          set -euo pipefail
+          if [ -z "${APPLE_DEVELOPER_ID_APPLICATION:-}" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Apple signing skipped (set APPLE_DEVELOPER_ID_APPLICATION + APPLE_ID + APPLE_TEAM_ID + APPLE_APP_SPECIFIC_PASSWORD)."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download darwin archives from release
+        if: steps.gate.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p signed
+          gh release download "${GITHUB_REF_NAME}" -D signed -p 'trim_darwin_*'
+
+      - name: codesign + notarytool
+        if: steps.gate.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          for archive in signed/trim_darwin_*.tar.gz; do
+            base="$(basename "$archive" .tar.gz)"
+            tmp="$(mktemp -d)"
+            tar -xzf "$archive" -C "$tmp"
+            bin="$tmp/$base/trim"
+            if [ ! -f "$bin" ]; then
+              echo "missing binary in $archive"
+              exit 1
+            fi
+            codesign --force --options runtime --sign "$APPLE_DEVELOPER_ID_APPLICATION" "$bin"
+            ditto -c -k --keepParent "$tmp/$base" "${base}.zip"
+            xcrun notarytool submit "${base}.zip" \
+              --apple-id "$APPLE_ID" \
+              --team-id "$APPLE_TEAM_ID" \
+              --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+              --wait
+            xcrun stapler staple "$tmp/$base/trim" || true
+            (cd "$tmp" && tar -czf "${base}.tar.gz" "$base")
+            gh release upload "${GITHUB_REF_NAME}" "$tmp/${base}.tar.gz" --clobber
+            rm -rf "$tmp"
+          done
+
+  # Windows EV signing (ops). Soft-skips when WINDOWS_CERT_PFX_BASE64 is unset.
+  sign-windows:
+    needs: [goreleaser, treesitter-windows]
+    runs-on: windows-latest
+    env:
+      WINDOWS_CERT_PFX_BASE64: ${{ secrets.WINDOWS_CERT_PFX_BASE64 }}
+      WINDOWS_CERT_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Gate on Windows signing secrets
+        id: gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${WINDOWS_CERT_PFX_BASE64:-}" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Windows EV signing skipped (set WINDOWS_CERT_PFX_BASE64 + WINDOWS_CERT_PASSWORD)."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download windows archives from release
+        if: steps.gate.outputs.skip != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p signed
+          gh release download "${GITHUB_REF_NAME}" -D signed -p 'trim_windows_*'
+
+      - name: signtool EV sign
+        if: steps.gate.outputs.skip != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "$WINDOWS_CERT_PFX_BASE64" | base64 -d > cert.pfx
+          shopt -s nullglob
+          for zipf in signed/trim_windows_*.zip; do
+            base="$(basename "$zipf" .zip)"
+            tmp="$(mktemp -d)"
+            unzip -q "$zipf" -d "$tmp"
+            exe="$tmp/$base/trim.exe"
+            if [ ! -f "$exe" ]; then
+              echo "missing binary in $zipf"
+              exit 1
+            fi
+            SIGNTOOL="$(ls /c/Program\ Files\ \(x86\)/Windows\ Kits/10/bin/*/x64/signtool.exe 2>/dev/null | head -n1 || true)"
+            if [ -z "$SIGNTOOL" ]; then
+              echo "signtool.exe not found on runner; install Windows SDK or skip."
+              exit 1
+            fi
+            "$SIGNTOOL" sign /f cert.pfx /p "$WINDOWS_CERT_PASSWORD" /tr http://timestamp.digicert.com /td sha256 /fd sha256 "$exe"
+            (cd "$tmp" && zip -r "${base}.zip" "$base")
+            gh release upload "${GITHUB_REF_NAME}" "$tmp/${base}.zip" --clobber
+            rm -rf "$tmp"
+          done
+          rm -f cert.pfx
+
+  # Optional on tag: freeze + attach trim-deep (PyInstaller).
+  # GitHub rejects continue-on-error on reusable workflow jobs, so deep is opt-in:
+  # set repository variable TRIM_ATTACH_DEEP_ON_RELEASE=true to enable.
+  # TRIM_SKIP_DEEP_ON_RELEASE=true always skips.
+  deep-attach:
+    needs: goreleaser
+    if: vars.TRIM_ATTACH_DEEP_ON_RELEASE == 'true' && vars.TRIM_SKIP_DEEP_ON_RELEASE != 'true'
+    uses: ./.github/workflows/build-trim-deep.yml
+    with:
+      upload_to_release: ${{ github.ref_name }}
+      platforms: linux,darwin,windows
+    secrets: inherit
+
+  deep-attach-note:
+    needs: [goreleaser, deep-attach]
+    if: always() && needs.goreleaser.result == 'success'
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Document Deep Mode release path and asset status
+        run: |
+          set -euo pipefail
+          echo "Frozen trim-deep is not inside default GoReleaser archives (PyInstaller+torch)."
+          if [ "${{ vars.TRIM_ATTACH_DEEP_ON_RELEASE }}" = "true" ] && [ "${{ vars.TRIM_SKIP_DEEP_ON_RELEASE }}" != "true" ]; then
+            echo "TRIM_ATTACH_DEEP_ON_RELEASE=true: deep-attach ran for ${GITHUB_REF_NAME}."
+          else
+            echo "deep-attach skipped (opt-in). Enable: repo variable TRIM_ATTACH_DEEP_ON_RELEASE=true"
+            echo "Manual: Actions → Build trim-deep → upload_to_release=${GITHUB_REF_NAME}"
+          fi
+          echo "Install with frozen deep: TRIM_WITH_DEEP=1 curl -fsSL https://use-trim.com/install.sh | sh"
+          echo "Fallback UX: trim compress --bootstrap / TRIM_OPTIMIZER_BIN"
+          echo "--- existing trim-deep assets on ${GITHUB_REF_NAME} (if any) ---"
+          gh release view "${GITHUB_REF_NAME}" --json assets --jq '.assets[].name' 2>/dev/null | grep -E '^trim-deep-' || echo "(none yet)"

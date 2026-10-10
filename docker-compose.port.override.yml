@@ -1,0 +1,13 @@
+# Use with docker-compose.prod.yml when host 8080 is blocked (Windows Hyper-V
+# excluded ranges often cover 8080) or when server/.env sets PORT=18080.
+#
+#   docker compose -f docker-compose.prod.yml -f docker-compose.port.override.yml --env-file server/.env up -d --build
+#
+# !override replaces ports from the base file (Compose merges ports by default).
+
+services:
+  api:
+    ports: !override
+      - "18080:18080"
+    environment:
+      PORT: "18080"

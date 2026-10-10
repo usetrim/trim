@@ -1,0 +1,4 @@
+# Local Deep Mode only. Bootstrapped by: trim compress --bootstrap
+# Alias of requirements-deep.txt for installs that expect requirements.txt.
+# Never deploy these models on Render.
+llmlingua>=0.2.2

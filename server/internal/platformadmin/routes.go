@@ -1,0 +1,135 @@
+package platformadmin
+
+import (
+	"github.com/go-chi/chi/v5"
+)
+
+// Mount registers admin routes on r. Parent must already apply fraud + Secure auth.
+func (h *Handler) Mount(r chi.Router) {
+	r.Get("/me", h.getMe)
+	r.With(h.RequirePermission(PermAdminAccess)).Get("/notifications", h.listNotifications)
+	r.With(h.RequirePermission(PermAdminAccess)).Get("/notifications/unread-count", h.unreadNotificationCount)
+	r.With(h.RequirePermission(PermAdminAccess)).Post("/notifications/read-all", h.markAllNotificationsRead)
+	r.With(h.RequirePermission(PermAdminAccess)).Post("/notifications/{id}/read", h.markNotificationRead)
+	r.With(h.RequirePermission(PermAdminAccess)).Post("/auth/step-up", h.postStepUp)
+	r.With(h.RequirePermission(PermAdminAccess)).Get("/auth/totp", h.getTOTPStatus)
+	r.With(h.RequirePermission(PermAdminAccess)).Post("/auth/totp/begin", h.postTOTPBegin)
+	r.With(h.RequirePermission(PermAdminAccess)).Post("/auth/totp/confirm", h.postTOTPConfirm)
+	r.With(h.RequirePermission(PermAdminAccess)).Post("/auth/totp/disable", h.postTOTPDisable)
+	r.With(h.RequirePermission(PermAdminAccess)).Get("/auth/webauthn", h.getWebAuthnStatus)
+	r.With(h.RequirePermission(PermAdminAccess)).Post("/auth/webauthn/register/begin", h.postWebAuthnRegisterBegin)
+	r.With(h.RequirePermission(PermAdminAccess)).Post("/auth/webauthn/register/finish", h.postWebAuthnRegisterFinish)
+	r.With(h.RequirePermission(PermAdminAccess)).Post("/auth/webauthn/assert/begin", h.postWebAuthnAssertBegin)
+	r.With(h.RequirePermission(PermAdminAccess)).Post("/auth/webauthn/assert/finish", h.postWebAuthnAssertFinish)
+	r.With(h.RequirePermission(PermAdminAccess)).Delete("/auth/webauthn/{id}", h.deleteWebAuthnCredential)
+
+	r.With(h.RequirePermission(PermDashboardRead)).Get("/dashboard", h.getDashboard)
+
+	r.With(h.RequirePermission(PermUsersRead)).Get("/users", h.listUsers)
+	// Static path before /users/{id} so "countries" is never treated as an id.
+	r.With(h.RequirePermission(PermUsersRead)).Get("/users/countries", h.listUserCountries)
+	r.With(h.RequirePermission(PermUsersRead)).Get("/users/{id}", h.getUser)
+	r.With(h.RequirePermission(PermUsersSuspend)).Post("/users/{id}/status", h.postUserStatus)
+	r.With(h.RequirePermission(PermUsersNotes)).Patch("/users/{id}/notes", h.patchUserNotes)
+	r.With(h.RequirePermission(PermUsersQuota)).Post("/users/{id}/quota", h.postUserQuota)
+	r.With(h.RequirePermission(PermUsersKeys)).Post("/users/{id}/revoke-keys", h.postUserRevokeKeys)
+	r.With(h.RequirePermission(PermUsersForceLogout)).Post("/users/{id}/force-logout", h.postUserForceLogout)
+	r.With(h.RequirePermission(PermUsersGDPR)).Post("/users/{id}/gdpr-export", h.postUserGDPRExport)
+	r.With(h.RequirePermission(PermUsersGDPR)).Post("/users/{id}/gdpr-erase", h.postUserGDPRErase)
+
+	r.With(h.RequirePermission(PermSegmentsRead)).Get("/segments/individuals", h.listSegmentsIndividuals)
+	r.With(h.RequirePermission(PermSegmentsRead)).Get("/segments/teams", h.listSegmentsTeams)
+	r.With(h.RequirePermission(PermSegmentsRead)).Get("/segments/enterprises", h.listSegmentsEnterprises)
+	r.With(h.RequirePermission(PermSegmentsRead)).Get("/segments/countries", h.listUserCountries)
+
+	r.With(h.RequirePermission(PermRBACRead)).Get("/rbac/permissions", h.listPermissions)
+	r.With(h.RequirePermission(PermRBACRead)).Get("/rbac/roles/options", h.listRoleOptions)
+	r.With(h.RequirePermission(PermRBACRead)).Get("/rbac/roles", h.listRoles)
+	r.With(h.RequirePermission(PermRBACWrite)).Post("/rbac/roles", h.postRole)
+	r.With(h.RequirePermission(PermRBACWrite)).Patch("/rbac/roles/{id}", h.patchRole)
+	r.With(h.RequirePermission(PermRBACWrite)).Delete("/rbac/roles/{id}", h.deleteRole)
+	r.With(h.RequirePermission(PermRBACRead)).Get("/rbac/admins", h.listAdmins)
+	r.With(h.RequirePermission(PermAdminsInvite)).Post("/rbac/admins", h.postAdmin)
+	r.With(h.RequirePermission(PermAdminsInvite)).Delete("/rbac/admins/{userId}", h.deleteAdmin)
+
+	r.With(h.RequirePermission(PermBillingRead)).Get("/billing/plans", h.listPlans)
+	r.With(h.RequirePermission(PermBillingPlans)).Post("/billing/plans", h.postPlan)
+	r.With(h.RequirePermission(PermBillingPlans)).Patch("/billing/plans/{id}", h.patchPlan)
+	r.With(h.RequirePermission(PermBillingPlans)).Post("/billing/plans/sync-paddle", h.postSyncPaddleCatalog)
+	r.With(h.RequirePermission(PermBillingRead)).Get("/billing/settings", h.getBillingSettings)
+	r.With(h.RequirePermission(PermBillingSettings)).Patch("/billing/settings", h.patchBillingSettings)
+	r.With(h.RequirePermission(PermBillingRead)).Get("/billing/provider-adapters", h.listProviderAdapters)
+	r.With(h.RequirePermission(PermBillingSettings)).Put("/billing/provider-adapters", h.putProviderAdapter)
+	r.With(h.RequirePermission(PermBillingRead)).Get("/billing/openai-model-aliases", h.listOpenAIModelAliases)
+	r.With(h.RequirePermission(PermBillingSettings)).Put("/billing/openai-model-aliases", h.putOpenAIModelAlias)
+	r.With(h.RequirePermission(PermBillingRead)).Get("/billing/subscriptions", h.listSubscriptions)
+	r.With(h.RequirePermission(PermBillingReceipts)).Get("/billing/receipts", h.listAdminReceipts)
+	r.With(h.RequirePermission(PermBillingReceipts)).Get("/billing/receipts/{id}", h.getAdminReceipt)
+	r.With(h.RequirePermission(PermBillingReceipts)).Get("/billing/receipts/{id}/pdf", h.getAdminReceiptPDF)
+	r.With(h.RequirePermission(PermBillingReceipts)).Post("/billing/receipts/{id}/resync", h.postReceiptResync)
+	r.With(h.RequirePermission(PermBillingReceipts)).Post("/billing/receipts/{id}/pdf-reissue", h.postReceiptPDFReissue)
+	r.With(h.RequirePermission(PermBillingRevenue)).Get("/billing/revenue", h.getBillingRevenue)
+	r.With(h.RequirePermission(PermBillingCredits)).Post("/billing/credits", h.postCreditGrant)
+	r.With(h.RequirePermission(PermBillingCredits)).Get("/billing/credits", h.listCreditGrants)
+	r.With(h.RequirePermission(PermBillingCredits)).Get("/billing/topups", h.listTopupLedger)
+	r.With(h.RequirePermission(PermBillingRead)).Get("/billing/disputes", h.listDisputeNotes)
+	r.With(h.RequirePermission(PermBillingReceipts)).Post("/billing/disputes", h.postDisputeNote)
+
+	r.With(h.RequirePermission(PermEnterpriseRead)).Get("/enterprise/inquiries", h.listEnterpriseInquiries)
+	r.With(h.RequirePermission(PermEnterpriseWrite)).Patch("/enterprise/inquiries/{id}", h.patchEnterpriseInquiry)
+	r.With(h.RequirePermission(PermEnterpriseWrite)).Post("/enterprise/inquiries/{id}/offer", h.postEnterpriseInquiryOffer)
+	// Legacy alias: activate no longer grants entitlements; it sends a Paddle offer.
+	r.With(h.RequirePermission(PermEnterpriseWrite)).Post("/enterprise/inquiries/{id}/activate", h.postEnterpriseInquiryActivate)
+
+	r.With(h.RequirePermission(PermDenylistRead)).Get("/denylist/email", h.listEmailDenylist)
+	r.With(h.RequirePermission(PermDenylistWrite)).Post("/denylist/email", h.postEmailDenylist)
+	r.With(h.RequirePermission(PermDenylistWrite)).Delete("/denylist/email/{domain}", h.deleteEmailDenylist)
+	r.With(h.RequirePermission(PermDenylistRead)).Get("/denylist/ip", h.listIPDenylist)
+	r.With(h.RequirePermission(PermDenylistWrite)).Post("/denylist/ip", h.postIPDenylist)
+	r.With(h.RequirePermission(PermDenylistWrite)).Delete("/denylist/ip/{cidr}", h.deleteIPDenylist)
+	r.With(h.RequirePermission(PermDenylistRead)).Get("/denylist/asn", h.listASNDenylist)
+	r.With(h.RequirePermission(PermDenylistWrite)).Post("/denylist/asn", h.postASNDenylist)
+	r.With(h.RequirePermission(PermDenylistWrite)).Delete("/denylist/asn/{asn}", h.deleteASNDenylist)
+
+	r.With(h.RequirePermission(PermChromeRead)).Get("/chrome/messages", h.listChromeMessages)
+	// ui-map is read-only operator chrome for every admin (shell + filters). Edit stays chrome.write.
+	r.With(h.RequirePermission(PermAdminAccess)).Get("/chrome/ui-map", h.getChromeUIMap)
+	r.With(h.RequirePermission(PermChromeWrite)).Patch("/chrome/messages/{code}", h.patchChromeMessage)
+	r.With(h.RequirePermission(PermChromeRead)).Get("/chrome/legal", h.listLegalSections)
+	r.With(h.RequirePermission(PermChromeWrite)).Patch("/chrome/legal/{id}", h.patchLegalSection)
+	r.With(h.RequirePermission(PermChromeRead)).Get("/email/templates", h.listEmailTemplates)
+	r.With(h.RequirePermission(PermChromeWrite)).Patch("/email/templates/{code}", h.patchEmailTemplate)
+
+	r.With(h.RequirePermission(PermAuthRead)).Get("/auth/settings", h.getAuthSettings)
+	r.With(h.RequirePermission(PermAuthWrite)).Patch("/auth/settings", h.patchAuthSettings)
+	r.With(h.RequirePermission(PermAuthRead)).Get("/auth/oauth-scopes", h.getOAuthScopeChrome)
+
+	r.With(h.RequirePermission(PermProductRead)).Get("/product/settings", h.getProductSettings)
+	r.With(h.RequirePermission(PermProductWrite)).Patch("/product/settings", h.patchProductSettings)
+
+	r.With(h.RequirePermission(PermObservabilityRead)).Get("/observability/events/stats", h.getObservabilityEventStats)
+	r.With(h.RequirePermission(PermObservabilityRead)).Get("/observability/webhooks", h.listObservabilityWebhooks)
+	r.With(h.RequirePermission(PermObservabilityRead)).Get("/observability/webhooks/{eventId}", h.getObservabilityWebhook)
+	r.With(h.RequirePermission(PermWebhooksReplay)).Post("/observability/webhooks/{eventId}/replay", h.postWebhookReplay)
+	r.With(h.RequirePermission(PermObservabilityRead)).Get("/observability/heatmap", h.getCountryHeatmap)
+
+	r.With(h.RequirePermission(PermDistributionRead)).Get("/distribution/stats", h.getDistributionStats)
+	r.With(h.RequirePermission(PermDistributionSync)).Post("/distribution/sync", h.postDistributionSync)
+
+	r.With(h.RequirePermission(PermAuditRead)).Get("/audit", h.listAudit)
+	r.With(h.RequirePermission(PermAuditRead)).Get("/audit/filter-options", h.listAuditFilterOptions)
+	r.With(h.RequirePermission(PermAuditExport)).Get("/audit/export", h.exportAudit)
+
+	r.With(h.RequirePermission(PermComplianceRead)).Get("/compliance/retention", h.getComplianceRetention)
+	r.With(h.RequirePermission(PermComplianceWrite)).Patch("/compliance/retention", h.patchComplianceRetention)
+	r.With(h.RequirePermission(PermComplianceWrite)).Post("/compliance/retention/purge", h.postComplianceRetentionPurge)
+	r.With(h.RequirePermission(PermComplianceRead)).Get("/compliance/access-review", h.getAccessReview)
+	r.With(h.RequirePermission(PermComplianceWrite)).Get("/compliance/access-review/export", h.exportAccessReview)
+	r.With(h.RequirePermission(PermComplianceWrite)).Post("/compliance/access-review/attest", h.postAccessReviewAttest)
+
+	r.With(h.RequirePermission(PermAdminsBreakGlass)).Get("/break-glass", h.listBreakGlass)
+	r.With(h.RequirePermission(PermAdminsBreakGlass)).Post("/break-glass", h.postBreakGlass)
+	r.With(h.RequirePermission(PermAdminsBreakGlass)).Post("/break-glass/{id}/approve", h.approveBreakGlass)
+	r.With(h.RequirePermission(PermAdminsBreakGlass)).Post("/break-glass/{id}/deny", h.denyBreakGlass)
+	r.With(h.RequirePermission(PermAdminsBreakGlass)).Post("/break-glass/{id}/revoke", h.revokeBreakGlass)
+}

@@ -1,0 +1,32 @@
+-- World-class tax-invoice chrome (Paddle-grade layout, Trim branding).
+
+insert into public.site_messages (code, body) values
+  ('RECEIPT_DOCUMENT_TITLE', 'Tax invoice'),
+  ('RECEIPT_SECTION_BILL_TO', 'Invoice to'),
+  ('RECEIPT_SECTION_INVOICE_FROM', 'Invoice from'),
+  ('RECEIPT_SECTION_INVOICE_DETAILS', 'Invoice details'),
+  ('RECEIPT_SECTION_TRANSACTION', 'Transaction'),
+  ('RECEIPT_SECTION_TAX_BREAKDOWN', 'Tax breakdown'),
+  ('RECEIPT_SECTION_PAYMENT', 'Payment method'),
+  ('RECEIPT_SECTION_PERIOD', 'Billing period'),
+  ('RECEIPT_LABEL_INVOICE_REFERENCE', 'Invoice reference'),
+  ('RECEIPT_LABEL_TRANSACTION_ID', 'Transaction ID'),
+  ('RECEIPT_LABEL_CURRENCY', 'Currency code'),
+  ('RECEIPT_LABEL_AMOUNT_PAID', 'Amount paid'),
+  ('RECEIPT_LABEL_TAX_TOTAL', 'Tax total'),
+  ('RECEIPT_LABEL_TAX_PERCENT', 'Tax %'),
+  ('RECEIPT_COL_PRODUCT', 'Product'),
+  ('RECEIPT_COL_QTY', 'Qty'),
+  ('RECEIPT_COL_UNIT', 'Unit price'),
+  ('RECEIPT_COL_TAX_RATE', 'Tax rate'),
+  ('RECEIPT_COL_AMOUNT', 'Amount'),
+  ('RECEIPT_COL_DESCRIPTION', 'Product'),
+  ('RECEIPT_TAX_RATE_ZERO', '0%'),
+  ('RECEIPT_TAX_RATE_PERCENT_FMT', '%0.2f%%'),
+  ('RECEIPT_MERCHANT_VIA', 'via Paddle'),
+  ('RECEIPT_HEADER_META_SEP', ' · '),
+  ('RECEIPT_FOOTER', 'Questions about this invoice? Contact support using the address on this document. Card statements may show Paddle as the merchant of record.'),
+  ('RECEIPT_LABEL_SUBTOTAL', 'Subtotal'),
+  ('RECEIPT_LABEL_TAX', 'VAT'),
+  ('RECEIPT_LABEL_TOTAL', 'Total')
+on conflict (code) do update set body = excluded.body;

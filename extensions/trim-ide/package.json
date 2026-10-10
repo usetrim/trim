@@ -1,0 +1,213 @@
+{
+  "name": "trim-ide",
+  "displayName": "Trim IDE",
+  "description": "Starts the local Trim Fast Mode proxy with your IDE and posts tab acceptance / AI LOC metrics to Trim cloud.",
+  "version": "1.0.2",
+  "publisher": "usetrim",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/usetrim/trim.git",
+    "directory": "extensions/trim-ide"
+  },
+  "bugs": {
+    "url": "https://github.com/usetrim/trim/issues",
+    "email": "support@use-trim.com"
+  },
+  "homepage": "https://use-trim.com/docs/ide/extension",
+  "qna": "marketplace",
+  "icon": "media/icon.png",
+  "galleryBanner": {
+    "color": "#0f0f12",
+    "theme": "dark"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Machine Learning", "Visualization", "Other"],
+  "keywords": [
+    "trim",
+    "telemetry",
+    "cursor",
+    "vscode",
+    "ai",
+    "loc",
+    "proxy",
+    "openai",
+    "claude",
+    "cost"
+  ],
+  "extensionKind": ["ui", "workspace"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "trim.setApiKey",
+        "title": "%trim.command.setApiKey.title%"
+      },
+      {
+        "command": "trim.clearApiKey",
+        "title": "%trim.command.clearApiKey.title%"
+      },
+      {
+        "command": "trim.copyHardwareId",
+        "title": "%trim.command.copyHardwareId.title%"
+      },
+      {
+        "command": "trim.markTabShown",
+        "title": "%trim.command.markTabShown.title%"
+      },
+      {
+        "command": "trim.markTabAccepted",
+        "title": "%trim.command.markTabAccepted.title%"
+      },
+      {
+        "command": "trim.flushTelemetry",
+        "title": "%trim.command.flushTelemetry.title%"
+      },
+      {
+        "command": "trim._onInlineSuggestCommit",
+        "title": "%trim.command.inlineSuggestCommit.title%"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "trim._onInlineSuggestCommit",
+          "when": "false"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "%trim.config.title%",
+      "properties": {
+        "trim.apiUrl": {
+          "type": "string",
+          "default": "",
+          "format": "uri",
+          "description": "%trim.config.apiUrl%",
+          "order": 1
+        },
+        "trim.httpTimeoutSec": {
+          "type": "number",
+          "default": 15,
+          "minimum": 1,
+          "maximum": 120,
+          "description": "%trim.config.httpTimeoutSec%",
+          "order": 2
+        },
+        "trim.autoFlushSeconds": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "maximum": 600,
+          "description": "%trim.config.autoFlushSeconds%",
+          "order": 3
+        },
+        "trim.trackDocumentEdits": {
+          "type": "boolean",
+          "default": false,
+          "description": "%trim.config.trackDocumentEdits%",
+          "order": 4
+        },
+        "trim.minLinesForAiHeuristic": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "description": "%trim.config.minLines%",
+          "order": 5
+        },
+        "trim.autoStartWithIde": {
+          "type": "string",
+          "enum": ["follow", "on", "off"],
+          "default": "follow",
+          "description": "%trim.config.autoStartWithIde%",
+          "order": 6
+        },
+        "trim.workspaceId": {
+          "type": "string",
+          "default": "",
+          "description": "%trim.config.workspaceId%",
+          "order": 7
+        }
+      }
+    },
+    "walkthroughs": [
+      {
+        "id": "trim.getStarted",
+        "title": "%trim.walkthrough.title%",
+        "description": "%trim.walkthrough.description%",
+        "steps": [
+          {
+            "id": "trim.walkthrough.installCli",
+            "title": "%trim.walkthrough.installCli.title%",
+            "description": "%trim.walkthrough.installCli.description%",
+            "media": {
+              "image": "media/banner-dark.png",
+              "altText": "Trim IDE"
+            }
+          },
+          {
+            "id": "trim.walkthrough.apiUrl",
+            "title": "%trim.walkthrough.apiUrl.title%",
+            "description": "%trim.walkthrough.apiUrl.description%",
+            "media": {
+              "image": "media/screenshot-setup.png",
+              "altText": "Trim API URL settings"
+            }
+          },
+          {
+            "id": "trim.walkthrough.hardware",
+            "title": "%trim.walkthrough.hardware.title%",
+            "description": "%trim.walkthrough.hardware.description%",
+            "media": {
+              "image": "media/screenshot-setup.png",
+              "altText": "Trim hardware ID"
+            },
+            "completionEvents": ["onCommand:trim.copyHardwareId"]
+          },
+          {
+            "id": "trim.walkthrough.apiKey",
+            "title": "%trim.walkthrough.apiKey.title%",
+            "description": "%trim.walkthrough.apiKey.description%",
+            "media": {
+              "image": "media/screenshot-status.png",
+              "altText": "Trim API key"
+            },
+            "completionEvents": ["onCommand:trim.setApiKey"]
+          },
+          {
+            "id": "trim.walkthrough.baseUrl",
+            "title": "%trim.walkthrough.baseUrl.title%",
+            "description": "%trim.walkthrough.baseUrl.description%",
+            "media": {
+              "image": "media/banner-light.png",
+              "altText": "Point IDE at Trim proxy"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "biome lint .",
+    "format": "biome format . --write",
+    "test": "npm run compile && node --test out/test/util.test.js",
+    "package": "vsce package --no-dependencies --baseContentUrl https://github.com/usetrim/trim/blob/main/extensions/trim-ide --baseImagesUrl https://raw.githubusercontent.com/usetrim/trim/main/extensions/trim-ide",
+    "publish:vsce": "vsce publish --no-dependencies --baseContentUrl https://github.com/usetrim/trim/blob/main/extensions/trim-ide --baseImagesUrl https://raw.githubusercontent.com/usetrim/trim/main/extensions/trim-ide",
+    "publish:ovsx": "ovsx publish --no-dependencies",
+    "publish:ovsx:oidc": "ovsx publish --no-dependencies --trusted-publishing"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.7.0",
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^2.32.0",
+    "ovsx": "^1.2.0",
+    "typescript": "^5.3.0"
+  }
+}

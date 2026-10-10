@@ -1,0 +1,352 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+
+    /* Neutral HSL (no blue cast) - keep in sync with --trim-* below */
+    --background: 0 0% 98%;
+    --foreground: 0 0% 9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 9%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 40%;
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 72% 48%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 91%;
+    --input: 0 0% 91%;
+    --ring: 0 0% 9%;
+    --radius: 0.5rem;
+
+    /* App surfaces (light) - solid borders + white panels (Vercel/Linear light) */
+    --trim-bg: #fafafa;
+    --trim-fg: #171717;
+    --trim-muted: #5c5c5c;
+    --trim-subtle: #8a8a8a;
+    --trim-border: #e8e8e8;
+    --trim-border-strong: #cfcfcf;
+    --trim-panel: #ffffff;
+    --trim-panel-2: #f2f2f2;
+    --trim-ink: #171717;
+    --trim-ink-inverse: #fafafa;
+    --trim-code: #f2f2f2;
+    --trim-hover: rgba(23, 23, 23, 0.05);
+    --trim-scrollbar: rgba(23, 23, 23, 0.28);
+    --trim-status: #27a644;
+    --trim-status-bg: rgba(39, 166, 68, 0.12);
+    --trim-overlay: rgba(23, 23, 23, 0.4);
+    --trim-shimmer: color-mix(in srgb, var(--trim-fg) 8%, transparent);
+    --trim-track: #ebebeb;
+    --trim-thumb-shadow: 0 0 0 1px rgba(23, 23, 23, 0.08), 0 1px 2px rgba(23, 23, 23, 0.1);
+    --trim-float-shadow: 0 8px 30px rgba(23, 23, 23, 0.08), 0 2px 8px rgba(23, 23, 23, 0.04);
+    --trim-card-shadow: 0 1px 2px rgba(23, 23, 23, 0.04);
+  }
+
+  .dark {
+    color-scheme: dark;
+
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+
+    /* App surfaces (dark) */
+    --trim-bg: #08090a;
+    --trim-fg: #f7f8f8;
+    --trim-muted: #8a8f98;
+    --trim-subtle: #71717a;
+    --trim-border: rgba(255, 255, 255, 0.06);
+    --trim-border-strong: rgba(255, 255, 255, 0.14);
+    --trim-panel: #0f1011;
+    --trim-panel-2: #08090a;
+    --trim-ink: #f7f8f8;
+    --trim-ink-inverse: #08090a;
+    --trim-code: #0f1011;
+    --trim-hover: rgba(255, 255, 255, 0.04);
+    --trim-scrollbar: rgba(255, 255, 255, 0.18);
+    --trim-status: #27a644;
+    --trim-status-bg: rgba(39, 166, 68, 0.12);
+    --trim-overlay: rgba(0, 0, 0, 0.72);
+    --trim-shimmer: color-mix(in srgb, var(--trim-fg) 14%, transparent);
+    --trim-track: color-mix(in srgb, var(--trim-fg) 12%, transparent);
+    --trim-thumb-shadow: none;
+    --trim-float-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    --trim-card-shadow: none;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-[var(--trim-bg)] text-[var(--trim-fg)] antialiased;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--trim-ink) 18%, transparent);
+    color: var(--trim-fg);
+  }
+}
+
+@layer components {
+  /*
+   * Product demo windows (IDE / CLI / hero stage) follow the active theme.
+   * Dark mode keeps a dense terminal look; light mode uses light panels.
+   */
+  .trim-product-frame {
+    color: var(--trim-fg);
+    background-color: var(--trim-panel);
+    border-color: var(--trim-border);
+  }
+
+  /* Explicit light surfaces so nested demos never inherit a dark forced look. */
+  :root:not(.dark) .trim-product-frame {
+    --trim-bg: #fafafa;
+    --trim-fg: #171717;
+    --trim-muted: #5c5c5c;
+    --trim-subtle: #8a8a8a;
+    --trim-border: #e8e8e8;
+    --trim-border-strong: #cfcfcf;
+    --trim-panel: #ffffff;
+    --trim-panel-2: #f2f2f2;
+    --trim-hover: rgba(23, 23, 23, 0.05);
+    --trim-code: #f2f2f2;
+    --trim-card-shadow: 0 1px 2px rgba(23, 23, 23, 0.04);
+  }
+
+  .dark .trim-product-frame {
+    --trim-bg: #08090a;
+    --trim-fg: #f7f8f8;
+    --trim-muted: #a1a6b0;
+    --trim-subtle: #71717a;
+    --trim-border: rgba(255, 255, 255, 0.08);
+    --trim-border-strong: rgba(255, 255, 255, 0.16);
+    --trim-panel: #0f1011;
+    --trim-panel-2: #08090a;
+    --trim-ink: #f7f8f8;
+    --trim-ink-inverse: #08090a;
+    --trim-code: #0f1011;
+    --trim-hover: rgba(255, 255, 255, 0.06);
+    --trim-scrollbar: rgba(255, 255, 255, 0.22);
+    --trim-status: #27a644;
+    --trim-status-bg: rgba(39, 166, 68, 0.14);
+    --trim-overlay: rgba(0, 0, 0, 0.72);
+    --trim-shimmer: color-mix(in srgb, var(--trim-fg) 14%, transparent);
+    --trim-track: color-mix(in srgb, var(--trim-fg) 12%, transparent);
+    --trim-thumb-shadow: none;
+    --trim-float-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    --trim-card-shadow: none;
+  }
+}
+
+@layer utilities {
+  @keyframes shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  .animate-shimmer {
+    animation: shimmer 1.4s ease-in-out infinite;
+  }
+
+  /* Floating surfaces: soft elevation in light, deeper lift in dark */
+  .trim-float {
+    border-color: var(--trim-border-strong);
+    box-shadow: var(--trim-float-shadow);
+  }
+
+  .trim-track {
+    background-color: var(--trim-track);
+  }
+
+  @keyframes fetch-bar {
+    0% {
+      left: -33%;
+    }
+    100% {
+      left: 100%;
+    }
+  }
+
+  .animate-fetch-bar {
+    animation: fetch-bar 1.1s ease-in-out infinite;
+  }
+
+  @keyframes trim-badge-in {
+    0% {
+      opacity: 0;
+      transform: translateY(6px) scale(0.96);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+}
+
+/* Toast host + Sonner above every modal (dialog/sheet/alert z-100).
+ *
+ * Root cause of mobile mis-placement: forcing left:auto / right:1rem on ALL
+ * viewports overrode Sonner's ≤600px layout (left+right insets, width 100%).
+ * Host is a full-viewport pointer-events-none portal mount; the toaster
+ * positions itself (fixed) via Sonner attrs + the rules below.
+ * Breakpoint 600px matches Sonner's injected @media (max-width: 600px).
+ */
+#trim-toast-host,
+[data-trim-toast-host] {
+  position: fixed;
+  inset: 0;
+  z-index: 9999 !important;
+  pointer-events: none;
+  overflow: visible;
+}
+
+[data-sonner-toaster] {
+  z-index: 9999 !important;
+  pointer-events: auto !important;
+}
+
+/* Desktop / tablet: top-right corner (matches position="top-right"). */
+@media (min-width: 601px) {
+  [data-sonner-toaster][data-y-position="top"][data-x-position="right"] {
+    top: var(--offset-top, 1rem) !important;
+    right: var(--offset-right, 1rem) !important;
+    bottom: auto !important;
+    left: auto !important;
+  }
+}
+
+/* Mobile: full-bleed with equal side insets (Sonner default ≤600px).
+ * Use Sonner --mobile-offset-* (from mobileOffset prop) + safe-area. */
+@media (max-width: 600px) {
+  [data-sonner-toaster] {
+    left: max(var(--mobile-offset-left, 0.75rem), env(safe-area-inset-left, 0px)) !important;
+    right: max(var(--mobile-offset-right, 0.75rem), env(safe-area-inset-right, 0px)) !important;
+    width: auto !important;
+    transform: none !important;
+  }
+
+  [data-sonner-toaster][data-y-position="top"] {
+    top: max(var(--mobile-offset-top, 0.75rem), env(safe-area-inset-top, 0px)) !important;
+    bottom: auto !important;
+  }
+
+  [data-sonner-toaster][data-y-position="bottom"] {
+    bottom: max(var(--mobile-offset-bottom, 0.75rem), env(safe-area-inset-bottom, 0px)) !important;
+    top: auto !important;
+  }
+
+  [data-sonner-toaster] [data-sonner-toast] {
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+/* react-day-picker: theme-aware accents (light + dark) */
+.rdp-root {
+  --rdp-accent-color: var(--trim-ink);
+  --rdp-accent-background-color: var(--trim-hover);
+  --rdp-range_middle-background-color: var(--trim-hover);
+  --rdp-range_start-date-background-color: var(--trim-ink);
+  --rdp-range_end-date-background-color: var(--trim-ink);
+  --rdp-range_start-color: var(--trim-ink-inverse);
+  --rdp-range_end-color: var(--trim-ink-inverse);
+  --rdp-selected-border: var(--trim-ink);
+  --rdp-today-color: var(--trim-fg);
+}
+
+/*
+ * Receipt print / Save-as-PDF: exact same tax-invoice article as on-screen.
+ * Hides dashboard chrome only; keeps invoice card layout, type, and colors.
+ */
+@media print {
+  @page {
+    margin: 10mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #171717 !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  [data-receipt-print],
+  [data-receipt-print] * {
+    visibility: visible !important;
+  }
+
+  [data-receipt-print] {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #fff !important;
+    color: #171717 !important;
+    /* Force light invoice paper even when the app theme is dark. */
+    --trim-fg: #171717;
+    --trim-muted: #5c5c5c;
+    --trim-subtle: #8a8a8a;
+    --trim-border: #e8e8e8;
+    --trim-panel: #ffffff;
+    --trim-panel-2: #f2f2f2;
+    --trim-status: #27a644;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  [data-sonner-toaster],
+  [data-sonner-toast] {
+    display: none !important;
+  }
+}
+
+/* Demo panes: theme-aware scrollbars */
+.landing-demo-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--trim-scrollbar) transparent;
+}
+.landing-demo-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.landing-demo-scroll::-webkit-scrollbar-thumb {
+  background: var(--trim-scrollbar);
+  border-radius: 999px;
+}

@@ -1,0 +1,31 @@
+name: Feature request
+description: Propose a Trim improvement
+title: "[feat] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What pain does this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: How should Trim behave?
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - CLI proxy
+        - API / auth / quotas
+        - Billing / Paddle
+        - Web dashboard
+        - Docs / install
+    validations:
+      required: true

@@ -1,0 +1,36 @@
+{
+  "$schema": "https://biomejs.dev/schemas/1.7.0/schema.json",
+  "organizeImports": {
+    "enabled": true
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true
+    }
+  },
+  "formatter": {
+    "enabled": true,
+    "formatWithErrors": false,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100,
+    "ignore": ["out/*", "node_modules/*", "coverage/*", "build/*", "*.vsix"]
+  },
+  "files": {
+    "maxSize": 2097152,
+    "ignore": [
+      "out/*",
+      "node_modules/*",
+      "*.config.json",
+      "tsconfig*.json",
+      "package-lock.json",
+      "*.vsix",
+      "**/*.map",
+      "lint_*.json",
+      "lint_*.txt",
+      "build_*.txt",
+      "*.log.txt"
+    ]
+  }
+}

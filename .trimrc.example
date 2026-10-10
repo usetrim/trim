@@ -1,0 +1,24 @@
+# Project-local Trim rules (key=value). Walks up from cwd with .tokenignore.
+#
+# Compression modes (bible Mode 1-4):
+#   mild       = logs / whitespace only (no AST body strip)
+#   balanced   = default: skeletonize background files, keep active file
+#   aggressive = deeper AST (min 5 lines), always compact logs
+#   custom     = use custom_min_lines / custom_logs_only / custom_query
+mode=balanced
+active_file_protection=true
+max_log_bytes=4096
+# Optional log compaction caps (omit = no invent defaults; 0 min = always compact)
+log_compact_min_bytes=200
+log_compact_max_lines=80
+# Case-insensitive substrings dropped from logs (omit = keep all; no invent filter)
+log_noise_substrings=[info],deprecated,npm warn,warning:
+# Optional sliding-window history (0 or omit = off; see /docs/cli/history-keep-turns)
+# history_keep_turns=8
+ignore_paths=node_modules/**,vendor/**,*.min.js
+never_trim=schema.prisma,openapi.yaml
+
+# Custom mode knobs (used when mode=custom):
+# custom_min_lines=10
+# custom_logs_only=false
+# custom_query=(function_declaration body: (block) @body)

@@ -1,0 +1,13 @@
+# Gitleaks config for Trim monorepo.
+# https://github.com/gitleaks/gitleaks
+
+title = "trim"
+
+[allowlist]
+description = "Non-secret examples and vendored license text"
+paths = [
+  '''(?i)\.env\.example$''',
+  '''(?i)LICENSES/''',
+  '''(?i)\.tokenignore\.example$''',
+  '''(?i)\.trimrc\.example$''',
+]

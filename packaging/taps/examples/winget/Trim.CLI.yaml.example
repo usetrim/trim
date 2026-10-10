@@ -1,0 +1,24 @@
+# Example winget package id Trim.CLI (matches .goreleaser.yaml wingets publisher).
+# Live manifests are emitted under dist/ on release, or uploaded when
+# WINGET_GITHUB_TOKEN points at a fork of microsoft/winget-pkgs.
+# See packaging/taps/winget-pkgs.README.md.
+
+PackageIdentifier: Trim.CLI
+PackageVersion: REPLACE.WITH.SEMVER
+PackageLocale: en-US
+Publisher: usetrim
+PackageName: Trim
+License: MIT
+ShortDescription: AST-aware local LLM context optimization proxy
+PackageUrl: https://use-trim.com
+Installers:
+  - Architecture: x64
+    InstallerType: zip
+    InstallerUrl: https://github.com/usetrim/trim/releases/download/vREPLACE/trim_windows_amd64.zip
+    InstallerSha256: REPLACE_FROM_checksums.txt
+    NestedInstallerType: portable
+    NestedInstallerFiles:
+      - RelativeFilePath: trim.exe
+        PortableCommandAlias: trim
+ManifestType: singleton
+ManifestVersion: 1.6.0

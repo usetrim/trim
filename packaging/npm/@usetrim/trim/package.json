@@ -1,0 +1,56 @@
+{
+  "name": "@usetrim/trim",
+  "version": "0.1.0",
+  "description": "Trim CLI - local AI context optimization proxy (OpenAI-compatible). Installs the official binary from GitHub Releases.",
+  "keywords": [
+    "trim",
+    "llm",
+    "proxy",
+    "openai",
+    "cli",
+    "context",
+    "cursor",
+    "vscode"
+  ],
+  "homepage": "https://use-trim.com",
+  "bugs": {
+    "url": "https://github.com/usetrim/trim/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/usetrim/trim.git",
+    "directory": "packaging/npm/@usetrim/trim"
+  },
+  "license": "MIT",
+  "author": "Trim <support@use-trim.com>",
+  "type": "commonjs",
+  "bin": {
+    "trim": "bin/trim.js"
+  },
+  "files": [
+    "bin/",
+    "scripts/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "postinstall": "node scripts/install.js",
+    "test": "node --test scripts/*.test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

@@ -1,0 +1,202 @@
+version: 2
+project_name: trim
+
+before:
+  hooks:
+    - sh -c 'cd server && go get github.com/smacker/go-tree-sitter@v0.0.0-20240827094217-dd81d9e9be82 && go mod tidy'
+    - sh -c 'cd cli && go mod tidy'
+
+builds:
+  - id: trim-cli
+    dir: ./cli
+    main: ./cmd/trim
+    binary: trim
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X github.com/usetrim/trim/cli/internal/cli.Version={{.Version}}
+
+  # Optional Tree-sitter grammars (CGO).
+  # linux/amd64: built on GitHub ubuntu runners via this config.
+  # darwin amd64/arm64: built in .github/workflows/release.yml job treesitter-darwin
+  # (CGO cannot cross-compile from linux to darwin).
+  - id: trim-cli-treesitter
+    dir: ./cli
+    main: ./cmd/trim
+    binary: trim
+    flags:
+      - -tags=treesitter
+    env:
+      - CGO_ENABLED=1
+    goos:
+      - linux
+    goarch:
+      - amd64
+    ldflags:
+      - -s -w -X github.com/usetrim/trim/cli/internal/cli.Version={{.Version}}
+
+  # linux/arm64 treesitter: not in GoReleaser (CGO cross from amd64 runners fails).
+  # Build on arm64 host: CGO_ENABLED=1 go build -tags treesitter ./cmd/trim
+  # Or use workflow treesitter-linux-arm64 when a native runner is available.
+
+archives:
+  - id: default
+    builds:
+      - trim-cli
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    formats:
+      - tar.gz
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+    files:
+      - LICENSE*
+      - README.md
+      - src: cli/optimizer/optimizer.py
+        dst: optimizer.py
+        strip_parent: true
+      - src: cli/optimizer/requirements-deep.txt
+        dst: requirements-deep.txt
+        strip_parent: true
+      - src: cli/optimizer/requirements.txt
+        dst: requirements.txt
+        strip_parent: true
+
+  - id: treesitter
+    builds:
+      - trim-cli-treesitter
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}_treesitter"
+    formats:
+      - tar.gz
+    files:
+      - LICENSE*
+      - README.md
+      - src: cli/optimizer/optimizer.py
+        dst: optimizer.py
+        strip_parent: true
+      - src: cli/optimizer/requirements-deep.txt
+        dst: requirements-deep.txt
+        strip_parent: true
+      - src: cli/optimizer/requirements.txt
+        dst: requirements.txt
+        strip_parent: true
+
+checksum:
+  name_template: checksums.txt
+
+sboms:
+  - id: default
+    artifacts: archive
+    documents:
+      - "{{ .ArtifactName }}.spdx.json"
+
+# Homebrew tap (optional): create github.com/usetrim/homebrew-tap and set HOMEBREW_TAP_TOKEN.
+# skip_upload stays true until the secret is non-empty (no failed publish on missing ops).
+brews:
+  - name: trim
+    # One formula per OS/Arch - exclude treesitter archive (same linux/amd64).
+    ids:
+      - default
+    repository:
+      owner: usetrim
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    skip_upload: '{{ not (isEnvSet "HOMEBREW_TAP_TOKEN") }}'
+    directory: Formula
+    homepage: "https://use-trim.com"
+    description: "AST-aware local LLM context optimization proxy"
+    license: "MIT"
+    install: |
+      bin.install "trim"
+      bin.install "optimizer.py" if File.exist?("optimizer.py")
+      doc.install "requirements-deep.txt" if File.exist?("requirements-deep.txt")
+      doc.install "requirements.txt" if File.exist?("requirements.txt")
+    caveats: |
+      Deep Mode uses Microsoft LLMLingua locally (not on Render).
+      Preferred: place trim-deep next to trim, or set TRIM_OPTIMIZER_BIN.
+      Fallback: trim compress --bootstrap then trim compress file.txt --mode deep
+      Set TRIM_OPTIMIZER_PY if optimizer.py is not next to the trim binary.
+      Optional freeze: scripts/build-deep-optimizer.sh (PyInstaller).
+    test: |
+      system "#{bin}/trim", "version"
+
+# Scoop bucket (optional): create github.com/usetrim/scoop-trim and set SCOOP_BUCKET_TOKEN.
+scoops:
+  - name: trim
+    ids:
+      - default
+    repository:
+      owner: usetrim
+      name: scoop-trim
+      token: "{{ .Env.SCOOP_BUCKET_TOKEN }}"
+    skip_upload: '{{ not (isEnvSet "SCOOP_BUCKET_TOKEN") }}'
+    homepage: "https://use-trim.com"
+    description: "AST-aware local LLM context optimization proxy"
+    license: "MIT"
+
+# Winget (optional): fork microsoft/winget-pkgs under usetrim, set WINGET_GITHUB_TOKEN.
+# Manifests always land under dist/; upload opens only when the token is set.
+winget:
+  - name: trim
+    ids:
+      - default
+    publisher: usetrim
+    package_identifier: Trim.CLI
+    short_description: "AST-aware local LLM context optimization proxy"
+    license: "MIT"
+    homepage: "https://use-trim.com"
+    release_notes_url: "https://github.com/usetrim/trim/releases/tag/{{ .Tag }}"
+    repository:
+      owner: usetrim
+      name: winget-pkgs
+      token: "{{ .Env.WINGET_GITHUB_TOKEN }}"
+    skip_upload: '{{ not (isEnvSet "WINGET_GITHUB_TOKEN") }}'
+
+nfpms:
+  - id: packages
+    # Only the CGO-free binary - treesitter build also outputs `trim` and collides at /usr/bin/trim.
+    builds:
+      - trim-cli
+    package_name: trim
+    vendor: usetrim
+    homepage: "https://use-trim.com"
+    maintainer: "Trim <support@use-trim.com>"
+    description: "AST-aware local LLM context optimization proxy"
+    license: "MIT"
+    formats:
+      - deb
+      - rpm
+    bindir: /usr/bin
+    section: utils
+    priority: optional
+    contents:
+      - src: cli/optimizer/optimizer.py
+        dst: /usr/share/trim/optimizer.py
+        file_info:
+          mode: 0755
+      - src: cli/optimizer/requirements-deep.txt
+        dst: /usr/share/trim/requirements-deep.txt
+      - src: cli/optimizer/requirements.txt
+        dst: /usr/share/trim/requirements.txt
+    scripts:
+      # nfpm expects a file path (inline script bodies are treated as filenames).
+      postinstall: packaging/nfpm/postinstall.sh
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+
+release:
+  draft: false
+  prerelease: auto

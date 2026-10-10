@@ -1,0 +1,77 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: trim_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: trim_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # Do not auto-run supabase/migrations here: they require Supabase auth schema.
+    # Apply with: supabase db push  (or paste SQL in Supabase SQL editor)
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: trim_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+      args:
+        # Set to "1" for optional Tree-sitter CGO grammars (needs longer build).
+        ENABLE_TREESITTER: ${ENABLE_TREESITTER:-0}
+    container_name: trim_api
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./server/.env
+    environment:
+      DATABASE_URL: postgres://postgres:postgrespassword@postgres:5432/trim_db?sslmode=disable
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/api", "-readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  # Next.js dashboard (run migrations on Supabase for Auth; local compose is API + data only by default).
+  # Uncomment when you want a local web container:
+  # web:
+  #   build:
+  #     context: ./apps/web
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     NEXT_PUBLIC_API_URL: http://localhost:8080
+  #     NEXT_PUBLIC_APP_URL: http://localhost:3000
+  #   depends_on:
+  #     - api
+
+volumes:
+  pgdata:
+  redisdata:

@@ -1,0 +1,64 @@
+# Publish @usetrim/trim to npm on v* tags via Trusted Publishing (OIDC).
+#
+# Best practice (preferred):
+#   1. Package must exist on npm (one-time bootstrap - see packaging/DISTRIBUTION-LAUNCH.md)
+#   2. Configure Trusted Publisher on npmjs.com for this workflow filename
+#   3. npm CLI uses OIDC (id-token: write) - no long-lived publish token required
+#
+# Optional fallback: repo secret NPM_TOKEN (granular, bypass-2FA) is used only if
+# OIDC is not configured yet. Remove NPM_TOKEN after the first successful OIDC publish.
+#
+# Requires: Node >= 22.14, npm CLI >= 11.5.1, GitHub-hosted runners.
+name: Publish npm
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  id-token: write # Required for npm Trusted Publishing (OIDC)
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packaging/npm/@usetrim/trim
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # Trusted Publishing requires Node >= 22.14 and npm CLI >= 11.5.1
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Ensure npm CLI supports OIDC
+        run: |
+          set -euo pipefail
+          npm install -g npm@^11.5.1
+          node -v
+          npm -v
+
+      - name: Unit tests
+        run: node --test scripts/platform.test.js
+
+      - name: Align package version with git tag
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          export VER="${TAG#v}"
+          node -e 'const fs=require("fs");const p="package.json";const j=JSON.parse(fs.readFileSync(p,"utf8"));j.version=process.env.VER;fs.writeFileSync(p,JSON.stringify(j,null,2)+"\n");console.log("version",process.env.VER);'
+
+      - name: Publish to npm
+        env:
+          # OIDC is preferred. NODE_AUTH_TOKEN is optional bootstrap/fallback only.
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          TRIM_NPM_SKIP_DOWNLOAD: "1"
+        run: |
+          set -euo pipefail
+          # Provenance is automatic under Trusted Publishing from public repos.
+          # --access public is required for scoped packages on first publish.
+          npm publish --access public

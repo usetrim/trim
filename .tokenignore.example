@@ -1,0 +1,12 @@
+# Paths Trim must never skeletonize or compact (like .gitignore syntax).
+# Place this file at the project root as `.tokenignore`.
+#
+# Examples:
+# secrets/**
+# **/*.pem
+# **/vendor/**
+# go.sum
+# package-lock.json
+#
+# Active / focused editor files are already protected by Trim heuristics.
+# Use .tokenignore for schemas, keys, and modules that must stay verbatim.

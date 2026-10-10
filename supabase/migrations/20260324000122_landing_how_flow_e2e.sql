@@ -1,0 +1,28 @@
+-- How Trim works: correct end-to-end product steps (install → proxy → IDE → trim → savings).
+insert into public.site_messages (code, body) values
+  ('LANDING_FLOW_TITLE', 'How Trim works'),
+  ('LANDING_FLOW_SUBTITLE', 'End to end: from install on your machine to a smaller bill on every chat.'),
+  ('LANDING_FLOW_1_TITLE', 'Install Trim and start the local proxy'),
+  ('LANDING_FLOW_1_BODY', 'Run the one-line installer, then trim start. Trim listens on http://127.0.0.1:8000/v1 as an OpenAI-compatible endpoint. Your code stays on this machine.'),
+  ('LANDING_FLOW_2_TITLE', 'Point your IDE at Trim'),
+  ('LANDING_FLOW_2_BODY', 'In Cursor: Settings → Models → OpenAI Compatible → Override Base URL to the Trim listen URL. No new editor. Same Composer and agents.'),
+  ('LANDING_FLOW_3_TITLE', 'Every request hits Trim first'),
+  ('LANDING_FLOW_3_BODY', 'Chat and agents POST through the local proxy. Fast Mode drops vendor dumps, lockfiles, and log spam; it keeps the files and stacks you are actually editing.'),
+  ('LANDING_FLOW_4_TITLE', 'The model sees less. You see the savings.'),
+  ('LANDING_FLOW_4_BODY', 'A slim prompt goes upstream. Same task, far fewer input tokens. Dashboard shows tokens in → out, percent cut, and USD direction so the win is measurable.'),
+  ('LANDING_HOW_TITLE', 'How Trim works'),
+  ('LANDING_HOW_1_TITLE', 'Install and start the local proxy'),
+  ('LANDING_HOW_1_BODY', 'trim start binds an OpenAI-compatible proxy on localhost. Compression runs on your laptop.'),
+  ('LANDING_HOW_2_TITLE', 'Wire Cursor (or any compatible IDE)'),
+  ('LANDING_HOW_2_BODY', 'Override Base URL to http://127.0.0.1:8000/v1. Requests route through Trim before the model.'),
+  ('LANDING_HOW_3_TITLE', 'Trim then meter'),
+  ('LANDING_HOW_3_BODY', 'Noise is cut locally. Cloud meters usage, quotas, and receipts after you sign in - not your source tree.'),
+  ('LANDING_USE_TITLE', 'Get started in three steps'),
+  ('LANDING_USE_SUBTITLE', 'Same path as above - short version.'),
+  ('LANDING_USE_1_TITLE', 'Install and run trim start'),
+  ('LANDING_USE_1_BODY', 'curl the install script (or use your package manager), then start the local proxy.'),
+  ('LANDING_USE_2_TITLE', 'Set Override Base URL'),
+  ('LANDING_USE_2_BODY', 'Cursor → Models → OpenAI Compatible → http://127.0.0.1:8000/v1'),
+  ('LANDING_USE_3_TITLE', 'Code as usual - check the dashboard'),
+  ('LANDING_USE_3_BODY', 'Composer and agents already go through Trim. Open the dashboard to see tokens trimmed and USD saved.')
+on conflict (code) do update set body = excluded.body;

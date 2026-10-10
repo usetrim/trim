@@ -1,0 +1,14 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Node helpers for Trim API ops scripts (pg/ioredis). The API itself is Go under ./cmd/api.",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "ioredis": "^6.0.0",
+    "pg": "^8.23.0"
+  }
+}
