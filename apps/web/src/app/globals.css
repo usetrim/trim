@@ -325,11 +325,20 @@ html.dark [data-receipt-print] {
 }
 
 /*
- * Receipt print / Save-as-PDF - identical to apps/admin/src/app/globals.css.
+ * Receipt print / Save-as-PDF - same live article (Download ≡ Print).
+ * Always light paper, even when the app is in dark mode:
+ *  - JS strips html.dark for the print snapshot (see receipt-print.ts)
+ *  - CSS re-locks every shadcn / trim token to light values here
+ * Also lock desktop letterhead/section padding so print viewports cannot
+ * collapse sm: spacing.
  */
 @media print {
   @page {
     margin: 10mm;
+  }
+
+  html {
+    color-scheme: light !important;
   }
 
   html,
@@ -347,7 +356,9 @@ html.dark [data-receipt-print] {
     visibility: visible !important;
   }
 
-  [data-receipt-print] {
+  [data-receipt-print],
+  html.dark [data-receipt-print],
+  .dark [data-receipt-print] {
     position: absolute !important;
     left: 0 !important;
     top: 0 !important;
@@ -357,29 +368,79 @@ html.dark [data-receipt-print] {
     overflow: visible !important;
     box-shadow: none !important;
     border: none !important;
-    background: #fff !important;
-    color: #171717 !important;
-    /* Force light invoice paper even when the app theme is dark. */
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --border: 240 5.9% 90%;
-    --trim-fg: #171717;
-    --trim-muted: #5c5c5c;
-    --trim-subtle: #8a8a8a;
-    --trim-border: #e8e8e8;
-    --trim-panel: #ffffff;
-    --trim-panel-2: #f4f4f5; /* zinc-100 - same as print:bg-zinc-100 */
-    --trim-status: #27a644;
+    color-scheme: light !important;
+    background: #ffffff !important;
+    color: #18181b !important; /* zinc-900 - readable on white */
+    /* Full light shadcn token set (wins over .dark :root during print). */
+    --background: 0 0% 100% !important;
+    --foreground: 240 10% 3.9% !important;
+    --card: 0 0% 100% !important;
+    --card-foreground: 240 10% 3.9% !important;
+    --popover: 0 0% 100% !important;
+    --popover-foreground: 240 10% 3.9% !important;
+    --primary: 240 5.9% 10% !important;
+    --primary-foreground: 0 0% 98% !important;
+    --secondary: 240 4.8% 95.9% !important;
+    --secondary-foreground: 240 5.9% 10% !important;
+    --muted: 240 4.8% 95.9% !important;
+    --muted-foreground: 240 3.8% 46.1% !important;
+    --accent: 240 4.8% 95.9% !important;
+    --accent-foreground: 240 5.9% 10% !important;
+    --destructive: 0 84.2% 60.2% !important;
+    --destructive-foreground: 0 0% 98% !important;
+    --border: 240 5.9% 90% !important;
+    --input: 240 5.9% 90% !important;
+    --ring: 240 5.9% 10% !important;
+    --trim-bg: #ffffff !important;
+    --trim-fg: #171717 !important;
+    --trim-muted: #5c5c5c !important;
+    --trim-subtle: #8a8a8a !important;
+    --trim-border: #e8e8e8 !important;
+    --trim-panel: #ffffff !important;
+    --trim-panel-2: #f4f4f5 !important;
+    --trim-ink: #171717 !important;
+    --trim-ink-inverse: #ffffff !important;
+    --trim-status: #27a644 !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+    zoom: 1 !important;
+    transform: none !important;
   }
 
+  /* Letterhead bands - zinc-100 + desktop padding (sm:px-8 sm:py-7) */
   [data-receipt-print] > header,
-  [data-receipt-print] > footer {
+  [data-receipt-print] > footer,
+  html.dark [data-receipt-print] > header,
+  html.dark [data-receipt-print] > footer,
+  .dark [data-receipt-print] > header,
+  .dark [data-receipt-print] > footer {
     background-color: #f4f4f5 !important;
+    color: #18181b !important;
+    padding: 1.75rem 2rem !important;
+  }
+
+  [data-receipt-print] > footer {
+    margin-top: 1rem !important;
+  }
+
+  [data-receipt-print] > section {
+    background-color: transparent !important;
+    color: #18181b !important;
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+  }
+
+  /* Safety: never leave near-white ink on white paper from dark utilities */
+  [data-receipt-print] h1,
+  [data-receipt-print] h2,
+  [data-receipt-print] p,
+  [data-receipt-print] td,
+  [data-receipt-print] th,
+  [data-receipt-print] span,
+  [data-receipt-print] dd,
+  [data-receipt-print] dt,
+  [data-receipt-print] a {
+    -webkit-text-fill-color: currentColor;
   }
 
   [data-sonner-toaster],

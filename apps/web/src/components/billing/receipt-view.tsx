@@ -162,9 +162,10 @@ export function ReceiptView({
       autoPrintOnce.current = true;
       const done = receipt.download_pdf_done_message || "";
       // Exact same call as the Print button (document_title, live article).
+      // Same print path as the Print button; toast/URL cleanup only after afterprint.
       printReceiptArticle(el, receipt.document_title || undefined, () => {
-        if (done) toast.success(done);
         router.replace(pathname, { scroll: false });
+        if (done) toast.success(done);
       });
       return true;
     };
@@ -290,12 +291,12 @@ export function ReceiptView({
                   return;
                 }
                 // Download ≡ Print: same function, same title, same live article.
-                // Never fetch Go /api/.../pdf.
+                // Never fetch Go /api/.../pdf. Toast only after print dialog closes.
                 setPrinting(true);
                 const done = receipt.download_pdf_done_message || "";
                 printReceiptArticle(el, receipt.document_title || undefined, () => {
-                  if (done) toast.success(done);
                   setPrinting(false);
+                  if (done) toast.success(done);
                 });
               }}
             >
@@ -337,7 +338,7 @@ export function ReceiptView({
         }}
       >
         <header
-          className="px-5 py-6 sm:px-8 sm:py-7 print:bg-zinc-100"
+          className="px-5 py-6 sm:px-8 sm:py-7 print:bg-zinc-100 print:px-8 print:py-7"
           style={{ backgroundColor: "hsl(var(--muted))" }}
         >
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
@@ -394,7 +395,7 @@ export function ReceiptView({
           </div>
         </header>
 
-        <section className="grid gap-10 px-5 py-8 sm:px-8 md:grid-cols-2 print:grid-cols-2">
+        <section className="grid gap-10 px-5 py-8 sm:px-8 md:grid-cols-2 print:grid-cols-2 print:gap-10 print:px-8 print:py-8">
           <div className="min-w-0 space-y-2">
             <h2 className="text-[13px] font-bold text-foreground print:text-zinc-900">
               {receipt.section_bill_to}
@@ -445,7 +446,7 @@ export function ReceiptView({
           </div>
         </section>
 
-        <section className="px-5 pb-6 sm:px-8">
+        <section className="px-5 pb-6 sm:px-8 print:px-8 print:pb-6">
           <h2 className="text-[13px] font-bold text-foreground print:text-zinc-900">
             {receipt.section_invoice_details}
           </h2>
@@ -460,9 +461,9 @@ export function ReceiptView({
           </div>
         </section>
 
-        <div className="mx-5 border-t border-border sm:mx-8 print:border-zinc-200" />
+        <div className="mx-5 border-t border-border sm:mx-8 print:mx-8 print:border-zinc-200" />
 
-        <section className="px-5 py-6 sm:px-8">
+        <section className="px-5 py-6 sm:px-8 print:px-8 print:py-6">
           <h2 className="mb-4 text-[13px] font-bold text-foreground print:text-zinc-900">
             {receipt.section_transaction}
           </h2>
@@ -595,7 +596,7 @@ export function ReceiptView({
 
         {receipt.footer ? (
           <footer
-            className="mt-4 px-5 py-7 text-center sm:px-8 print:bg-zinc-100"
+            className="mt-4 px-5 py-7 text-center sm:px-8 print:mt-4 print:bg-zinc-100 print:px-8 print:py-7"
             style={{ backgroundColor: "hsl(var(--muted))" }}
           >
             <div className="mx-auto flex max-w-lg flex-col items-center gap-3">
