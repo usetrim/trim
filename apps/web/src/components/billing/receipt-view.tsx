@@ -147,7 +147,7 @@ export function ReceiptView({
   const receipt = data as Detail | undefined;
 
   // List "Download" → ?download=1 → same Print pipeline (never Go /pdf).
-  // Do NOT router.replace / toast until afterprint — mutating the page during
+  // Do NOT router.replace / toast until afterprint - mutating the page during
   // print() was producing a different PDF snapshot than the Print button.
   useEffect(() => {
     if (autoPrintOnce.current) return;

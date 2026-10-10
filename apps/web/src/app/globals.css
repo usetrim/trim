@@ -6,7 +6,7 @@
   :root {
     color-scheme: light;
 
-    /* shadcn HSL — identical to apps/admin (invoice bg-muted / bg-card / text-*) */
+    /* shadcn HSL - identical to apps/admin (invoice bg-muted / bg-card / text-*) */
     --background: 0 0% 100%;
     --foreground: 240 10% 3.9%;
     --card: 0 0% 100%;
@@ -30,7 +30,7 @@
 
     /*
      * trim-* mirrors admin (hsl of shadcn), EXCEPT --trim-bg:
-     * page body stays web chrome (#fafafa) — intentionally not admin bg-background.
+     * page body stays web chrome (#fafafa) - intentionally not admin bg-background.
      */
     --trim-bg: #fafafa;
     --trim-fg: hsl(var(--foreground));
@@ -58,7 +58,7 @@
   .dark {
     color-scheme: dark;
 
-    /* shadcn HSL — identical to apps/admin */
+    /* shadcn HSL - identical to apps/admin */
     --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
     --card: 240 10% 3.9%;
@@ -245,7 +245,7 @@
   }
 }
 
-/* react-day-picker v9: theme tokens — identical to apps/admin */
+/* react-day-picker v9: theme tokens - identical to apps/admin */
 .rdp-root {
   --rdp-accent-color: hsl(var(--primary));
   --rdp-accent-background-color: hsl(var(--accent));
@@ -259,7 +259,7 @@
 }
 
 /*
- * Receipt print / Save-as-PDF — identical to apps/admin/src/app/globals.css.
+ * Receipt print / Save-as-PDF - identical to apps/admin/src/app/globals.css.
  * On-screen invoice uses the same bg-muted / bg-card as admin (no web-only overrides).
  */
 @media print {
