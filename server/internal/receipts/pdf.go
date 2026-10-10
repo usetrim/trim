@@ -195,7 +195,8 @@ func BuildReceiptPDF(d ReceiptDetail) ([]byte, error) {
 		g:     0.957,
 		b:     0.961,
 	})
-	blank(18)
+	// Detail parties section: py-8 ≈ 32pt after letterhead.
+	blank(28)
 
 	// --- Parties ---
 	leftLines := make([]string, 0, 12)
@@ -259,22 +260,23 @@ func BuildReceiptPDF(d ReceiptDetail) ([]byte, error) {
 	}
 
 	ops = append(ops, pdfOp{kind: "two_col", lines: encodeTwoCol(leftLines, rightLines)})
-	blank(14)
+	blank(22)
 
 	// --- Invoice details ---
 	add(d.SectionInvoiceDetails, 11, true)
-	blank(6)
+	blank(10)
 	inline(d.LabelInvoiceReference, d.DisplayID, 10)
 	inline(d.SectionPeriod, d.PeriodLabel, 10)
 	inline(d.LabelTransactionID, d.PaddleTransactionID, 10)
 	inline(d.LabelCurrency, currency, 10)
-	blank(10)
+	// Detail: generous gap before the rule + transaction (matches print whitespace).
+	blank(22)
 	rule()
-	blank(12)
+	blank(18)
 
 	// --- Transaction ---
 	add(d.SectionTransaction, 11, true)
-	blank(8)
+	blank(12)
 	productCol := strings.TrimSpace(d.ColProduct)
 	if productCol == "" {
 		productCol = d.ColDescription
@@ -727,6 +729,7 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 	}
 
 	// Labeled value on one baseline: bold label + regular value (detail page InlineDetail).
+	// Use AFM bold widths + a 1.5pt safety gap so values never collide ("Payment methodvisa").
 	writeLabeled := func(x, ty float64, size int, label, value string, r, g, b float64) {
 		label = strings.TrimSpace(label)
 		value = strings.TrimSpace(value)
@@ -735,7 +738,7 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 		}
 		prefix := label + ": "
 		writeTextAt(x, ty, size, true, prefix, r, g, b)
-		writeTextAt(x+approxTextWidthFont(prefix, size, true), ty, size, false, value, r, g, b)
+		writeTextAt(x+approxTextWidthFont(prefix, size, true)+1.5, ty, size, false, value, r, g, b)
 	}
 
 	drawImage := func(name string, img *pdfImage, x, topY, maxW, maxH float64) float64 {
@@ -947,10 +950,11 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 					rBold = true
 				}
 				if l == "" && r == "" && lVal == "" && rVal == "" {
-					y -= 8
+					y -= 10
 					continue
 				}
-				y -= 13
+				// Match detail leading-relaxed ≈ 15–16pt line boxes at 13px.
+				y -= 15
 				if y < 48 {
 					continue
 				}
@@ -974,7 +978,8 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 			if size < 1 {
 				size = 10
 			}
-			y -= float64(size + 4)
+			// Detail InlineDetail: text-[13px] leading-relaxed + space-y-1.
+			y -= float64(size + 6)
 			if y < 48 {
 				continue
 			}
@@ -1242,14 +1247,69 @@ func approxTextWidth(s string, size int) float64 {
 	return approxTextWidthFont(s, size, false)
 }
 
-// approxTextWidthFont estimates Helvetica advance. Bold is wider; under-estimate
-// caused labeled values to collide with labels (e.g. "Payment methodvisa").
+// helveticaWidths / helveticaBoldWidths are Adobe AFM WinAnsi advances (units/1000).
+// Missing glyphs fall back to average width. Accurate widths prevent labeled
+// collisions like "Payment methodvisa" when bold labels sit beside regular values.
+var helveticaWidths = [256]int{
+	250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250,
+	250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250,
+	278, 278, 355, 556, 556, 889, 667, 191, 333, 333, 389, 584, 278, 333, 278, 278,
+	556, 556, 556, 556, 556, 556, 556, 556, 556, 556, 278, 278, 584, 584, 584, 556,
+	1015, 667, 667, 722, 722, 667, 611, 778, 722, 278, 500, 667, 556, 833, 722, 778,
+	667, 778, 722, 667, 611, 722, 667, 944, 667, 667, 611, 278, 278, 278, 469, 556,
+	333, 556, 556, 500, 556, 556, 278, 556, 556, 222, 222, 500, 222, 833, 556, 556,
+	556, 556, 333, 500, 278, 556, 500, 722, 500, 500, 500, 334, 260, 334, 584, 250,
+	250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250,
+	250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250,
+	250, 333, 556, 556, 167, 556, 556, 556, 556, 191, 333, 556, 333, 333, 500, 500,
+	250, 556, 556, 556, 278, 250, 537, 350, 222, 333, 333, 556, 1000, 1000, 250, 611,
+	250, 333, 333, 333, 333, 333, 333, 333, 333, 250, 333, 333, 250, 333, 333, 333,
+	250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250,
+	250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250,
+	250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250,
+}
+
+var helveticaBoldWidths = [256]int{
+	250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250,
+	250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250,
+	278, 333, 474, 556, 556, 889, 722, 238, 333, 333, 389, 584, 278, 333, 278, 278,
+	556, 556, 556, 556, 556, 556, 556, 556, 556, 556, 333, 333, 584, 584, 584, 611,
+	975, 722, 722, 722, 722, 667, 611, 778, 722, 278, 556, 722, 611, 833, 722, 778,
+	667, 778, 722, 667, 611, 722, 667, 944, 667, 667, 611, 333, 278, 333, 584, 556,
+	333, 556, 611, 556, 611, 556, 333, 611, 611, 278, 278, 556, 278, 889, 611, 611,
+	611, 611, 389, 556, 333, 611, 556, 778, 556, 556, 500, 389, 280, 389, 584, 250,
+	250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250,
+	250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250,
+	250, 333, 556, 556, 167, 556, 556, 556, 556, 238, 500, 556, 333, 333, 611, 611,
+	250, 556, 556, 556, 278, 250, 556, 350, 278, 500, 500, 556, 1000, 1000, 250, 611,
+	250, 333, 333, 333, 333, 333, 333, 333, 333, 250, 333, 333, 250, 333, 333, 333,
+	250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250,
+	250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250,
+	250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250,
+}
+
+// approxTextWidthFont returns Helvetica / Helvetica-Bold advance using AFM widths.
 func approxTextWidthFont(s string, size int, bold bool) float64 {
-	factor := 0.50
-	if bold {
-		factor = 0.58
+	if size < 1 {
+		size = 10
 	}
-	return float64(utf8.RuneCountInString(s)) * float64(size) * factor
+	table := helveticaWidths
+	if bold {
+		table = helveticaBoldWidths
+	}
+	sum := 0
+	for _, r := range s {
+		if r < 0 || r > 255 {
+			sum += 600
+			continue
+		}
+		w := table[r]
+		if w <= 0 {
+			w = 556
+		}
+		sum += w
+	}
+	return float64(sum) * float64(size) / 1000.0
 }
 
 func fitLogo(srcW, srcH, maxW, maxH float64) (float64, float64) {

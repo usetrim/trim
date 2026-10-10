@@ -900,8 +900,8 @@ export function ReceiptDetailSkeleton({
           <Skeleton className="h-8 w-16" />
         </div>
       </div>
-      <article className="bg-[var(--trim-panel)] text-[var(--trim-fg)]">
-        <header className="bg-[var(--trim-panel-2)] px-5 py-6 sm:px-8 sm:py-7">
+      <article className="bg-white text-zinc-900 dark:bg-transparent dark:text-foreground">
+        <header className="bg-[#f4f4f5] px-5 py-6 sm:px-8 sm:py-7 dark:bg-[#2a2a2e]">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0 space-y-1.5">
               <div className="flex flex-wrap items-center gap-2.5">
@@ -1065,7 +1065,7 @@ export function ReceiptDetailSkeleton({
           </div>
         </section>
 
-        <footer className="mt-4 bg-[var(--trim-panel-2)] px-5 py-7 text-center sm:px-8">
+        <footer className="mt-4 bg-[#f4f4f5] px-5 py-7 text-center sm:px-8 dark:bg-[#2a2a2e]">
           <div className="mx-auto flex max-w-lg flex-col items-center gap-3">
             {chrome?.footer ? (
               <p className="text-[12px] leading-relaxed text-[var(--trim-muted)]">

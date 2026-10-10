@@ -321,9 +321,9 @@ export function ReceiptView({
       <article
         ref={invoiceRef}
         data-receipt-print
-        className="bg-card text-foreground print:bg-white print:text-zinc-900"
+        className="bg-white text-zinc-900 dark:bg-transparent dark:text-foreground print:!bg-white print:!text-zinc-900"
       >
-        <header className="bg-muted px-5 py-6 sm:px-8 sm:py-7 print:bg-zinc-100">
+        <header className="bg-[#f4f4f5] px-5 py-6 sm:px-8 sm:py-7 dark:bg-[#2a2a2e] print:!bg-zinc-100">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0 space-y-1.5">
               <div className="flex flex-wrap items-center gap-2.5">
@@ -578,7 +578,7 @@ export function ReceiptView({
         </section>
 
         {receipt.footer ? (
-          <footer className="mt-4 bg-muted px-5 py-7 text-center sm:px-8 print:bg-zinc-100">
+          <footer className="mt-4 bg-[#f4f4f5] px-5 py-7 text-center sm:px-8 dark:bg-[#2a2a2e] print:!bg-zinc-100">
             <div className="mx-auto flex max-w-lg flex-col items-center gap-3">
               <p className="text-[12px] leading-relaxed text-muted-foreground print:text-zinc-600">
                 {receipt.footer}

@@ -108,6 +108,21 @@ func TestBuildReceiptPDFMatchesDetailPatterns(t *testing.T) {
 	}
 }
 
+func TestApproxTextWidthFontBoldPaymentMethod(t *testing.T) {
+	// AFM bold width for "Payment method: " must exceed the naive 0.50*chars*size
+	// estimate that caused "Payment methodvisa" collisions in older PDFs.
+	prefix := "Payment method: "
+	got := approxTextWidthFont(prefix, 10, true)
+	naive := float64(len([]rune(prefix))) * 10 * 0.50
+	if got <= naive {
+		t.Fatalf("bold AFM width %.2f should exceed naive %.2f", got, naive)
+	}
+	// Value must start after label (+ safety gap used by writeLabeled).
+	if got+1.5 < 85 {
+		t.Fatalf("unexpectedly narrow bold label width: %.2f", got)
+	}
+}
+
 func TestCountryDisplayName(t *testing.T) {
 	if got := countryDisplayName("ET", "en"); got != "Ethiopia" {
 		t.Fatalf("got %q", got)
