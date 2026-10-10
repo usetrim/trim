@@ -181,9 +181,12 @@ jobs:
         with:
           go-version: "1.23"
 
+      # path-type: inherit so actions/setup-go's GOROOT/bin is visible inside MSYS2
+      # (default Minimal PATH causes `go: command not found` in shell: msys2 {0}).
       - uses: msys2/setup-msys2@v2
         with:
           msystem: MINGW64
+          path-type: inherit
           update: true
           install: mingw-w64-x86_64-gcc mingw-w64-x86_64-pkg-config make zip
 
@@ -192,7 +195,10 @@ jobs:
         working-directory: cli
         run: |
           set -euo pipefail
-          export PATH="/mingw64/bin:$PATH"
+          # MinGW gcc first for CGO; keep setup-go on PATH via inherit + explicit GOROOT.
+          export PATH="/mingw64/bin:$(cygpath -u "${GOROOT}")/bin:${PATH}"
+          command -v go
+          go version
           go get github.com/smacker/go-tree-sitter@v0.0.0-20240827094217-dd81d9e9be82
           go mod tidy
           VER="${GITHUB_REF_NAME#v}"
@@ -456,9 +462,12 @@ jobs:
         with:
           go-version: "1.23"
 
+      # path-type: inherit so actions/setup-go's GOROOT/bin is visible inside MSYS2
+      # (default Minimal PATH causes `go: command not found` in shell: msys2 {0}).
       - uses: msys2/setup-msys2@v2
         with:
           msystem: MINGW64
+          path-type: inherit
           update: true
           install: mingw-w64-x86_64-gcc mingw-w64-x86_64-pkg-config make zip
 
@@ -467,7 +476,10 @@ jobs:
         working-directory: cli
         run: |
           set -euo pipefail
-          export PATH="/mingw64/bin:$PATH"
+          # MinGW gcc first for CGO; keep setup-go on PATH via inherit + explicit GOROOT.
+          export PATH="/mingw64/bin:$(cygpath -u "${GOROOT}")/bin:${PATH}"
+          command -v go
+          go version
           go get github.com/smacker/go-tree-sitter@v0.0.0-20240827094217-dd81d9e9be82
           go get github.com/tree-sitter-grammars/tree-sitter-zig@latest
           go mod tidy
