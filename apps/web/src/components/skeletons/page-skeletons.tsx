@@ -904,7 +904,7 @@ export function ReceiptDetailSkeleton({
         data-receipt-print
         className="text-foreground"
         style={{
-          backgroundColor: "hsl(var(--card))",
+          backgroundColor: "var(--trim-bg)",
           color: "hsl(var(--foreground))",
         }}
       >

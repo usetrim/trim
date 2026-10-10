@@ -259,12 +259,17 @@
 }
 
 /*
- * Invoice - exact admin surfaces (apps/admin receipt-view).
- * Paper/body = bg-card (black in dark). Letterhead ONLY = header + footer bg-muted.
- * Do NOT paint muted/grey on the article body or mid sections.
+ * Invoice (web) - match admin LOOK, not admin page chrome tokens blindly.
+ *
+ * ROOT CAUSE of the “whole sheet grey” bug:
+ *   Admin shell = bg-background = bg-card → article body blends; only header/footer
+ *   bg-muted bands show.
+ *   Web shell = --trim-bg (#08090a / #fafafa) ≠ hsl(card). Painting the article with
+ *   bg-card / hsl(var(--card)) lifted the ENTIRE invoice into a charcoal panel.
+ *
+ * Fix: body paper = --trim-bg (same as dashboard). Letterhead ONLY = header/footer muted.
  */
 [data-receipt-print] {
-  --background: 0 0% 100%;
   --foreground: 240 10% 3.9%;
   --card: 0 0% 100%;
   --card-foreground: 240 10% 3.9%;
@@ -277,18 +282,17 @@
   --trim-muted: hsl(var(--muted-foreground));
   --trim-subtle: hsl(var(--muted-foreground) / 0.85);
   --trim-border: hsl(var(--border));
-  --trim-panel: hsl(var(--card));
+  --trim-panel: var(--trim-bg);
   --trim-panel-2: hsl(var(--muted));
   --trim-status: #27a644;
   --trim-status-bg: rgba(39, 166, 68, 0.12);
   color: hsl(var(--foreground));
-  /* Invoice body paper - admin bg-card (NOT muted grey) */
-  background-color: hsl(var(--card)) !important;
+  /* Body blends with web page - NEVER card/muted grey sheet */
+  background-color: var(--trim-bg) !important;
 }
 
 .dark [data-receipt-print],
 html.dark [data-receipt-print] {
-  --background: 240 10% 3.9%;
   --foreground: 0 0% 98%;
   --card: 240 10% 3.9%;
   --card-foreground: 0 0% 98%;
@@ -301,21 +305,21 @@ html.dark [data-receipt-print] {
   --trim-muted: hsl(var(--muted-foreground));
   --trim-subtle: hsl(var(--muted-foreground) / 0.85);
   --trim-border: hsl(var(--border));
-  --trim-panel: hsl(var(--card));
+  --trim-panel: var(--trim-bg);
   --trim-panel-2: hsl(var(--muted));
   --trim-status: #27a644;
   --trim-status-bg: rgba(39, 166, 68, 0.18);
   color: hsl(var(--foreground));
-  background-color: hsl(var(--card)) !important;
+  background-color: var(--trim-bg) !important;
 }
 
-/* Letterhead bands ONLY - same as admin bg-muted */
+/* Letterhead bands ONLY - same admin muted grey as bg-muted */
 [data-receipt-print] > header,
 [data-receipt-print] > footer {
   background-color: hsl(var(--muted)) !important;
 }
 
-/* Mid invoice sections must stay on black paper (never muted/panel grey) */
+/* Mid sections stay on page paper (never muted/panel grey) */
 [data-receipt-print] > section {
   background-color: transparent !important;
 }
