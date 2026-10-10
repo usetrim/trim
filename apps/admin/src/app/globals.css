@@ -240,7 +240,7 @@
     border: none !important;
     color-scheme: light !important;
     background: #ffffff !important;
-    color: #18181b !important; /* zinc-900 — readable on white */
+    color: #18181b !important; /* zinc-900 - readable on white */
     --background: 0 0% 100% !important;
     --foreground: 240 10% 3.9% !important;
     --card: 0 0% 100% !important;
