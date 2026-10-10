@@ -268,7 +268,8 @@ export function ReceiptView({
   }
 
   return (
-    <div className="mx-auto w-full max-w-[920px] px-3 py-6 sm:px-6 sm:py-10 print:max-w-none print:px-0 print:py-0">
+    // Canvas bg-background matches admin page surface so muted letterhead bands contrast.
+    <div className="mx-auto w-full max-w-[920px] bg-background px-3 py-6 text-foreground sm:px-6 sm:py-10 print:max-w-none print:bg-transparent print:px-0 print:py-0">
       <FetchProgressBar active={isFetching && !isPending} className="mb-4 print:hidden" />
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3 print:hidden">
         <Button asChild variant="outline" size="sm">
@@ -320,6 +321,7 @@ export function ReceiptView({
         </div>
       </div>
 
+      {/* Exact admin invoice surfaces: bg-card + bg-muted header/footer */}
       <article
         ref={invoiceRef}
         data-receipt-print
