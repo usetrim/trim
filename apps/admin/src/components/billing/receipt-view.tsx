@@ -235,12 +235,12 @@ export function ReceiptView({
                   return;
                 }
                 // Download ≡ Print: same function, same title, same live article.
-                // Never fetch Go /api/.../pdf.
+                // Never fetch Go /api/.../pdf. Toast only after print dialog closes.
                 setPrinting(true);
                 const done = receipt.download_pdf_done_message || "";
                 printReceiptArticle(el, receipt.document_title || undefined, () => {
-                  if (done) toast.success(done);
                   setPrinting(false);
+                  if (done) toast.success(done);
                 });
               }}
             >
@@ -271,7 +271,7 @@ export function ReceiptView({
         data-receipt-print
         className="bg-card text-foreground print:bg-white print:text-zinc-900"
       >
-        <header className="bg-muted px-5 py-6 sm:px-8 sm:py-7 print:bg-zinc-100">
+        <header className="bg-muted px-5 py-6 sm:px-8 sm:py-7 print:bg-zinc-100 print:px-8 print:py-7">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0 space-y-1.5">
               <div className="flex flex-wrap items-center gap-2.5">
@@ -326,7 +326,7 @@ export function ReceiptView({
           </div>
         </header>
 
-        <section className="grid gap-10 px-5 py-8 sm:px-8 md:grid-cols-2 print:grid-cols-2">
+        <section className="grid gap-10 px-5 py-8 sm:px-8 md:grid-cols-2 print:grid-cols-2 print:gap-10 print:px-8 print:py-8">
           <div className="min-w-0 space-y-2">
             <h2 className="text-[13px] font-bold text-foreground print:text-zinc-900">
               {receipt.section_bill_to}
@@ -377,7 +377,7 @@ export function ReceiptView({
           </div>
         </section>
 
-        <section className="px-5 pb-6 sm:px-8">
+        <section className="px-5 pb-6 sm:px-8 print:px-8 print:pb-6">
           <h2 className="text-[13px] font-bold text-foreground print:text-zinc-900">
             {receipt.section_invoice_details}
           </h2>
@@ -392,9 +392,9 @@ export function ReceiptView({
           </div>
         </section>
 
-        <div className="mx-5 border-t border-border sm:mx-8 print:border-zinc-200" />
+        <div className="mx-5 border-t border-border sm:mx-8 print:mx-8 print:border-zinc-200" />
 
-        <section className="px-5 py-6 sm:px-8">
+        <section className="px-5 py-6 sm:px-8 print:px-8 print:py-6">
           <h2 className="mb-4 text-[13px] font-bold text-foreground print:text-zinc-900">
             {receipt.section_transaction}
           </h2>
@@ -526,7 +526,7 @@ export function ReceiptView({
         </section>
 
         {receipt.footer ? (
-          <footer className="mt-4 bg-muted px-5 py-7 text-center sm:px-8 print:bg-zinc-100">
+          <footer className="mt-4 bg-muted px-5 py-7 text-center sm:px-8 print:mt-4 print:bg-zinc-100 print:px-8 print:py-7">
             <div className="mx-auto flex max-w-lg flex-col items-center gap-3">
               <p className="text-[12px] leading-relaxed text-muted-foreground print:text-zinc-600">
                 {receipt.footer}
