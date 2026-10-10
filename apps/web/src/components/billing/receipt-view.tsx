@@ -4,14 +4,14 @@ import { TrimWordmark } from "@/components/brand/trim-wordmark";
 import { ReceiptDetailSkeleton } from "@/components/skeletons/page-skeletons";
 import { Button } from "@/components/ui/button";
 import { FetchProgressBar } from "@/components/ui/fetch-progress";
-import { useDownloadReceiptPdf } from "@/hooks/mutations/billing";
 import { useAuthProviders } from "@/hooks/queries/auth";
 import { useReceipt } from "@/hooks/queries/billing";
 import { downloadReceiptArticlePdf, printReceiptArticle } from "@/lib/receipt-print";
 import { receiptSkeletonChrome } from "@/lib/skeleton-chrome";
 import { formatMoney } from "@/lib/utils";
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 type Detail = {
@@ -137,11 +137,49 @@ export function ReceiptView({
 }) {
   const [printing, setPrinting] = useState(false);
   const invoiceRef = useRef<HTMLElement | null>(null);
+  const autoPrintOnce = useRef(false);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { data, isPending, isFetching, error } = useReceipt(accessToken, receiptId);
   const authProviders = useAuthProviders();
   const publicChrome = receiptSkeletonChrome(authProviders.data?.site);
   const receipt = data as Detail | undefined;
-  const downloadPdf = useDownloadReceiptPdf(accessToken);
+
+  // List "Download" → ?download=1 opens this page and runs the Print pipeline.
+  useEffect(() => {
+    if (autoPrintOnce.current) return;
+    if (!receipt || isPending) return;
+    if (!(receipt.company_legal_name || "").trim()) return;
+    const want = searchParams.get("download") === "1" || searchParams.get("print") === "1";
+    if (!want) return;
+
+    const run = () => {
+      const el = invoiceRef.current;
+      if (!el) return false;
+      autoPrintOnce.current = true;
+      const displayId = (receipt.display_id || receipt.id || "invoice").trim();
+      const fmt = (receipt.download_pdf_filename_fmt || "").trim();
+      const filename = fmt.includes("%s")
+        ? fmt.replace("%s", displayId)
+        : fmt || `trim-invoice-${displayId}`;
+      downloadReceiptArticlePdf(el, {
+        title: receipt.document_title || undefined,
+        filename,
+      });
+      const done = receipt.download_pdf_done_message || "";
+      if (done) toast.success(done);
+      router.replace(pathname, { scroll: false });
+      return true;
+    };
+
+    if (run()) return;
+    // Article mounts after paint; retry once.
+    const t = window.setTimeout(() => {
+      run();
+    }, 100);
+    return () => window.clearTimeout(t);
+  }, [receipt, isPending, searchParams, router, pathname]);
 
   if (!accessToken || (isPending && !receipt)) {
     return (
@@ -208,7 +246,6 @@ export function ReceiptView({
   const productCol = (receipt.col_product || receipt.col_description || "").trim();
   const taxPercent = (receipt.tax_rate_percent || "").trim();
   const billToCountry = countryDisplayName(receipt.bill_to_country, moneyLocale);
-  const pdfHref = (receipt.first_party_pdf_href || "").trim();
   const backHref = (receipt.back_href || "").trim();
 
   if (!brand) {
@@ -247,47 +284,33 @@ export function ReceiptView({
             <Button
               variant="outline"
               size="sm"
-              isLoading={downloadPdf.isPending}
+              isLoading={printing}
               pendingLabel={receipt.download_pdf_pending_label || undefined}
               onClick={() => {
                 const el = invoiceRef.current;
-                // Prefer the live print article (identical to Print → Save as PDF).
-                if (el) {
-                  const displayId = (receipt.display_id || receipt.id || "invoice").trim();
-                  const fmt = (receipt.download_pdf_filename_fmt || "").trim();
-                  const filename = fmt.includes("%s")
-                    ? fmt.replace("%s", displayId)
-                    : fmt || `trim-invoice-${displayId}`;
-                  downloadReceiptArticlePdf(el, {
-                    title: receipt.document_title || undefined,
-                    filename,
-                  });
-                  const done = receipt.download_pdf_done_message || "";
-                  if (done) toast.success(done);
-                  return;
-                }
-                // Fallback: first-party API PDF (list views / no mounted article).
                 const failed = receipt.download_pdf_failed_message || "";
-                if (!pdfHref) {
+                if (!el) {
                   toast.error(failed);
                   return;
                 }
-                downloadPdf.mutate(
-                  {
-                    href: pdfHref,
-                    failedMessage: failed,
-                    filenameFmt: receipt.download_pdf_filename_fmt,
-                    displayId: receipt.display_id || receipt.id,
-                  },
-                  {
-                    onSuccess: () => {
-                      const done = receipt.download_pdf_done_message || "";
-                      if (done) toast.success(done);
-                    },
-                    onError: (e) => {
-                      toast.error(e.message || failed);
-                    },
-                  },
+                // Download = Print (same live article → Save as PDF). No Go PDF.
+                const displayId = (receipt.display_id || receipt.id || "invoice").trim();
+                const fmt = (receipt.download_pdf_filename_fmt || "").trim();
+                const filename = fmt.includes("%s")
+                  ? fmt.replace("%s", displayId)
+                  : fmt || `trim-invoice-${displayId}`;
+                setPrinting(true);
+                downloadReceiptArticlePdf(el, {
+                  title: receipt.document_title || undefined,
+                  filename,
+                });
+                const done = receipt.download_pdf_done_message || "";
+                if (done) toast.success(done);
+                const raw = receipt.print_pending_ms?.trim() || "";
+                const ms = Number.parseInt(raw, 10);
+                window.setTimeout(
+                  () => setPrinting(false),
+                  Number.isFinite(ms) && ms > 0 ? ms : 800,
                 );
               }}
             >
@@ -321,9 +344,13 @@ export function ReceiptView({
       <article
         ref={invoiceRef}
         data-receipt-print
-        className="bg-white text-zinc-900 dark:bg-transparent dark:text-foreground print:!bg-white print:!text-zinc-900"
+        className="bg-card text-foreground print:bg-white print:text-zinc-900"
       >
-        <header className="bg-[#f4f4f5] px-5 py-6 sm:px-8 sm:py-7 dark:bg-[#2a2a2e] print:!bg-zinc-100">
+        <header
+          data-receipt-band
+          className="bg-muted px-5 py-6 sm:px-8 sm:py-7 print:bg-zinc-100"
+          style={{ backgroundColor: "var(--receipt-band, #f4f4f5)" }}
+        >
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0 space-y-1.5">
               <div className="flex flex-wrap items-center gap-2.5">
@@ -578,7 +605,11 @@ export function ReceiptView({
         </section>
 
         {receipt.footer ? (
-          <footer className="mt-4 bg-[#f4f4f5] px-5 py-7 text-center sm:px-8 dark:bg-[#2a2a2e] print:!bg-zinc-100">
+          <footer
+            data-receipt-band
+            className="mt-4 bg-muted px-5 py-7 text-center sm:px-8 print:bg-zinc-100"
+            style={{ backgroundColor: "var(--receipt-band, #f4f4f5)" }}
+          >
             <div className="mx-auto flex max-w-lg flex-col items-center gap-3">
               <p className="text-[12px] leading-relaxed text-muted-foreground print:text-zinc-600">
                 {receipt.footer}

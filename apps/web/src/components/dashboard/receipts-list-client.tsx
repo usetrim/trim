@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { useDownloadReceiptPdf, useSyncReceipts } from "@/hooks/mutations/billing";
+import { useSyncReceipts } from "@/hooks/mutations/billing";
 import { useAuthProviders } from "@/hooks/queries/auth";
 import { useReceipts, useSubscriptionStatus } from "@/hooks/queries/billing";
 import { toast } from "sonner";
@@ -49,7 +49,6 @@ export function ReceiptsListClient({ accessToken }: { accessToken?: string }) {
   const authProviders = useAuthProviders();
   const subscription = useSubscriptionStatus(accessToken);
   const syncReceipts = useSyncReceipts(accessToken);
-  const downloadPdf = useDownloadReceiptPdf(accessToken);
   const dialogCancel = authProviders.data?.site?.dialog_cancel?.trim() || "";
   const authPageSize = useDefaultPageSize();
   const pageSize =
@@ -143,32 +142,25 @@ export function ReceiptsListClient({ accessToken }: { accessToken?: string }) {
   const openReceiptPdf = useCallback(
     (row: ReceiptRow) => {
       const id = row.id?.trim() || "";
-      if (!id || !accessToken) return;
+      if (!id) return;
+      // Same Print → Save as PDF as the detail page (never the Go raster PDF).
+      const prefix = (
+        subscription.data?.path_receipts_prefix ||
+        authProviders.data?.site?.path_receipts_prefix ||
+        ""
+      ).trim();
+      if (prefix) {
+        router.push(`${prefix}${id}?download=1`);
+        return;
+      }
       const failed = receipts.data?.download_pdf_failed_message || "";
-      const done = receipts.data?.download_pdf_done_message || "";
-      downloadPdf.mutate(
-        {
-          href: `/api/v1/billing/receipts/${encodeURIComponent(id)}/pdf`,
-          failedMessage: failed,
-          filenameFmt: receipts.data?.download_pdf_filename_fmt,
-          displayId: row.display_id || row.paddle_invoice_number || id,
-        },
-        {
-          onSuccess: () => {
-            if (done) toast.success(done);
-          },
-          onError: (e) => {
-            toast.error(e.message || failed);
-          },
-        },
-      );
+      toast.error(failed);
     },
     [
-      accessToken,
-      downloadPdf,
-      receipts.data?.download_pdf_done_message,
+      authProviders.data?.site?.path_receipts_prefix,
       receipts.data?.download_pdf_failed_message,
-      receipts.data?.download_pdf_filename_fmt,
+      router,
+      subscription.data?.path_receipts_prefix,
     ],
   );
 
