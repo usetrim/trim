@@ -4,6 +4,7 @@ import { TrimWordmark } from "@/components/brand/trim-wordmark";
 import { ReceiptDetailSkeleton } from "@/components/skeletons/page-skeletons";
 import { Button } from "@/components/ui/button";
 import { FetchProgressBar } from "@/components/ui/fetch-progress";
+import { useDownloadAdminReceiptPdf } from "@/hooks/mutations/billing";
 import { useAdminReceipt } from "@/hooks/queries/billing";
 import { printReceiptArticle } from "@/lib/receipt-print";
 import { formatMoney } from "@/lib/utils";
@@ -134,6 +135,7 @@ export function ReceiptView({
   const [printing, setPrinting] = useState(false);
   const invoiceRef = useRef<HTMLElement | null>(null);
   const { data, isPending, isFetching, error } = useAdminReceipt(accessToken || "", receiptId);
+  const downloadPdf = useDownloadAdminReceiptPdf(accessToken || "");
   const receipt = data as Detail | undefined;
 
   if (!accessToken || (isPending && !receipt)) {
@@ -225,23 +227,33 @@ export function ReceiptView({
             <Button
               variant="outline"
               size="sm"
-              isLoading={printing}
+              isLoading={downloadPdf.isPending}
               pendingLabel={receipt.download_pdf_pending_label || undefined}
               onClick={() => {
-                const el = invoiceRef.current;
+                const href = (receipt.first_party_pdf_href || "").trim();
                 const failed = receipt.download_pdf_failed_message || "";
-                if (!el) {
+                if (!href) {
                   toast.error(failed);
                   return;
                 }
-                // Download ≡ Print: same function, same title, same live article.
-                // Never fetch Go /api/.../pdf. Toast only after print dialog closes.
-                setPrinting(true);
-                const done = receipt.download_pdf_done_message || "";
-                printReceiptArticle(el, receipt.document_title || undefined, () => {
-                  setPrinting(false);
-                  if (done) toast.success(done);
-                });
+                // Direct file download via first-party PDF API (not the print dialog).
+                downloadPdf.mutate(
+                  {
+                    href,
+                    failedMessage: failed,
+                    filenameFmt: receipt.download_pdf_filename_fmt,
+                    displayId: receipt.display_id || receipt.id,
+                  },
+                  {
+                    onSuccess: () => {
+                      const done = receipt.download_pdf_done_message || "";
+                      if (done) toast.success(done);
+                    },
+                    onError: (e) => {
+                      toast.error(e.message || failed);
+                    },
+                  },
+                );
               }}
             >
               {receipt.download_pdf_action_label}
@@ -310,7 +322,7 @@ export function ReceiptView({
                     <TrimWordmark size="lg" alt={brand} priority />
                   </span>
                   <span className="hidden print:inline-flex">
-                    <TrimWordmark size="lg" alt={brand} ink="black" />
+                    <TrimWordmark size="lg" alt={brand} ink="black" priority />
                   </span>
                 </>
               )}
@@ -531,11 +543,16 @@ export function ReceiptView({
               <p className="text-[12px] leading-relaxed text-muted-foreground print:text-zinc-600">
                 {receipt.footer}
               </p>
+              {/*
+                Screen mark uses priority so /brand/trim-mark-black.png loads even in dark
+                (black img is dark:hidden). Print mark must not use opacity-70 - that made
+                the footer logo nearly invisible on light PDF paper vs the header mark.
+              */}
               <span className="print:hidden opacity-70">
-                <TrimWordmark size="sm" alt={brand} />
+                <TrimWordmark size="sm" alt={brand} priority />
               </span>
-              <span className="hidden print:inline-flex opacity-70">
-                <TrimWordmark size="sm" alt={brand} ink="black" />
+              <span className="hidden print:inline-flex">
+                <TrimWordmark size="sm" alt={brand} ink="black" priority />
               </span>
               <p className="text-[11px] leading-relaxed text-muted-foreground print:text-zinc-500">
                 {[

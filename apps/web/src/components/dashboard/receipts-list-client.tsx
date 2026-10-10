@@ -143,7 +143,7 @@ export function ReceiptsListClient({ accessToken }: { accessToken?: string }) {
     (row: ReceiptRow) => {
       const id = row.id?.trim() || "";
       if (!id) return;
-      // Same Print → Save as PDF as the detail page (never the Go raster PDF).
+      // Open detail with ?download=1 → first-party PDF file download (not print dialog).
       const prefix = (
         subscription.data?.path_receipts_prefix ||
         authProviders.data?.site?.path_receipts_prefix ||
