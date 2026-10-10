@@ -655,7 +655,7 @@ export type ReceiptSkeletonChrome = {
 };
 
 /**
- * Admin receipt detail shimmer — mirrors billing ReceiptView tax-invoice article.
+ * Admin receipt detail shimmer - mirrors billing ReceiptView tax-invoice article.
  */
 export function ReceiptDetailSkeleton({
   chrome,

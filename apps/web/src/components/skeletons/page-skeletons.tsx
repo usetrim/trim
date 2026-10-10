@@ -877,7 +877,7 @@ export type ReceiptSkeletonChrome = {
 };
 
 /**
- * Receipt detail shimmer — mirrors ReceiptView tax-invoice article 1:1:
+ * Receipt detail shimmer - mirrors ReceiptView tax-invoice article 1:1:
  * toolbar, header band (title+badge+meta | brand), parties grid, invoice details,
  * transaction table with stacked product cell, totals, tax breakdown, footer band.
  */

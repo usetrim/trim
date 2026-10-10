@@ -155,7 +155,7 @@ func BuildReceiptPDF(d ReceiptDetail) ([]byte, error) {
 		headerMeta = totalStr
 	}
 
-	// Transparent black mark (soft mask) — never flatten onto white.
+	// Transparent black mark (soft mask) - never flatten onto white.
 	var headerLogo *pdfImage
 	if lg, err := blackLetterheadImage(1); err == nil && lg != nil {
 		headerLogo = lg
@@ -176,7 +176,7 @@ func BuildReceiptPDF(d ReceiptDetail) ([]byte, error) {
 		right: headerMeta,
 		lines: []string{strings.TrimSpace(d.CompanyLegalName), strings.TrimSpace(d.MerchantVia)},
 		logo:  headerLogo,
-		r:     0.961, // zinc-100 ≈ #f5f5f5 — matches print:bg-zinc-100
+		r:     0.961, // zinc-100 ≈ #f5f5f5 - matches print:bg-zinc-100
 		g:     0.961,
 		b:     0.961,
 	})
