@@ -107,49 +107,6 @@
     @apply bg-[var(--trim-bg)] text-[var(--trim-fg)] antialiased;
   }
 
-  /*
-   * Tax-invoice article: identical token chain to apps/admin globals.css
-   * (--trim-* → hsl(var(--card|--muted|--border|…))) so dark/light surfaces
-   * match admin while the rest of the web app keeps its own hex palette.
-   */
-  [data-receipt-print] {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --border: 240 5.9% 90%;
-    --trim-bg: hsl(var(--background));
-    --trim-fg: hsl(var(--foreground));
-    --trim-muted: hsl(var(--muted-foreground));
-    --trim-subtle: hsl(var(--muted-foreground) / 0.85);
-    --trim-border: hsl(var(--border));
-    --trim-border-strong: hsl(var(--border));
-    --trim-panel: hsl(var(--card));
-    --trim-panel-2: hsl(var(--muted));
-    --trim-status: #27a644;
-    --trim-status-bg: rgba(39, 166, 68, 0.12);
-  }
-
-  .dark [data-receipt-print] {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --border: 240 3.7% 15.9%;
-    --trim-bg: hsl(var(--background));
-    --trim-fg: hsl(var(--foreground));
-    --trim-muted: hsl(var(--muted-foreground));
-    --trim-subtle: hsl(var(--muted-foreground) / 0.85);
-    --trim-border: hsl(var(--border));
-    --trim-border-strong: hsl(var(--border));
-    --trim-panel: hsl(var(--card));
-    --trim-panel-2: hsl(var(--muted));
-    --trim-status: #27a644;
-    --trim-status-bg: rgba(39, 166, 68, 0.18);
-  }
-
   ::selection {
     background: color-mix(in srgb, var(--trim-ink) 18%, transparent);
     color: var(--trim-fg);
@@ -324,6 +281,62 @@
   --rdp-range_end-color: var(--trim-ink-inverse);
   --rdp-selected-border: var(--trim-ink);
   --rdp-today-color: var(--trim-fg);
+}
+
+/*
+ * Tax-invoice article (OUTSIDE @layer so it always wins over web hex --trim-*).
+ * Root cause of web≠admin dark mode: web --trim-panel-2 is #08090a (same as page
+ * bg) so header/footer bands vanish; admin maps panel-2 → hsl(muted) elevated gray.
+ * Lock the same shadcn HSL chain admin uses, then mirror into --trim-* for any
+ * remaining trim utility classes.
+ */
+[data-receipt-print] {
+  --background: 0 0% 100%;
+  --foreground: 240 10% 3.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 240 10% 3.9%;
+  --muted: 240 4.8% 95.9%;
+  --muted-foreground: 240 3.8% 46.1%;
+  --border: 240 5.9% 90%;
+  --trim-bg: hsl(var(--background));
+  --trim-fg: hsl(var(--foreground));
+  --trim-muted: hsl(var(--muted-foreground));
+  --trim-subtle: hsl(var(--muted-foreground) / 0.85);
+  --trim-border: hsl(var(--border));
+  --trim-border-strong: hsl(var(--border));
+  --trim-panel: hsl(var(--card));
+  --trim-panel-2: hsl(var(--muted));
+  --trim-status: #27a644;
+  --trim-status-bg: rgba(39, 166, 68, 0.12);
+  color: hsl(var(--foreground));
+  background-color: hsl(var(--card));
+}
+
+html.dark [data-receipt-print] {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --card: 240 10% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --border: 240 3.7% 15.9%;
+  --trim-bg: hsl(var(--background));
+  --trim-fg: hsl(var(--foreground));
+  --trim-muted: hsl(var(--muted-foreground));
+  --trim-subtle: hsl(var(--muted-foreground) / 0.85);
+  --trim-border: hsl(var(--border));
+  --trim-border-strong: hsl(var(--border));
+  --trim-panel: hsl(var(--card));
+  --trim-panel-2: hsl(var(--muted));
+  --trim-status: #27a644;
+  --trim-status-bg: rgba(39, 166, 68, 0.18);
+  color: hsl(var(--foreground));
+  background-color: hsl(var(--card));
+}
+
+[data-receipt-print] header,
+[data-receipt-print] footer {
+  background-color: hsl(var(--muted));
 }
 
 /*

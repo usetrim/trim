@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { FetchProgressBar } from "@/components/ui/fetch-progress";
 import { useDownloadAdminReceiptPdf } from "@/hooks/mutations/billing";
 import { useAdminReceipt } from "@/hooks/queries/billing";
-import { printReceiptArticle } from "@/lib/receipt-print";
+import { downloadReceiptArticlePdf, printReceiptArticle } from "@/lib/receipt-print";
 import { formatMoney } from "@/lib/utils";
 import Link from "next/link";
 import { useRef, useState } from "react";
@@ -116,8 +116,8 @@ function InlineDetail({ label, value }: { label?: string; value?: string }) {
   const v = (value || "").trim();
   if (!l || !v) return null;
   return (
-    <p className="text-[13px] leading-relaxed text-[var(--trim-fg)] print:text-zinc-900">
-      <span className="font-semibold text-[var(--trim-fg)]">{l}:</span> {v}
+    <p className="text-[13px] leading-relaxed text-foreground print:text-zinc-900">
+      <span className="font-semibold text-foreground">{l}:</span> {v}
     </p>
   );
 }
@@ -224,14 +224,35 @@ export function ReceiptView({
           <Link href={backHref}>{receipt.back_action_label}</Link>
         </Button>
         <div className="flex flex-wrap gap-2">
-          {receipt.download_pdf_action_label && pdfHref ? (
+          {receipt.download_pdf_action_label ? (
             <Button
               variant="outline"
               size="sm"
               isLoading={downloadPdf.isPending}
               pendingLabel={receipt.download_pdf_pending_label || undefined}
               onClick={() => {
+                const el = invoiceRef.current;
+                // Prefer the live print article (identical to Print → Save as PDF).
+                if (el) {
+                  const displayId = (receipt.display_id || receipt.id || "invoice").trim();
+                  const fmt = (receipt.download_pdf_filename_fmt || "").trim();
+                  const filename = fmt.includes("%s")
+                    ? fmt.replace("%s", displayId)
+                    : fmt || `trim-invoice-${displayId}`;
+                  downloadReceiptArticlePdf(el, {
+                    title: receipt.document_title || undefined,
+                    filename,
+                  });
+                  const done = receipt.download_pdf_done_message || "";
+                  if (done) toast.success(done);
+                  return;
+                }
+                // Fallback: first-party API PDF (list views / no mounted article).
                 const failed = receipt.download_pdf_failed_message || "";
+                if (!pdfHref) {
+                  toast.error(failed);
+                  return;
+                }
                 downloadPdf.mutate(
                   {
                     href: pdfHref,
@@ -281,13 +302,13 @@ export function ReceiptView({
       <article
         ref={invoiceRef}
         data-receipt-print
-        className="bg-[var(--trim-panel)] text-[var(--trim-fg)] print:bg-white print:text-zinc-900"
+        className="bg-card text-foreground print:bg-white print:text-zinc-900"
       >
-        <header className="bg-[var(--trim-panel-2)] px-5 py-6 sm:px-8 sm:py-7 print:bg-zinc-100">
+        <header className="bg-muted px-5 py-6 sm:px-8 sm:py-7 print:bg-zinc-100">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0 space-y-1.5">
               <div className="flex flex-wrap items-center gap-2.5">
-                <h1 className="text-[1.35rem] font-bold tracking-tight text-[var(--trim-fg)] sm:text-[1.5rem] print:text-zinc-900">
+                <h1 className="text-[1.35rem] font-bold tracking-tight text-foreground sm:text-[1.5rem] print:text-zinc-900">
                   {receipt.document_title}
                 </h1>
                 {receipt.status_label ? (
@@ -297,11 +318,11 @@ export function ReceiptView({
                 ) : null}
               </div>
               {paidLabel || totalFmt ? (
-                <p className="text-[13px] text-[var(--trim-subtle)] print:text-zinc-500">
+                <p className="text-[13px] text-muted-foreground print:text-zinc-500">
                   {paidLabel}
                   {paidLabel && totalFmt ? metaSep : null}
                   {totalFmt ? (
-                    <span className="font-semibold text-[var(--trim-fg)] print:text-zinc-800">
+                    <span className="font-semibold text-foreground print:text-zinc-800">
                       {totalFmt}
                     </span>
                   ) : null}
@@ -326,11 +347,11 @@ export function ReceiptView({
                   </span>
                 </>
               )}
-              <p className="text-[15px] font-bold tracking-tight text-[var(--trim-fg)] print:text-zinc-900">
+              <p className="text-[15px] font-bold tracking-tight text-foreground print:text-zinc-900">
                 {brand}
               </p>
               {receipt.merchant_via ? (
-                <p className="text-[11px] text-[var(--trim-subtle)] print:text-zinc-500">
+                <p className="text-[11px] text-muted-foreground print:text-zinc-500">
                   {receipt.merchant_via}
                 </p>
               ) : null}
@@ -340,10 +361,10 @@ export function ReceiptView({
 
         <section className="grid gap-10 px-5 py-8 sm:px-8 md:grid-cols-2 print:grid-cols-2">
           <div className="min-w-0 space-y-2">
-            <h2 className="text-[13px] font-bold text-[var(--trim-fg)] print:text-zinc-900">
+            <h2 className="text-[13px] font-bold text-foreground print:text-zinc-900">
               {receipt.section_bill_to}
             </h2>
-            <div className="space-y-0.5 text-[13px] leading-relaxed text-[var(--trim-fg)]/90 print:text-zinc-800">
+            <div className="space-y-0.5 text-[13px] leading-relaxed text-foreground/90 print:text-zinc-800">
               {receipt.bill_to_name ? <p>{receipt.bill_to_name}</p> : null}
               {receipt.bill_to_company ? <p>{receipt.bill_to_company}</p> : null}
               <p className="break-all">{receipt.bill_to_email}</p>
@@ -358,7 +379,7 @@ export function ReceiptView({
               ) : null}
             </div>
             {receipt.payment_method_summary ? (
-              <p className="pt-2 text-[13px] text-[var(--trim-fg)]/90 print:text-zinc-800">
+              <p className="pt-2 text-[13px] text-foreground/90 print:text-zinc-800">
                 <span className="font-semibold">{receipt.section_payment}:</span>{" "}
                 {receipt.payment_method_summary}
               </p>
@@ -366,10 +387,10 @@ export function ReceiptView({
           </div>
 
           <div className="min-w-0 space-y-2">
-            <h2 className="text-[13px] font-bold text-[var(--trim-fg)] print:text-zinc-900">
+            <h2 className="text-[13px] font-bold text-foreground print:text-zinc-900">
               {receipt.section_invoice_from}
             </h2>
-            <div className="space-y-0.5 text-[13px] leading-relaxed text-[var(--trim-fg)]/90 print:text-zinc-800">
+            <div className="space-y-0.5 text-[13px] leading-relaxed text-foreground/90 print:text-zinc-800">
               <p>{brand}</p>
               {receipt.company_address_line1 ? <p>{receipt.company_address_line1}</p> : null}
               {receipt.company_address_line2 ? <p>{receipt.company_address_line2}</p> : null}
@@ -390,7 +411,7 @@ export function ReceiptView({
         </section>
 
         <section className="px-5 pb-6 sm:px-8">
-          <h2 className="text-[13px] font-bold text-[var(--trim-fg)] print:text-zinc-900">
+          <h2 className="text-[13px] font-bold text-foreground print:text-zinc-900">
             {receipt.section_invoice_details}
           </h2>
           <div className="mt-3 space-y-1">
@@ -404,30 +425,30 @@ export function ReceiptView({
           </div>
         </section>
 
-        <div className="mx-5 border-t border-[var(--trim-border)] sm:mx-8 print:border-zinc-200" />
+        <div className="mx-5 border-t border-border sm:mx-8 print:border-zinc-200" />
 
         <section className="px-5 py-6 sm:px-8">
-          <h2 className="mb-4 text-[13px] font-bold text-[var(--trim-fg)] print:text-zinc-900">
+          <h2 className="mb-4 text-[13px] font-bold text-foreground print:text-zinc-900">
             {receipt.section_transaction}
           </h2>
 
           <div className="overflow-x-auto">
             <table className="w-full min-w-[520px] border-collapse text-left text-[13px] print:min-w-0">
               <thead>
-                <tr className="border-b border-[var(--trim-border)] print:border-zinc-200">
-                  <th className="pb-2.5 pr-3 text-[12px] font-bold text-[var(--trim-fg)] print:text-zinc-900">
+                <tr className="border-b border-border print:border-zinc-200">
+                  <th className="pb-2.5 pr-3 text-[12px] font-bold text-foreground print:text-zinc-900">
                     {productCol}
                   </th>
-                  <th className="px-2 pb-2.5 text-right text-[12px] font-bold text-[var(--trim-fg)] print:text-zinc-900">
+                  <th className="px-2 pb-2.5 text-right text-[12px] font-bold text-foreground print:text-zinc-900">
                     {receipt.col_qty}
                   </th>
-                  <th className="px-2 pb-2.5 text-right text-[12px] font-bold text-[var(--trim-fg)] print:text-zinc-900">
+                  <th className="px-2 pb-2.5 text-right text-[12px] font-bold text-foreground print:text-zinc-900">
                     {receipt.col_unit}
                   </th>
-                  <th className="px-2 pb-2.5 text-right text-[12px] font-bold text-[var(--trim-fg)] print:text-zinc-900">
+                  <th className="px-2 pb-2.5 text-right text-[12px] font-bold text-foreground print:text-zinc-900">
                     {receipt.col_tax_rate}
                   </th>
-                  <th className="pb-2.5 pl-2 text-right text-[12px] font-bold text-[var(--trim-fg)] print:text-zinc-900">
+                  <th className="pb-2.5 pl-2 text-right text-[12px] font-bold text-foreground print:text-zinc-900">
                     {receipt.col_amount}
                   </th>
                 </tr>
@@ -439,14 +460,14 @@ export function ReceiptView({
                   return (
                     <tr
                       key={item.position}
-                      className="border-b border-[var(--trim-border)] print:border-zinc-200"
+                      className="border-b border-border print:border-zinc-200"
                     >
                       <td className="py-3.5 pr-3 align-top">
-                        <p className="font-bold text-[var(--trim-fg)] print:text-zinc-900">
+                        <p className="font-bold text-foreground print:text-zinc-900">
                           {item.description}
                         </p>
                         {linePeriod ? (
-                          <p className="mt-0.5 text-[12px] text-[var(--trim-subtle)] print:text-zinc-500">
+                          <p className="mt-0.5 text-[12px] text-muted-foreground print:text-zinc-500">
                             {linePeriod}
                           </p>
                         ) : null}
@@ -456,16 +477,16 @@ export function ReceiptView({
                           </p>
                         ) : null}
                       </td>
-                      <td className="px-2 py-3.5 text-right align-top tabular-nums text-[var(--trim-muted)] print:text-zinc-700">
+                      <td className="px-2 py-3.5 text-right align-top tabular-nums text-muted-foreground print:text-zinc-700">
                         {item.quantity}
                       </td>
-                      <td className="px-2 py-3.5 text-right align-top tabular-nums text-[var(--trim-muted)] print:text-zinc-700">
+                      <td className="px-2 py-3.5 text-right align-top tabular-nums text-muted-foreground print:text-zinc-700">
                         {formatMoney(item.unit_amount_cents, receipt.currency_code, moneyLocale)}
                       </td>
-                      <td className="px-2 py-3.5 text-right align-top tabular-nums text-[var(--trim-muted)] print:text-zinc-700">
+                      <td className="px-2 py-3.5 text-right align-top tabular-nums text-muted-foreground print:text-zinc-700">
                         {taxPercent}
                       </td>
-                      <td className="py-3.5 pl-2 text-right align-top font-bold tabular-nums text-[var(--trim-fg)] print:text-zinc-900">
+                      <td className="py-3.5 pl-2 text-right align-top font-bold tabular-nums text-foreground print:text-zinc-900">
                         {formatMoney(item.amount_cents, receipt.currency_code, moneyLocale)}
                       </td>
                     </tr>
@@ -477,23 +498,23 @@ export function ReceiptView({
 
           <div className="mt-2 flex justify-end">
             <dl className="w-full max-w-[240px] text-[13px]">
-              <div className="flex items-center justify-between gap-8 border-b border-[var(--trim-border)] py-2 text-[var(--trim-muted)] print:border-zinc-200 print:text-zinc-700">
+              <div className="flex items-center justify-between gap-8 border-b border-border py-2 text-muted-foreground print:border-zinc-200 print:text-zinc-700">
                 <dt>{receipt.label_subtotal}</dt>
                 <dd className="tabular-nums">
                   {formatMoney(receipt.subtotal_cents, receipt.currency_code, moneyLocale)}
                 </dd>
               </div>
-              <div className="flex items-center justify-between gap-8 border-b border-[var(--trim-border)] py-2 text-[var(--trim-muted)] print:border-zinc-200 print:text-zinc-700">
+              <div className="flex items-center justify-between gap-8 border-b border-border py-2 text-muted-foreground print:border-zinc-200 print:text-zinc-700">
                 <dt>{receipt.label_tax}</dt>
                 <dd className="tabular-nums">
                   {formatMoney(receipt.tax_cents, receipt.currency_code, moneyLocale)}
                 </dd>
               </div>
-              <div className="flex items-center justify-between gap-8 border-b border-[var(--trim-border)] py-2 text-[var(--trim-fg)] print:border-zinc-200 print:text-zinc-900">
+              <div className="flex items-center justify-between gap-8 border-b border-border py-2 text-foreground print:border-zinc-200 print:text-zinc-900">
                 <dt>{receipt.label_total}</dt>
                 <dd className="tabular-nums">{totalFmt}</dd>
               </div>
-              <div className="flex items-center justify-between gap-8 border-t-2 border-[var(--trim-fg)]/25 py-2.5 text-[15px] font-bold text-[var(--trim-fg)] print:border-zinc-800 print:text-zinc-900">
+              <div className="flex items-center justify-between gap-8 border-t-2 border-foreground/25 py-2.5 text-[15px] font-bold text-foreground print:border-zinc-800 print:text-zinc-900">
                 <dt>{receipt.label_amount_paid}</dt>
                 <dd className="tabular-nums">{totalFmt}</dd>
               </div>
@@ -501,34 +522,34 @@ export function ReceiptView({
           </div>
 
           <div className="mt-8 max-w-[240px]">
-            <h2 className="text-[13px] font-bold text-[var(--trim-fg)] print:text-zinc-900">
+            <h2 className="text-[13px] font-bold text-foreground print:text-zinc-900">
               {receipt.section_tax_breakdown}
             </h2>
             <table className="mt-2 w-full border-collapse text-[13px]">
               <thead>
-                <tr className="border-b border-[var(--trim-border)] print:border-zinc-200">
-                  <th className="pb-2 text-left text-[12px] font-bold text-[var(--trim-fg)] print:text-zinc-900">
+                <tr className="border-b border-border print:border-zinc-200">
+                  <th className="pb-2 text-left text-[12px] font-bold text-foreground print:text-zinc-900">
                     {receipt.label_tax_percent}
                   </th>
-                  <th className="pb-2 text-right text-[12px] font-bold text-[var(--trim-fg)] print:text-zinc-900">
+                  <th className="pb-2 text-right text-[12px] font-bold text-foreground print:text-zinc-900">
                     {receipt.label_tax}
                   </th>
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b border-[var(--trim-border)] print:border-zinc-200">
-                  <td className="py-2 tabular-nums text-[var(--trim-fg)]/90 print:text-zinc-800">
+                <tr className="border-b border-border print:border-zinc-200">
+                  <td className="py-2 tabular-nums text-foreground/90 print:text-zinc-800">
                     {taxPercent}
                   </td>
-                  <td className="py-2 text-right tabular-nums text-[var(--trim-fg)]/90 print:text-zinc-800">
+                  <td className="py-2 text-right tabular-nums text-foreground/90 print:text-zinc-800">
                     {formatMoney(receipt.tax_cents, receipt.currency_code, moneyLocale)}
                   </td>
                 </tr>
                 <tr>
-                  <td className="pt-2.5 font-bold text-[var(--trim-fg)] print:text-zinc-900">
+                  <td className="pt-2.5 font-bold text-foreground print:text-zinc-900">
                     {receipt.label_tax_total}
                   </td>
-                  <td className="pt-2.5 text-right font-bold tabular-nums text-[var(--trim-fg)] print:text-zinc-900">
+                  <td className="pt-2.5 text-right font-bold tabular-nums text-foreground print:text-zinc-900">
                     {formatMoney(receipt.tax_cents, receipt.currency_code, moneyLocale)}
                   </td>
                 </tr>
@@ -538,9 +559,9 @@ export function ReceiptView({
         </section>
 
         {receipt.footer ? (
-          <footer className="mt-4 bg-[var(--trim-panel-2)] px-5 py-7 text-center sm:px-8 print:bg-zinc-100">
+          <footer className="mt-4 bg-muted px-5 py-7 text-center sm:px-8 print:bg-zinc-100">
             <div className="mx-auto flex max-w-lg flex-col items-center gap-3">
-              <p className="text-[12px] leading-relaxed text-[var(--trim-muted)] print:text-zinc-600">
+              <p className="text-[12px] leading-relaxed text-muted-foreground print:text-zinc-600">
                 {receipt.footer}
               </p>
               <span className="print:hidden opacity-70">
@@ -549,7 +570,7 @@ export function ReceiptView({
               <span className="hidden print:inline-flex opacity-70">
                 <TrimWordmark size="sm" alt={brand} ink="black" />
               </span>
-              <p className="text-[11px] leading-relaxed text-[var(--trim-subtle)] print:text-zinc-500">
+              <p className="text-[11px] leading-relaxed text-muted-foreground print:text-zinc-500">
                 {[
                   brand,
                   receipt.company_address_line1,
