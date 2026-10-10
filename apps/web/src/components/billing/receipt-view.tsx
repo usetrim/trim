@@ -322,16 +322,17 @@ export function ReceiptView({
       </div>
 
       {/*
-        Admin parity (inline wins over utilities):
-        - article body = admin bg-card (black paper in dark)
-        - header/footer ONLY = admin bg-muted letterhead bands
+        Visual parity with admin invoice:
+        - Admin: page bg-background ≡ article bg-card → body blends; only muted bands show.
+        - Web: page is --trim-bg ≠ card. Body MUST use --trim-bg or the whole sheet looks grey.
+        - Letterhead ONLY: header + footer = muted (same as admin bg-muted).
       */}
       <article
         ref={invoiceRef}
         data-receipt-print
         className="text-foreground print:bg-white print:text-zinc-900"
         style={{
-          backgroundColor: "hsl(var(--card))",
+          backgroundColor: "var(--trim-bg)",
           color: "hsl(var(--foreground))",
         }}
       >
