@@ -122,7 +122,7 @@ export function useReceiptPDFReissue(token: string) {
 
 /**
  * @deprecated Invoice Download must use printReceiptArticle (live article →
- * Save as PDF). Do not call the Go /pdf endpoint — layout diverges from Print.
+ * Save as PDF). Do not call the Go /pdf endpoint - layout diverges from Print.
  */
 export function useDownloadAdminReceiptPdf(_token: string) {
   return useMutation({

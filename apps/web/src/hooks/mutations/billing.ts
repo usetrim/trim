@@ -97,7 +97,7 @@ export function useSyncReceipts(token: string | undefined) {
 
 /**
  * @deprecated Invoice Download must use printReceiptArticle (live article →
- * Save as PDF). Do not call the Go /pdf endpoint — layout diverges from Print.
+ * Save as PDF). Do not call the Go /pdf endpoint - layout diverges from Print.
  */
 export function useDownloadReceiptPdf(_token: string | undefined) {
   return useMutation({

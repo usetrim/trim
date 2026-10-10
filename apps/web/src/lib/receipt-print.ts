@@ -31,7 +31,7 @@ export function printReceiptArticle(
   window.addEventListener("afterprint", cleanup);
 
   // Let the browser apply @media print against the settled live article
-  // (same paint path for Print and Download — no clone window, no Go PDF).
+  // (same paint path for Print and Download - no clone window, no Go PDF).
   window.requestAnimationFrame(() => {
     window.requestAnimationFrame(() => {
       window.print();
@@ -47,7 +47,7 @@ export function printReceiptArticle(
  *
  * Uses the invoice document title for the print stylesheet context (same as
  * Print). Suggested Save-as-PDF filename is applied via document.title when
- * `filename` is provided — layout/CSS are unchanged.
+ * `filename` is provided - layout/CSS are unchanged.
  */
 export function downloadReceiptArticlePdf(
   root: HTMLElement,
