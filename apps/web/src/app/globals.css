@@ -83,7 +83,11 @@
     --trim-border: rgba(255, 255, 255, 0.06);
     --trim-border-strong: rgba(255, 255, 255, 0.14);
     --trim-panel: #0f1011;
-    --trim-panel-2: #08090a;
+    /*
+     * Elevated surface (matches admin --trim-panel-2 → hsl(muted) ≈ #28282c).
+     * Never equal --trim-bg or invoice letterhead bands vanish.
+     */
+    --trim-panel-2: #28282c;
     --trim-ink: #f7f8f8;
     --trim-ink-inverse: #08090a;
     --trim-code: #0f1011;
@@ -147,7 +151,7 @@
     --trim-border: rgba(255, 255, 255, 0.08);
     --trim-border-strong: rgba(255, 255, 255, 0.16);
     --trim-panel: #0f1011;
-    --trim-panel-2: #08090a;
+    --trim-panel-2: #28282c;
     --trim-ink: #f7f8f8;
     --trim-ink-inverse: #08090a;
     --trim-code: #0f1011;
@@ -284,13 +288,22 @@
 }
 
 /*
- * Tax-invoice article (OUTSIDE @layer - must beat web hex --trim-*).
+ * Tax-invoice letterhead bands (OUTSIDE @layer).
  *
- * Root cause (web≠admin dark bands): web --trim-panel-2 is #08090a (same as
- * --trim-bg), so header/footer painted with panel-2 / collapsing muted vanish.
- * Admin maps panel-2 → elevated muted gray. Lock explicit letterhead hex that
- * matches admin screenshots (zinc-100 light / #2a2a2e dark) with !important.
+ * ROOT CAUSE (web ≠ admin): web dark --trim-panel-2 was #08090a - identical to
+ * --trim-bg - so header/footer painted with panel-2 (or collapsing into page)
+ * were invisible. Admin maps --trim-panel-2 → hsl(var(--muted)) ≈ #28282c
+ * (elevated gray on black). Match that surface + force bands via data attr.
  */
+:root {
+  --receipt-band: #f4f4f5; /* zinc-100 - light letterhead */
+}
+
+.dark,
+html.dark {
+  --receipt-band: #28282c; /* admin muted / --trim-panel-2 dark */
+}
+
 [data-receipt-print] {
   --background: 0 0% 100%;
   --foreground: 240 10% 3.9%;
@@ -299,20 +312,17 @@
   --muted: 240 4.8% 95.9%;
   --muted-foreground: 240 3.8% 46.1%;
   --border: 240 5.9% 90%;
-  --trim-bg: #ffffff;
   --trim-fg: #171717;
   --trim-muted: #5c5c5c;
   --trim-subtle: #8a8a8a;
   --trim-border: #e8e8e8;
-  --trim-border-strong: #cfcfcf;
   --trim-panel: #ffffff;
-  /* Elevated letterhead - never equal page bg */
-  --trim-panel-2: #f4f4f5;
+  --trim-panel-2: var(--receipt-band);
   --trim-status: #27a644;
   --trim-status-bg: rgba(39, 166, 68, 0.12);
   --receipt-band: #f4f4f5;
-  color: #171717;
-  background-color: #ffffff;
+  color: hsl(var(--foreground));
+  background-color: hsl(var(--card));
 }
 
 .dark [data-receipt-print],
@@ -324,32 +334,29 @@ html.dark [data-receipt-print] {
   --muted: 240 3.7% 15.9%;
   --muted-foreground: 240 5% 64.9%;
   --border: 240 3.7% 15.9%;
-  --trim-bg: transparent;
   --trim-fg: #f7f8f8;
   --trim-muted: #a1a6b0;
   --trim-subtle: #8a8f98;
   --trim-border: rgba(255, 255, 255, 0.12);
-  --trim-border-strong: rgba(255, 255, 255, 0.18);
   --trim-panel: transparent;
-  /* Same elevated band as admin muted (~hsl(240 3.7% 15.9%)) */
-  --trim-panel-2: #2a2a2e;
+  --trim-panel-2: #28282c;
   --trim-status: #27a644;
   --trim-status-bg: rgba(39, 166, 68, 0.18);
-  --receipt-band: #2a2a2e;
-  color: #f7f8f8;
+  --receipt-band: #28282c;
+  color: hsl(var(--foreground));
   background-color: transparent;
 }
 
-[data-receipt-print] > header,
-[data-receipt-print] > footer {
-  background-color: var(--receipt-band, #f4f4f5) !important;
+/* data-receipt-band: nuclear paint - wins over utility class wars */
+[data-receipt-print] [data-receipt-band] {
+  background-color: #f4f4f5 !important;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
 }
 
-.dark [data-receipt-print] > header,
-.dark [data-receipt-print] > footer,
-html.dark [data-receipt-print] > header,
-html.dark [data-receipt-print] > footer {
-  background-color: #2a2a2e !important;
+.dark [data-receipt-print] [data-receipt-band],
+html.dark [data-receipt-print] [data-receipt-band] {
+  background-color: #28282c !important;
 }
 
 /*
@@ -401,8 +408,7 @@ html.dark [data-receipt-print] > footer {
     print-color-adjust: exact;
   }
 
-  [data-receipt-print] > header,
-  [data-receipt-print] > footer {
+  [data-receipt-print] [data-receipt-band] {
     background-color: #f4f4f5 !important;
   }
 

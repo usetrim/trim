@@ -4,7 +4,6 @@ import { TrimWordmark } from "@/components/brand/trim-wordmark";
 import { ReceiptDetailSkeleton } from "@/components/skeletons/page-skeletons";
 import { Button } from "@/components/ui/button";
 import { FetchProgressBar } from "@/components/ui/fetch-progress";
-import { useDownloadAdminReceiptPdf } from "@/hooks/mutations/billing";
 import { useAdminReceipt } from "@/hooks/queries/billing";
 import { downloadReceiptArticlePdf, printReceiptArticle } from "@/lib/receipt-print";
 import { formatMoney } from "@/lib/utils";
@@ -136,7 +135,6 @@ export function ReceiptView({
   const invoiceRef = useRef<HTMLElement | null>(null);
   const { data, isPending, isFetching, error } = useAdminReceipt(accessToken || "", receiptId);
   const receipt = data as Detail | undefined;
-  const downloadPdf = useDownloadAdminReceiptPdf(accessToken || "");
 
   if (!accessToken || (isPending && !receipt)) {
     return (
@@ -189,7 +187,6 @@ export function ReceiptView({
   const productCol = (receipt.col_product || receipt.col_description || "").trim();
   const taxPercent = (receipt.tax_rate_percent || "").trim();
   const billToCountry = countryDisplayName(receipt.bill_to_country, moneyLocale);
-  const pdfHref = (receipt.first_party_pdf_href || "").trim();
   const backHref = (receipt.back_href || listHref).trim() || listHref;
 
   if (!brand) {
@@ -228,47 +225,33 @@ export function ReceiptView({
             <Button
               variant="outline"
               size="sm"
-              isLoading={downloadPdf.isPending}
+              isLoading={printing}
               pendingLabel={receipt.download_pdf_pending_label || undefined}
               onClick={() => {
                 const el = invoiceRef.current;
-                // Prefer the live print article (identical to Print → Save as PDF).
-                if (el) {
-                  const displayId = (receipt.display_id || receipt.id || "invoice").trim();
-                  const fmt = (receipt.download_pdf_filename_fmt || "").trim();
-                  const filename = fmt.includes("%s")
-                    ? fmt.replace("%s", displayId)
-                    : fmt || `trim-invoice-${displayId}`;
-                  downloadReceiptArticlePdf(el, {
-                    title: receipt.document_title || undefined,
-                    filename,
-                  });
-                  const done = receipt.download_pdf_done_message || "";
-                  if (done) toast.success(done);
-                  return;
-                }
-                // Fallback: first-party API PDF (list views / no mounted article).
                 const failed = receipt.download_pdf_failed_message || "";
-                if (!pdfHref) {
+                if (!el) {
                   toast.error(failed);
                   return;
                 }
-                downloadPdf.mutate(
-                  {
-                    href: pdfHref,
-                    failedMessage: failed,
-                    filenameFmt: receipt.download_pdf_filename_fmt,
-                    displayId: receipt.display_id || receipt.id,
-                  },
-                  {
-                    onSuccess: () => {
-                      const done = receipt.download_pdf_done_message || "";
-                      if (done) toast.success(done);
-                    },
-                    onError: (e) => {
-                      toast.error(e.message || failed);
-                    },
-                  },
+                // Download = Print (same live article → Save as PDF). No Go PDF.
+                const displayId = (receipt.display_id || receipt.id || "invoice").trim();
+                const fmt = (receipt.download_pdf_filename_fmt || "").trim();
+                const filename = fmt.includes("%s")
+                  ? fmt.replace("%s", displayId)
+                  : fmt || `trim-invoice-${displayId}`;
+                setPrinting(true);
+                downloadReceiptArticlePdf(el, {
+                  title: receipt.document_title || undefined,
+                  filename,
+                });
+                const done = receipt.download_pdf_done_message || "";
+                if (done) toast.success(done);
+                const raw = receipt.print_pending_ms?.trim() || "";
+                const ms = Number.parseInt(raw, 10);
+                window.setTimeout(
+                  () => setPrinting(false),
+                  Number.isFinite(ms) && ms > 0 ? ms : 800,
                 );
               }}
             >
