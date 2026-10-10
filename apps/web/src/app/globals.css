@@ -108,29 +108,46 @@
   }
 
   /*
-   * Tax-invoice article: lock to the same HSL surfaces as admin
-   * (apps/admin globals --card / --muted / --border) for dark/light parity.
+   * Tax-invoice article: identical token chain to apps/admin globals.css
+   * (--trim-* → hsl(var(--card|--muted|--border|…))) so dark/light surfaces
+   * match admin while the rest of the web app keeps its own hex palette.
    */
   [data-receipt-print] {
-    --trim-fg: hsl(240 10% 3.9%);
-    --trim-muted: hsl(240 3.8% 46.1%);
-    --trim-subtle: hsl(240 3.8% 46.1% / 0.85);
-    --trim-border: hsl(240 5.9% 90%);
-    --trim-border-strong: hsl(240 5.9% 90%);
-    --trim-panel: hsl(0 0% 100%);
-    --trim-panel-2: hsl(240 4.8% 95.9%);
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --border: 240 5.9% 90%;
+    --trim-bg: hsl(var(--background));
+    --trim-fg: hsl(var(--foreground));
+    --trim-muted: hsl(var(--muted-foreground));
+    --trim-subtle: hsl(var(--muted-foreground) / 0.85);
+    --trim-border: hsl(var(--border));
+    --trim-border-strong: hsl(var(--border));
+    --trim-panel: hsl(var(--card));
+    --trim-panel-2: hsl(var(--muted));
     --trim-status: #27a644;
+    --trim-status-bg: rgba(39, 166, 68, 0.12);
   }
 
   .dark [data-receipt-print] {
-    --trim-fg: hsl(0 0% 98%);
-    --trim-muted: hsl(240 5% 64.9%);
-    --trim-subtle: hsl(240 5% 64.9% / 0.85);
-    --trim-border: hsl(240 3.7% 15.9%);
-    --trim-border-strong: hsl(240 3.7% 15.9%);
-    --trim-panel: hsl(240 10% 3.9%);
-    --trim-panel-2: hsl(240 3.7% 15.9%);
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --border: 240 3.7% 15.9%;
+    --trim-bg: hsl(var(--background));
+    --trim-fg: hsl(var(--foreground));
+    --trim-muted: hsl(var(--muted-foreground));
+    --trim-subtle: hsl(var(--muted-foreground) / 0.85);
+    --trim-border: hsl(var(--border));
+    --trim-border-strong: hsl(var(--border));
+    --trim-panel: hsl(var(--card));
+    --trim-panel-2: hsl(var(--muted));
     --trim-status: #27a644;
+    --trim-status-bg: rgba(39, 166, 68, 0.18);
   }
 
   ::selection {
@@ -351,7 +368,7 @@
     --trim-subtle: #8a8a8a;
     --trim-border: #e8e8e8;
     --trim-panel: #ffffff;
-    --trim-panel-2: #f2f2f2;
+    --trim-panel-2: #f4f4f5; /* zinc-100 - same as print:bg-zinc-100 */
     --trim-status: #27a644;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;

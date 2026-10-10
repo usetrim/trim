@@ -201,19 +201,22 @@ export function ReceiptView({
   const moneyLocale = receipt.money_locale?.trim() || "";
   const paidLabel = (receipt.paid_at_label || "").trim();
   const periodLabel = (receipt.period_label || "").trim();
-  const totalFmt = formatMoney(receipt.total_cents, receipt.currency_code, moneyLocale);
+  const totalFmt = moneyLocale
+    ? formatMoney(receipt.total_cents, receipt.currency_code, moneyLocale)
+    : "";
   const metaSep = (receipt.header_meta_sep || " - ").trim() || " - ";
   const productCol = (receipt.col_product || receipt.col_description || "").trim();
   const taxPercent = (receipt.tax_rate_percent || "").trim();
   const billToCountry = countryDisplayName(receipt.bill_to_country, moneyLocale);
   const pdfHref = (receipt.first_party_pdf_href || "").trim();
+  const backHref = (receipt.back_href || "").trim();
 
   if (!brand) {
     return (
       <div className="p-8">
         <p className="text-sm text-destructive">{receipt.seller_missing_message || ""}</p>
         <Button asChild variant="outline" className="mt-4">
-          <Link href={receipt.back_href || ""}>{receipt.back_action_label || ""}</Link>
+          <Link href={backHref}>{receipt.back_action_label || ""}</Link>
         </Button>
       </div>
     );
@@ -226,7 +229,7 @@ export function ReceiptView({
           {process.env.NEXT_PUBLIC_MONEY_LOCALE_MISSING?.trim() || ""}
         </p>
         <Button asChild variant="outline" className="mt-4">
-          <Link href={receipt.back_href || ""}>{receipt.back_action_label || ""}</Link>
+          <Link href={backHref}>{receipt.back_action_label || ""}</Link>
         </Button>
       </div>
     );
@@ -237,7 +240,7 @@ export function ReceiptView({
       <FetchProgressBar active={isFetching && !isPending} className="mb-4 print:hidden" />
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3 print:hidden">
         <Button asChild variant="outline" size="sm">
-          <Link href={receipt.back_href || ""}>{receipt.back_action_label}</Link>
+          <Link href={backHref}>{receipt.back_action_label}</Link>
         </Button>
         <div className="flex flex-wrap gap-2">
           {receipt.download_pdf_action_label && pdfHref ? (
@@ -299,7 +302,6 @@ export function ReceiptView({
         data-receipt-print
         className="bg-[var(--trim-panel)] text-[var(--trim-fg)] print:bg-white print:text-zinc-900"
       >
-        {/* Header band - Paddle tax-invoice letterhead pattern */}
         <header className="bg-[var(--trim-panel-2)] px-5 py-6 sm:px-8 sm:py-7 print:bg-zinc-100">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0 space-y-1.5">
@@ -355,7 +357,6 @@ export function ReceiptView({
           </div>
         </header>
 
-        {/* Parties */}
         <section className="grid gap-10 px-5 py-8 sm:px-8 md:grid-cols-2 print:grid-cols-2">
           <div className="min-w-0 space-y-2">
             <h2 className="text-[13px] font-bold text-[var(--trim-fg)] print:text-zinc-900">
@@ -407,7 +408,6 @@ export function ReceiptView({
           </div>
         </section>
 
-        {/* Invoice details */}
         <section className="px-5 pb-6 sm:px-8">
           <h2 className="text-[13px] font-bold text-[var(--trim-fg)] print:text-zinc-900">
             {receipt.section_invoice_details}
@@ -425,7 +425,6 @@ export function ReceiptView({
 
         <div className="mx-5 border-t border-[var(--trim-border)] sm:mx-8 print:border-zinc-200" />
 
-        {/* Transaction */}
         <section className="px-5 py-6 sm:px-8">
           <h2 className="mb-4 text-[13px] font-bold text-[var(--trim-fg)] print:text-zinc-900">
             {receipt.section_transaction}
@@ -495,7 +494,6 @@ export function ReceiptView({
             </table>
           </div>
 
-          {/* Totals - right column, Paddle style */}
           <div className="mt-2 flex justify-end">
             <dl className="w-full max-w-[240px] text-[13px]">
               <div className="flex items-center justify-between gap-8 border-b border-[var(--trim-border)] py-2 text-[var(--trim-muted)] print:border-zinc-200 print:text-zinc-700">
@@ -521,7 +519,6 @@ export function ReceiptView({
             </dl>
           </div>
 
-          {/* Tax breakdown */}
           <div className="mt-8 max-w-[240px]">
             <h2 className="text-[13px] font-bold text-[var(--trim-fg)] print:text-zinc-900">
               {receipt.section_tax_breakdown}

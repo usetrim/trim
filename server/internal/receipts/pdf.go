@@ -182,19 +182,20 @@ func BuildReceiptPDF(d ReceiptDetail) ([]byte, error) {
 	if headerLogo != nil {
 		headerH = 108
 	}
+	// print:bg-zinc-100 ≈ #f4f4f5 (admin/web print letterhead).
 	ops = append(ops, pdfOp{
 		kind:  "header_block",
 		h:     headerH,
 		text:  title,
 		left:  strings.TrimSpace(d.StatusLabel),
 		right: headerMeta,
-		lines: []string{strings.TrimSpace(d.CompanyLegalName), strings.TrimSpace(d.MerchantVia)},
+		lines: []string{strings.TrimSpace(d.CompanyLegalName), strings.TrimSpace(d.MerchantVia), strings.TrimSpace(d.PaidAtLabel), totalStr, metaSep},
 		logo:  headerLogo,
-		r:     0.949, // #f2f2f2 - matches --trim-panel-2 / print letterhead
-		g:     0.949,
-		b:     0.949,
+		r:     0.957,
+		g:     0.957,
+		b:     0.961,
 	})
-	blank(16)
+	blank(18)
 
 	// --- Parties ---
 	leftLines := make([]string, 0, 12)
@@ -338,7 +339,9 @@ func BuildReceiptPDF(d ReceiptDetail) ([]byte, error) {
 		blank(14)
 	}
 
-	// --- Footer band (centered, matches detail page) ---
+	// --- Footer band (centered, matches detail/print) ---
+	// Detail page: footer copy → TrimWordmark → single locality line (brand, address…).
+	// Do NOT draw a second brand string under the mark (that duplicated "Trim").
 	footerLines := make([]string, 0, 4)
 	if s := strings.TrimSpace(d.Footer); s != "" {
 		footerLines = append(footerLines, s)
@@ -355,21 +358,19 @@ func BuildReceiptPDF(d ReceiptDetail) ([]byte, error) {
 	if lg, err := blackLetterheadImage(0.7); err == nil && lg != nil {
 		footerLogo = lg
 	}
-	// Reserve height: padding + wrapped footer (~2 lines) + mark + brand + address.
-	footerH := 96.0
+	footerH := 88.0
 	if footerLogo != nil {
-		footerH = 118
+		footerH = 110
 	}
 	ops = append(ops, pdfOp{
 		kind:  "footer_block",
 		h:     footerH,
-		text:  strings.TrimSpace(d.CompanyLegalName), // brand under mark (detail page)
 		lines: footerLines,
 		left:  addrLine,
 		logo:  footerLogo,
-		r:     0.949, // #f2f2f2
-		g:     0.949,
-		b:     0.949,
+		r:     0.957, // zinc-100
+		g:     0.957,
+		b:     0.961,
 	})
 
 	return writeReceiptPDF(ops)
@@ -711,18 +712,30 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 
 	writeTextRight := func(rightX, ty float64, size int, bold bool, s string, r, g, b float64) {
 		s = truncateRunes(s, 48)
-		w := approxTextWidth(s, size)
+		w := approxTextWidthFont(s, size, bold)
 		writeTextAt(rightX-w, ty, size, bold, s, r, g, b)
 	}
 
 	writeTextCentered := func(ty float64, size int, bold bool, s string, r, g, b float64) {
 		s = truncateRunes(s, 140)
-		w := approxTextWidth(s, size)
+		w := approxTextWidthFont(s, size, bold)
 		x := (pdfPageW - w) / 2
 		if x < pdfMarginL {
 			x = pdfMarginL
 		}
 		writeTextAt(x, ty, size, bold, s, r, g, b)
+	}
+
+	// Labeled value on one baseline: bold label + regular value (detail page InlineDetail).
+	writeLabeled := func(x, ty float64, size int, label, value string, r, g, b float64) {
+		label = strings.TrimSpace(label)
+		value = strings.TrimSpace(value)
+		if label == "" || value == "" {
+			return
+		}
+		prefix := label + ": "
+		writeTextAt(x, ty, size, true, prefix, r, g, b)
+		writeTextAt(x+approxTextWidthFont(prefix, size, true), ty, size, false, value, r, g, b)
 	}
 
 	drawImage := func(name string, img *pdfImage, x, topY, maxW, maxH float64) float64 {
@@ -759,10 +772,11 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 			logoH := 0.0
 			if op.logo != nil {
 				imgName = registerImage(op.logo)
-				maxW, maxH := 34.0, 34.0
+				// Detail TrimWordmark size="lg" ≈ 28–36px tall.
+				maxW, maxH := 36.0, 36.0
 				dw, dh := fitLogo(float64(op.logo.Width), float64(op.logo.Height), maxW, maxH)
 				logoH = dh
-				logoY := y - 16 - dh
+				logoY := y - 18 - dh
 				content.WriteString(fmt.Sprintf("q\n%.2f 0 0 %.2f %.2f %.2f cm\n/%s Do\nQ\n", dw, dh, pdfContentR-dw, logoY, imgName))
 			}
 			content.WriteString("BT\n")
@@ -771,10 +785,10 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 			writeTextAt(pdfMarginL, ty, 18, true, op.text, 0, 0, 0)
 			badge := strings.TrimSpace(op.left)
 			if badge != "" {
-				bw := approxTextWidth(strings.ToUpper(badge), 8) + 14
-				bx := pdfMarginL + approxTextWidth(op.text, 18) + 12
+				bw := approxTextWidthFont(strings.ToUpper(badge), 8, true) + 14
+				bx := pdfMarginL + approxTextWidthFont(op.text, 18, true) + 12
 				content.WriteString("ET\n")
-				content.WriteString(fmt.Sprintf("0.153 0.651 0.267 rg\n%.2f %.2f %.2f %.2f re\nf\n", bx, ty-3, bw, 14.0))
+				content.WriteString(fmt.Sprintf("0.153 0.651 0.267 rg\n%.2f %.2f %.2f 14.00 re\nf\n", bx, ty-3, bw))
 				content.WriteString("BT\n")
 				setFont(8, true)
 				content.WriteString("1 1 1 rg\n")
@@ -784,15 +798,40 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 				content.WriteString(") Tj\n")
 				content.WriteString("0 0 0 rg\n")
 			}
-			if meta := strings.TrimSpace(op.right); meta != "" {
-				writeTextAt(pdfMarginL, ty-18, 10, false, meta, 0.40, 0.40, 0.40)
-			}
+			// Detail page: muted paid date + sep, semibold total amount.
+			paidAt, totalAmt, sep := "", "", " - "
 			brand, via := "", ""
 			if len(op.lines) > 0 {
 				brand = op.lines[0]
 			}
 			if len(op.lines) > 1 {
 				via = op.lines[1]
+			}
+			if len(op.lines) > 2 {
+				paidAt = op.lines[2]
+			}
+			if len(op.lines) > 3 {
+				totalAmt = op.lines[3]
+			}
+			if len(op.lines) > 4 && strings.TrimSpace(op.lines[4]) != "" {
+				sep = op.lines[4]
+			}
+			metaY := ty - 18
+			if paidAt != "" || totalAmt != "" {
+				mx := pdfMarginL
+				if paidAt != "" {
+					writeTextAt(mx, metaY, 10, false, paidAt, 0.45, 0.45, 0.45)
+					mx += approxTextWidthFont(paidAt, 10, false)
+					if totalAmt != "" {
+						writeTextAt(mx, metaY, 10, false, sep, 0.45, 0.45, 0.45)
+						mx += approxTextWidthFont(sep, 10, false)
+					}
+				}
+				if totalAmt != "" {
+					writeTextAt(mx, metaY, 10, true, totalAmt, 0.15, 0.15, 0.15)
+				}
+			} else if meta := strings.TrimSpace(op.right); meta != "" {
+				writeTextAt(pdfMarginL, metaY, 10, false, meta, 0.45, 0.45, 0.45)
 			}
 			brandY := ty - 8
 			if op.logo != nil {
@@ -844,15 +883,9 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 				content.WriteString(fmt.Sprintf("q\n%.2f 0 0 %.2f %.2f %.2f cm\n/%s Do\nQ\n", dw, dh, (pdfPageW-dw)/2, cy-dh, imgName))
 				content.WriteString("BT\n")
 				setFont(curSize, curBold)
-				cy -= dh + 6
+				cy -= dh + 8
 			}
-			// Brand under mark (matches TrimWordmark + name on detail/print).
-			if brand := strings.TrimSpace(op.text); brand != "" {
-				if cy >= contentBottom+12 {
-					writeTextCentered(cy, 9, false, brand, 0.45, 0.45, 0.45)
-					cy -= 12
-				}
-			}
+			// Single locality line under mark (includes brand when present) - same as detail <p>.
 			if addr := strings.TrimSpace(op.left); addr != "" {
 				for _, part := range wrapWords(addr, 70) {
 					if cy < contentBottom+10 {
@@ -923,16 +956,14 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 				}
 				if l != "" {
 					if lVal != "" {
-						writeTextAt(pdfMarginL, y, 10, true, l+": ", 0, 0, 0)
-						writeTextAt(pdfMarginL+approxTextWidth(l+": ", 10), y, 10, false, lVal, 0, 0, 0)
+						writeLabeled(pdfMarginL, y, 10, l, lVal, 0, 0, 0)
 					} else {
 						writeTextAt(pdfMarginL, y, 10, lBold, l, 0, 0, 0)
 					}
 				}
 				if r != "" {
 					if rVal != "" {
-						writeTextAt(colR, y, 10, true, r+": ", 0, 0, 0)
-						writeTextAt(colR+approxTextWidth(r+": ", 10), y, 10, false, rVal, 0, 0, 0)
+						writeLabeled(colR, y, 10, r, rVal, 0, 0, 0)
 					} else {
 						writeTextAt(colR, y, 10, rBold, r, 0, 0, 0)
 					}
@@ -947,34 +978,37 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 			if y < 48 {
 				continue
 			}
-			label := strings.TrimSpace(op.left)
-			value := strings.TrimSpace(op.right)
-			writeTextAt(pdfMarginL, y, size, true, label+": ", 0, 0, 0)
-			writeTextAt(pdfMarginL+approxTextWidth(label+": ", size), y, size, false, value, 0, 0, 0)
+			writeLabeled(pdfMarginL, y, size, op.left, op.right, 0, 0, 0)
 		case "right_pair":
 			size := op.size
 			if size < 1 {
 				size = 10
 			}
-			// Amount paid: stronger rule above (detail page emphasis).
+			// Totals column ≈ detail max-w-[240px] anchored to content right edge.
+			totalsL := pdfContentR - 240
+			// Amount paid: border-t-2 emphasis only (no hairline under the row).
 			if op.bold {
 				content.WriteString("ET\n")
-				content.WriteString(fmt.Sprintf("0.9 w\n0.22 0.22 0.22 RG\n360 %.2f m\n%.2f %.2f l\nS\n0 0 0 RG\n", y-1, pdfContentR, y-1))
+				content.WriteString(fmt.Sprintf("1.2 w\n0.20 0.20 0.20 RG\n%.2f %.2f m\n%.2f %.2f l\nS\n0 0 0 RG\n", totalsL, y-1, pdfContentR, y-1))
 				content.WriteString("BT\n")
 				setFont(curSize, curBold)
-				y -= 5
+				y -= 6
 			}
 			y -= float64(size + 6)
 			if y < 48 {
 				continue
 			}
-			writeTextAt(360, y, size, op.bold, op.left, op.r, op.g, op.b)
+			writeTextAt(totalsL, y, size, op.bold, op.left, op.r, op.g, op.b)
 			writeTextRight(pdfContentR, y, size, op.bold, op.right, op.r, op.g, op.b)
-			content.WriteString("ET\n")
-			content.WriteString(fmt.Sprintf("0.4 w\n0.910 0.910 0.910 RG\n360 %.2f m\n%.2f %.2f l\nS\n0 0 0 RG\n", y-3, pdfContentR, y-3))
-			content.WriteString("BT\n")
-			setFont(curSize, curBold)
-			y -= 3
+			if !op.bold {
+				content.WriteString("ET\n")
+				content.WriteString(fmt.Sprintf("0.4 w\n0.910 0.910 0.910 RG\n%.2f %.2f m\n%.2f %.2f l\nS\n0 0 0 RG\n", totalsL, y-3, pdfContentR, y-3))
+				content.WriteString("BT\n")
+				setFont(curSize, curBold)
+				y -= 3
+			} else {
+				y -= 2
+			}
 		case "table_header":
 			size := op.size
 			if size < 1 {
@@ -1205,7 +1239,17 @@ func zlibCompress(b []byte) []byte {
 }
 
 func approxTextWidth(s string, size int) float64 {
-	return float64(utf8.RuneCountInString(s)) * float64(size) * 0.5
+	return approxTextWidthFont(s, size, false)
+}
+
+// approxTextWidthFont estimates Helvetica advance. Bold is wider; under-estimate
+// caused labeled values to collide with labels (e.g. "Payment methodvisa").
+func approxTextWidthFont(s string, size int, bold bool) float64 {
+	factor := 0.50
+	if bold {
+		factor = 0.58
+	}
+	return float64(utf8.RuneCountInString(s)) * float64(size) * factor
 }
 
 func fitLogo(srcW, srcH, maxW, maxH float64) (float64, float64) {
