@@ -892,7 +892,7 @@ export function ReceiptDetailSkeleton({
   const n = lineRows > 0 ? lineRows : 1;
   const productCol = (chrome?.col_product || chrome?.col_description || "").trim();
   return (
-    <div className="mx-auto w-full max-w-[920px] bg-background px-3 py-6 text-foreground sm:px-6 sm:py-10">
+    <div className="mx-auto w-full max-w-[920px] px-3 py-6 sm:px-6 sm:py-10">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <Skeleton className="h-8 w-28" />
         <div className="flex gap-2">
@@ -900,8 +900,18 @@ export function ReceiptDetailSkeleton({
           <Skeleton className="h-8 w-16" />
         </div>
       </div>
-      <article data-receipt-print className="bg-card text-foreground">
-        <header className="bg-muted px-5 py-6 sm:px-8 sm:py-7">
+      <article
+        data-receipt-print
+        className="text-foreground"
+        style={{
+          backgroundColor: "hsl(var(--card))",
+          color: "hsl(var(--foreground))",
+        }}
+      >
+        <header
+          className="px-5 py-6 sm:px-8 sm:py-7"
+          style={{ backgroundColor: "hsl(var(--muted))" }}
+        >
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0 space-y-1.5">
               <div className="flex flex-wrap items-center gap-2.5">
@@ -1065,7 +1075,10 @@ export function ReceiptDetailSkeleton({
           </div>
         </section>
 
-        <footer className="mt-4 bg-muted px-5 py-7 text-center sm:px-8">
+        <footer
+          className="mt-4 px-5 py-7 text-center sm:px-8"
+          style={{ backgroundColor: "hsl(var(--muted))" }}
+        >
           <div className="mx-auto flex max-w-lg flex-col items-center gap-3">
             {chrome?.footer ? (
               <p className="text-[12px] leading-relaxed text-[var(--trim-muted)]">
