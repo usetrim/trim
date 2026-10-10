@@ -36,7 +36,7 @@ jobs:
       #   xcrun stapler staple dist/trim_darwin_arm64/trim
       # Windows EV signing similarly needs a paid cert + signtool on windows-latest.
 
-      - uses: goreleaser/goreleaser-action@v6
+      - uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser
           version: "~> v2"
