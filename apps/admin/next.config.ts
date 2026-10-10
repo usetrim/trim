@@ -4,7 +4,7 @@ import type { NextConfig } from "next";
 const assetPrefix = (process.env.NEXT_PUBLIC_ASSET_PREFIX || "").trim();
 
 /**
- * Next 15 defaults dynamic router-cache staleTime to 0s, so every soft-nav
+ * Next defaults dynamic router-cache staleTime to 0s, so every soft-nav
  * re-fetches the page RSC (loading.tsx flash + client remount). Sidebar links
  * use prefetch (static window once), then fall back to dynamic - set dynamic
  * to match React Query staleTime so revisits reuse the segment; mutations still
