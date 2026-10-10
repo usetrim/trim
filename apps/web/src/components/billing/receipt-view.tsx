@@ -15,7 +15,7 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 type Detail = {
-  id: string; 
+  id: string;
   paddle_transaction_id: string;
   paddle_invoice_number: string | null;
   paddle_invoice_pdf_url: string | null;
