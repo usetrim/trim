@@ -111,6 +111,21 @@ func TestBuildReceiptPDFMatchesDetailPatterns(t *testing.T) {
 	if strings.Contains(body, "1.2 w\n0.20 0.20 0.20 RG") {
 		t.Fatal("expected no thick Amount paid separator; use same 0.4w hairline as other totals")
 	}
+	// Structural parity with receipt-view.tsx sections.
+	for _, want := range []string{
+		"Tax invoice",
+		"Invoice to",
+		"Invoice from",
+		"Invoice details",
+		"Transaction",
+		"Tax breakdown",
+		"Amount paid",
+		"via Paddle.com",
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("missing detail-page section/label %q", want)
+		}
+	}
 }
 
 func TestApproxTextWidthFontBoldPaymentMethod(t *testing.T) {
@@ -122,8 +137,8 @@ func TestApproxTextWidthFontBoldPaymentMethod(t *testing.T) {
 	if got <= naive {
 		t.Fatalf("bold AFM width %.2f should exceed naive %.2f", got, naive)
 	}
-	// Value must start after label (+ 3% pad + 4pt safety used by writeLabeled).
-	if got*1.03+4.0 < 90 {
+	// Value must start after label (+ 4% pad + 4pt safety used by writeLabeled).
+	if got*1.04+4.0 < 90 {
 		t.Fatalf("unexpectedly narrow bold label width: %.2f", got)
 	}
 }
