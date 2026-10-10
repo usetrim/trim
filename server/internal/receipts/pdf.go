@@ -383,14 +383,11 @@ func BuildReceiptPDF(d ReceiptDetail) ([]byte, error) {
 		if lg, err := blackLetterheadImage(1); err == nil && lg != nil {
 			footerLogo = lg
 		}
-		// py-7*2 + copy + gap-3 + sm mark + gap-3 + locality
-		footerH := 120.0
-		if footerLogo != nil {
-			footerH = 140
-		}
+		// h is a soft hint only; footer_block sizes the band to real content
+		// (detail footer py-7 + gap-3 stack — not a tall empty gray slab).
 		ops = append(ops, pdfOp{
 			kind:  "footer_block",
-			h:     footerH,
+			h:     72,
 			lines: []string{s},
 			left:  addrLine,
 			logo:  footerLogo,
@@ -754,17 +751,34 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 	}
 
 	// Labeled value = InlineDetail / payment: <span className="font-semibold">{l}:</span> {v}
-	// AFM bold widths + pad so values never collide ("Payment methodvisa").
+	// Sequential Tj on one baseline — the PDF text cursor advances by real glyph
+	// widths, so bold labels never overlap values (no hand-computed X).
 	writeLabeled := func(x, ty float64, size int, label, value string, r, g, b float64) {
 		label = strings.TrimSpace(label)
 		value = strings.TrimSpace(value)
 		if label == "" || value == "" {
 			return
 		}
+		if size < 1 {
+			size = pdfPtBody
+		}
 		prefix := label + ": "
-		writeTextAt(x, ty, size, true, prefix, r, g, b)
-		gap := approxTextWidthFont(prefix, size, true)*1.04 + 4.0
-		writeTextAt(x+gap, ty, size, false, value, r, g, b)
+		colored := r != 0 || g != 0 || b != 0
+		if colored {
+			content.WriteString(fmt.Sprintf("%.3f %.3f %.3f rg\n", r, g, b))
+		}
+		setFont(size, true)
+		content.WriteString(fmt.Sprintf("1 0 0 1 %.2f %.2f Tm\n", x, ty))
+		content.WriteString("(")
+		content.WriteString(pdfEscape(truncateRunes(prefix, 120)))
+		content.WriteString(") Tj\n")
+		setFont(size, false)
+		content.WriteString("(")
+		content.WriteString(pdfEscape(truncateRunes(value, 120)))
+		content.WriteString(") Tj\n")
+		if colored {
+			content.WriteString("0 0 0 rg\n")
+		}
 	}
 
 	drawImage := func(name string, img *pdfImage, x, topY, maxW, maxH float64) float64 {
@@ -875,27 +889,29 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 			y = bottom
 
 		case "footer_block":
-			// Measure footer (py-7 + copy + gap-3 + mark + gap-3 + locality + py-7)
-			// so the band matches detail height and disclaimer is never truncated.
+			// Content-sized band like detail footer (py-7 ≈ 16–20pt pad in PDF + gap-3),
+			// never force a tall min height / page-fill gray.
 			footerParts := make([]string, 0, 8)
 			for _, line := range op.lines {
-				footerParts = append(footerParts, wrapWords(line, 72)...)
+				footerParts = append(footerParts, wrapWords(line, 78)...)
 			}
-			addrParts := wrapWords(strings.TrimSpace(op.left), 68)
+			addrParts := wrapWords(strings.TrimSpace(op.left), 72)
 			markH := 0.0
 			if op.logo != nil {
 				_, markH = fitLogo(float64(op.logo.Width), float64(op.logo.Height), pdfMarkSM, pdfMarkSM)
 			}
-			need := 28.0 + float64(len(footerParts))*16 + 12
+			const padY = 16.0 // ≈ print py-7 visual density
+			const gap3 = 8.0  // gap-3
+			need := padY + float64(len(footerParts))*14 + gap3
 			if op.logo != nil {
-				need += markH + 12
+				need += markH + gap3
 			}
-			need += float64(len(addrParts))*14 + 28
-			if need < op.h {
-				need = op.h
+			if len(addrParts) > 0 {
+				need += float64(len(addrParts)) * 12
 			}
-			if need < 100 {
-				need = 100
+			need += padY
+			if need < 56 {
+				need = 56
 			}
 			pageFloor := 18.0
 			contentBottom := y - need
@@ -911,12 +927,12 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 			))
 			content.WriteString("BT\n")
 			setFont(pdfPtFooter, false)
-			cy := y - 28 // py-7
+			cy := y - padY
 			for _, part := range footerParts {
 				writeTextCentered(cy, pdfPtFooter, false, part, 0.40, 0.40, 0.40)
-				cy -= 16 // leading-relaxed @ 12px
+				cy -= 14
 			}
-			cy -= 12 // gap-3
+			cy -= gap3
 			if op.logo != nil {
 				imgName := registerImage(op.logo)
 				dw, dh := fitLogo(float64(op.logo.Width), float64(op.logo.Height), pdfMarkSM, pdfMarkSM)
@@ -924,11 +940,11 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 				content.WriteString(fmt.Sprintf("q\n%.2f 0 0 %.2f %.2f %.2f cm\n/%s Do\nQ\n", dw, dh, (pdfPageW-dw)/2, cy-dh, imgName))
 				content.WriteString("BT\n")
 				setFont(curSize, curBold)
-				cy -= dh + 12 // gap-3
+				cy -= dh + gap3
 			}
 			for _, part := range addrParts {
 				writeTextCentered(cy, pdfPtLocality, false, part, 0.45, 0.45, 0.45)
-				cy -= 14
+				cy -= 12
 			}
 			y = contentBottom
 

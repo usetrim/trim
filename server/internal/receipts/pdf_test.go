@@ -129,17 +129,68 @@ func TestBuildReceiptPDFMatchesDetailPatterns(t *testing.T) {
 }
 
 func TestApproxTextWidthFontBoldPaymentMethod(t *testing.T) {
-	// AFM bold width for "Payment method: " must exceed the naive 0.50*chars*size
-	// estimate that caused "Payment methodvisa" collisions in older PDFs.
+	// AFM still used for right-aligned / centered text; keep bold wider than naive.
 	prefix := "Payment method: "
-	got := approxTextWidthFont(prefix, 10, true)
-	naive := float64(len([]rune(prefix))) * 10 * 0.50
+	got := approxTextWidthFont(prefix, 13, true)
+	naive := float64(len([]rune(prefix))) * 13 * 0.50
 	if got <= naive {
 		t.Fatalf("bold AFM width %.2f should exceed naive %.2f", got, naive)
 	}
-	// Value must start after label (+ 4% pad + 4pt safety used by writeLabeled).
-	if got*1.04+4.0 < 90 {
-		t.Fatalf("unexpectedly narrow bold label width: %.2f", got)
+}
+
+func TestBuildReceiptPDFLabeledUsesSequentialTj(t *testing.T) {
+	// writeLabeled must emit bold prefix Tj then regular value Tj (cursor advance),
+	// not a second absolute Tm that can overlap when widths are wrong.
+	pay := "visa - 7299"
+	d := ReceiptDetail{
+		ReceiptSummary: ReceiptSummary{
+			StatusLabel:         "PAID",
+			CurrencyCode:        "USD",
+			TotalCents:          100,
+			DisplayID:           "43682-10003",
+			BillToEmail:         "a@b.com",
+			PaddleTransactionID: "txn_x",
+		},
+		DocumentTitle:         "Tax invoice",
+		MoneyLocale:           "en",
+		PaidAtLabel:           "9th October 2026",
+		HeaderMetaSep:         " - ",
+		CompanyLegalName:      "Trim",
+		SectionBillTo:         "Invoice to",
+		SectionInvoiceFrom:    "Invoice from",
+		SectionInvoiceDetails: "Invoice details",
+		SectionPayment:        "Payment method",
+		PaymentMethodSummary:  &pay,
+		LabelInvoiceReference: "Invoice reference",
+		SectionPeriod:         "Billing period",
+		PeriodLabel:           "9th October 2026 - 9th November 2026",
+		LabelTransactionID:    "Transaction",
+		LabelCurrency:         "Currency code",
+		LabelSubtotal:         "Subtotal",
+		LabelTax:              "VAT",
+		LabelTotal:            "Total",
+		LabelAmountPaid:       "Amount paid",
+		ColProduct:            "Product",
+		ColQty:                "Qty",
+		ColUnit:               "Unit",
+		ColTaxRate:            "Tax",
+		ColAmount:             "Amount",
+		LineItems:             []LineItem{{Position: 1, Description: "Team", Quantity: 1, UnitAmountCents: 100, AmountCents: 100}},
+	}
+	pdf, err := BuildReceiptPDF(d)
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := string(pdf)
+	// Bold label run then regular value run (Payment method).
+	if !strings.Contains(body, "(Payment method: ) Tj") {
+		t.Fatal("expected bold Payment method prefix Tj")
+	}
+	if !strings.Contains(body, "(visa - 7299) Tj") {
+		t.Fatal("expected payment value Tj after label (sequential cursor advance)")
+	}
+	if !strings.Contains(body, "(Invoice reference: ) Tj") || !strings.Contains(body, "(43682-10003) Tj") {
+		t.Fatal("expected Invoice reference label/value sequential Tj")
 	}
 }
 
