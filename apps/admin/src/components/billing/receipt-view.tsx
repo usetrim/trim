@@ -493,7 +493,7 @@ export function ReceiptView({
                 <dt>{receipt.label_total}</dt>
                 <dd className="tabular-nums">{totalFmt}</dd>
               </div>
-              <div className="flex items-center justify-between gap-8 border-t-2 border-foreground/25 py-2.5 text-[15px] font-bold text-foreground print:border-zinc-800 print:text-zinc-900">
+              <div className="flex items-center justify-between gap-8 border-b border-border py-2 text-[15px] font-bold text-foreground print:border-zinc-200 print:text-zinc-900">
                 <dt>{receipt.label_amount_paid}</dt>
                 <dd className="tabular-nums">{totalFmt}</dd>
               </div>

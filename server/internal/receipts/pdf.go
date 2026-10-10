@@ -178,9 +178,10 @@ func BuildReceiptPDF(d ReceiptDetail) ([]byte, error) {
 			headerLogo = lg
 		}
 	}
-	headerH := 92.0
+	// Detail letterhead ≈ py-6/py-7 (~72–80pt), not a tall empty gray band.
+	headerH := 72.0
 	if headerLogo != nil {
-		headerH = 108
+		headerH = 80
 	}
 	// print:bg-zinc-100 ≈ #f4f4f5 (admin/web print letterhead).
 	ops = append(ops, pdfOp{
@@ -195,8 +196,8 @@ func BuildReceiptPDF(d ReceiptDetail) ([]byte, error) {
 		g:     0.957,
 		b:     0.961,
 	})
-	// Detail parties section: py-8 ≈ 32pt after letterhead.
-	blank(28)
+	// Detail parties section: py-8 ≈ 22–28pt after a compact letterhead.
+	blank(22)
 
 	// --- Parties ---
 	leftLines := make([]string, 0, 12)
@@ -226,10 +227,8 @@ func BuildReceiptPDF(d ReceiptDetail) ([]byte, error) {
 	if d.TaxID != nil && strings.TrimSpace(*d.TaxID) != "" && strings.TrimSpace(d.LabelTaxID) != "" {
 		leftLines = append(leftLines, "#L:"+strings.TrimSpace(d.LabelTaxID)+"\x1e"+strings.TrimSpace(*d.TaxID))
 	}
-	if d.PaymentMethodSummary != nil && strings.TrimSpace(*d.PaymentMethodSummary) != "" && strings.TrimSpace(d.SectionPayment) != "" {
-		leftLines = append(leftLines, "")
-		leftLines = append(leftLines, "#L:"+strings.TrimSpace(d.SectionPayment)+"\x1e"+strings.TrimSpace(*d.PaymentMethodSummary))
-	}
+	// Payment method is drawn AFTER the parties grid (detail: pt-2 under bill-to),
+	// so it never shares a cramped two_col row with the email line.
 
 	if s := strings.TrimSpace(d.SectionInvoiceFrom); s != "" {
 		rightLines = append(rightLines, "#"+s)
@@ -260,23 +259,27 @@ func BuildReceiptPDF(d ReceiptDetail) ([]byte, error) {
 	}
 
 	ops = append(ops, pdfOp{kind: "two_col", lines: encodeTwoCol(leftLines, rightLines)})
-	blank(22)
+	if d.PaymentMethodSummary != nil && strings.TrimSpace(*d.PaymentMethodSummary) != "" && strings.TrimSpace(d.SectionPayment) != "" {
+		blank(10) // detail pt-2 under bill-to block
+		inline(d.SectionPayment, strings.TrimSpace(*d.PaymentMethodSummary), 10)
+	}
+	blank(18)
 
 	// --- Invoice details ---
-	add(d.SectionInvoiceDetails, 11, true)
-	blank(10)
+	add(d.SectionInvoiceDetails, 10, true)
+	blank(8)
 	inline(d.LabelInvoiceReference, d.DisplayID, 10)
 	inline(d.SectionPeriod, d.PeriodLabel, 10)
 	inline(d.LabelTransactionID, d.PaddleTransactionID, 10)
 	inline(d.LabelCurrency, currency, 10)
-	// Detail: generous gap before the rule + transaction (matches print whitespace).
-	blank(22)
+	// Detail: gap before the rule + transaction.
+	blank(18)
 	rule()
 	blank(18)
 
 	// --- Transaction ---
-	add(d.SectionTransaction, 11, true)
-	blank(12)
+	add(d.SectionTransaction, 10, true)
+	blank(10)
 	productCol := strings.TrimSpace(d.ColProduct)
 	if productCol == "" {
 		productCol = d.ColDescription
@@ -323,14 +326,15 @@ func BuildReceiptPDF(d ReceiptDetail) ([]byte, error) {
 	blank(4)
 
 	// Match detail page totals column (muted subtotal/VAT, fg total, bold amount paid).
+	// Same hairline separators for every row (no thicker Amount paid rule).
 	pair(d.LabelSubtotal, subtotalStr, 10, false, true)
 	pair(d.LabelTax, taxStr, 10, false, true)
 	pair(d.LabelTotal, totalStr, 10, false, false)
-	pair(d.LabelAmountPaid, totalStr, 12, true, false)
-	blank(16)
+	pair(d.LabelAmountPaid, totalStr, 11, true, false)
+	blank(14)
 
 	if strings.TrimSpace(d.SectionTaxBreakdown) != "" {
-		add(d.SectionTaxBreakdown, 11, true)
+		add(d.SectionTaxBreakdown, 10, true)
 		blank(6)
 		ops = append(ops, pdfOp{
 			kind:  "tax_table",
@@ -360,9 +364,10 @@ func BuildReceiptPDF(d ReceiptDetail) ([]byte, error) {
 	if lg, err := blackLetterheadImage(0.7); err == nil && lg != nil {
 		footerLogo = lg
 	}
-	footerH := 88.0
+	// Detail footer ≈ py-7 + copy + sm mark + locality (~64–78pt), not page-fill gray.
+	footerH := 64.0
 	if footerLogo != nil {
-		footerH = 110
+		footerH = 78
 	}
 	ops = append(ops, pdfOp{
 		kind:  "footer_block",
@@ -729,7 +734,7 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 	}
 
 	// Labeled value on one baseline: bold label + regular value (detail page InlineDetail).
-	// Use AFM bold widths + a 1.5pt safety gap so values never collide ("Payment methodvisa").
+	// AFM bold widths + 4pt safety gap so values never collide ("Payment methodvisa").
 	writeLabeled := func(x, ty float64, size int, label, value string, r, g, b float64) {
 		label = strings.TrimSpace(label)
 		value = strings.TrimSpace(value)
@@ -738,7 +743,8 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 		}
 		prefix := label + ": "
 		writeTextAt(x, ty, size, true, prefix, r, g, b)
-		writeTextAt(x+approxTextWidthFont(prefix, size, true)+1.5, ty, size, false, value, r, g, b)
+		gap := approxTextWidthFont(prefix, size, true)*1.03 + 4.0
+		writeTextAt(x+gap, ty, size, false, value, r, g, b)
 	}
 
 	drawImage := func(name string, img *pdfImage, x, topY, maxW, maxH float64) float64 {
@@ -759,8 +765,8 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 		switch op.kind {
 		case "header_block":
 			h := op.h
-			if h < 70 {
-				h = 92
+			if h < 60 {
+				h = 72
 			}
 			bottom := y - h
 			// Extend gray letterhead to the physical page top (no white strip).
@@ -775,27 +781,27 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 			logoH := 0.0
 			if op.logo != nil {
 				imgName = registerImage(op.logo)
-				// Detail TrimWordmark size="lg" ≈ 28–36px tall.
-				maxW, maxH := 36.0, 36.0
+				// Detail TrimWordmark size="lg" ≈ 28px tall.
+				maxW, maxH := 28.0, 28.0
 				dw, dh := fitLogo(float64(op.logo.Width), float64(op.logo.Height), maxW, maxH)
 				logoH = dh
-				logoY := y - 18 - dh
+				logoY := y - 14 - dh
 				content.WriteString(fmt.Sprintf("q\n%.2f 0 0 %.2f %.2f %.2f cm\n/%s Do\nQ\n", dw, dh, pdfContentR-dw, logoY, imgName))
 			}
 			content.WriteString("BT\n")
 			setFont(10, false)
-			ty := y - 28
-			writeTextAt(pdfMarginL, ty, 18, true, op.text, 0, 0, 0)
+			ty := y - 22
+			writeTextAt(pdfMarginL, ty, 16, true, op.text, 0, 0, 0)
 			badge := strings.TrimSpace(op.left)
 			if badge != "" {
-				bw := approxTextWidthFont(strings.ToUpper(badge), 8, true) + 14
-				bx := pdfMarginL + approxTextWidthFont(op.text, 18, true) + 12
+				bw := approxTextWidthFont(strings.ToUpper(badge), 7, true) + 12
+				bx := pdfMarginL + approxTextWidthFont(op.text, 16, true) + 10
 				content.WriteString("ET\n")
-				content.WriteString(fmt.Sprintf("0.153 0.651 0.267 rg\n%.2f %.2f %.2f 14.00 re\nf\n", bx, ty-3, bw))
+				content.WriteString(fmt.Sprintf("0.153 0.651 0.267 rg\n%.2f %.2f %.2f 12.00 re\nf\n", bx, ty-2.5, bw))
 				content.WriteString("BT\n")
-				setFont(8, true)
+				setFont(7, true)
 				content.WriteString("1 1 1 rg\n")
-				content.WriteString(fmt.Sprintf("1 0 0 1 %.2f %.2f Tm\n", bx+7, ty))
+				content.WriteString(fmt.Sprintf("1 0 0 1 %.2f %.2f Tm\n", bx+6, ty))
 				content.WriteString("(")
 				content.WriteString(pdfEscape(strings.ToUpper(badge)))
 				content.WriteString(") Tj\n")
@@ -819,86 +825,87 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 			if len(op.lines) > 4 && strings.TrimSpace(op.lines[4]) != "" {
 				sep = op.lines[4]
 			}
-			metaY := ty - 18
+			metaY := ty - 15
 			if paidAt != "" || totalAmt != "" {
 				mx := pdfMarginL
 				if paidAt != "" {
-					writeTextAt(mx, metaY, 10, false, paidAt, 0.45, 0.45, 0.45)
-					mx += approxTextWidthFont(paidAt, 10, false)
+					writeTextAt(mx, metaY, 9, false, paidAt, 0.45, 0.45, 0.45)
+					mx += approxTextWidthFont(paidAt, 9, false)
 					if totalAmt != "" {
-						writeTextAt(mx, metaY, 10, false, sep, 0.45, 0.45, 0.45)
-						mx += approxTextWidthFont(sep, 10, false)
+						writeTextAt(mx, metaY, 9, false, sep, 0.45, 0.45, 0.45)
+						mx += approxTextWidthFont(sep, 9, false)
 					}
 				}
 				if totalAmt != "" {
-					writeTextAt(mx, metaY, 10, true, totalAmt, 0.15, 0.15, 0.15)
+					writeTextAt(mx, metaY, 9, true, totalAmt, 0.15, 0.15, 0.15)
 				}
 			} else if meta := strings.TrimSpace(op.right); meta != "" {
-				writeTextAt(pdfMarginL, metaY, 10, false, meta, 0.45, 0.45, 0.45)
+				writeTextAt(pdfMarginL, metaY, 9, false, meta, 0.45, 0.45, 0.45)
 			}
-			brandY := ty - 8
+			brandY := ty - 6
 			if op.logo != nil {
-				brandY = y - 16 - logoH - 12
+				brandY = y - 12 - logoH - 10
 			}
 			if brand != "" {
-				writeTextRight(pdfContentR, brandY, 12, true, brand, 0, 0, 0)
+				writeTextRight(pdfContentR, brandY, 11, true, brand, 0, 0, 0)
 			}
 			if via != "" {
-				writeTextRight(pdfContentR, brandY-13, 9, false, via, 0.45, 0.45, 0.45)
+				writeTextRight(pdfContentR, brandY-11, 8, false, via, 0.45, 0.45, 0.45)
 			}
 			y = bottom
 
 		case "footer_block":
 			h := op.h
-			if h < 56 {
-				h = 88
+			if h < 52 {
+				h = 64
 			}
 			contentBottom := y - h
 			if contentBottom < 24 {
 				contentBottom = 24
+				h = y - contentBottom
 			}
-			// Extend gray footer to the physical page bottom.
-			pageBottom := 0.0
+			// Band only as tall as content (detail footer), not fill-to-page-bottom gray.
 			content.WriteString("ET\n")
 			content.WriteString(fmt.Sprintf(
 				"%.3f %.3f %.3f rg\n%.2f %.2f %.2f %.2f re\nf\n0 0 0 rg\n",
 				op.r, op.g, op.b,
-				0.0, pageBottom, pdfPageW, y-pageBottom,
+				0.0, contentBottom, pdfPageW, h,
 			))
 			content.WriteString("BT\n")
 			setFont(10, false)
-			cy := y - 18
+			cy := y - 14
 			for _, line := range op.lines {
 				for _, part := range wrapWords(line, 78) {
-					if cy < contentBottom+20 {
+					if cy < contentBottom+16 {
 						break
 					}
-					writeTextCentered(cy, 9, false, part, 0.40, 0.40, 0.40)
-					cy -= 12
+					writeTextCentered(cy, 8, false, part, 0.40, 0.40, 0.40)
+					cy -= 11
 				}
 			}
-			cy -= 6
+			cy -= 8
 			if op.logo != nil {
 				imgName := registerImage(op.logo)
-				maxW, maxH := 22.0, 22.0
+				// Detail TrimWordmark size="sm" ≈ 18px.
+				maxW, maxH := 18.0, 18.0
 				dw, dh := fitLogo(float64(op.logo.Width), float64(op.logo.Height), maxW, maxH)
 				content.WriteString("ET\n")
 				content.WriteString(fmt.Sprintf("q\n%.2f 0 0 %.2f %.2f %.2f cm\n/%s Do\nQ\n", dw, dh, (pdfPageW-dw)/2, cy-dh, imgName))
 				content.WriteString("BT\n")
 				setFont(curSize, curBold)
-				cy -= dh + 8
+				cy -= dh + 12 // clear gap under mark before locality / brand line
 			}
 			// Single locality line under mark (includes brand when present) - same as detail <p>.
 			if addr := strings.TrimSpace(op.left); addr != "" {
 				for _, part := range wrapWords(addr, 70) {
-					if cy < contentBottom+10 {
+					if cy < contentBottom+8 {
 						break
 					}
 					writeTextCentered(cy, 8, false, part, 0.50, 0.50, 0.50)
-					cy -= 11
+					cy -= 10
 				}
 			}
-			y = pageBottom
+			y = contentBottom
 
 		case "gap":
 			h := op.h
@@ -950,11 +957,11 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 					rBold = true
 				}
 				if l == "" && r == "" && lVal == "" && rVal == "" {
-					y -= 10
+					y -= 12
 					continue
 				}
-				// Match detail leading-relaxed ≈ 15–16pt line boxes at 13px.
-				y -= 15
+				// Detail space-y-0.5 + leading-relaxed ≈ 16pt at 10pt/13px body.
+				y -= 16
 				if y < 48 {
 					continue
 				}
@@ -979,7 +986,7 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 				size = 10
 			}
 			// Detail InlineDetail: text-[13px] leading-relaxed + space-y-1.
-			y -= float64(size + 6)
+			y -= float64(size + 7)
 			if y < 48 {
 				continue
 			}
@@ -991,29 +998,18 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 			}
 			// Totals column ≈ detail max-w-[240px] anchored to content right edge.
 			totalsL := pdfContentR - 240
-			// Amount paid: border-t-2 emphasis only (no hairline under the row).
-			if op.bold {
-				content.WriteString("ET\n")
-				content.WriteString(fmt.Sprintf("1.2 w\n0.20 0.20 0.20 RG\n%.2f %.2f m\n%.2f %.2f l\nS\n0 0 0 RG\n", totalsL, y-1, pdfContentR, y-1))
-				content.WriteString("BT\n")
-				setFont(curSize, curBold)
-				y -= 6
-			}
 			y -= float64(size + 6)
 			if y < 48 {
 				continue
 			}
 			writeTextAt(totalsL, y, size, op.bold, op.left, op.r, op.g, op.b)
 			writeTextRight(pdfContentR, y, size, op.bold, op.right, op.r, op.g, op.b)
-			if !op.bold {
-				content.WriteString("ET\n")
-				content.WriteString(fmt.Sprintf("0.4 w\n0.910 0.910 0.910 RG\n%.2f %.2f m\n%.2f %.2f l\nS\n0 0 0 RG\n", totalsL, y-3, pdfContentR, y-3))
-				content.WriteString("BT\n")
-				setFont(curSize, curBold)
-				y -= 3
-			} else {
-				y -= 2
-			}
+			// Same hairline under every totals row (incl. Amount paid) — matches detail border-b.
+			content.WriteString("ET\n")
+			content.WriteString(fmt.Sprintf("0.4 w\n0.910 0.910 0.910 RG\n%.2f %.2f m\n%.2f %.2f l\nS\n0 0 0 RG\n", totalsL, y-3, pdfContentR, y-3))
+			content.WriteString("BT\n")
+			setFont(curSize, curBold)
+			y -= 3
 		case "table_header":
 			size := op.size
 			if size < 1 {
