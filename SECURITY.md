@@ -40,7 +40,7 @@ Trim enforces quotas and identity on the server only. Clearing local CLI state d
 | 1 Network / VPN | Cloudflare ASN headers, optional GeoLite MMDB or CIDR blocklists, ipwho.is fallback | `TRIM_GEOLITE_*_MMDB_PATH`, CF proxy |
 | 2 Transport fingerprint | JA3 / JA4 account graph (edge-forwarded) | `CF-JA4` / `X-JA4` headers |
 | 3 Hardware identity | Device UUID bound to API keys (`api_keys.hardware_uuid` enforced on use) | CLI `X-Hardware-UUID` |
-| 4 Request integrity | Timestamp window + CLI HMAC | `TRIM_CLI_HMAC_SECRET` |
+| 4 Request integrity | Timestamp window + CLI HMAC | Server: `TRIM_CLI_HMAC_SECRET`. Official CLI releases bake the same value via ldflags (`config.HostedCLIHMACSecret`) so hosted users need zero env; self-hosters set env to match their server. |
 | 5 Social identity | Google / GitHub / GitLab OAuth only (DB allow-list) | Supabase providers + `ALLOWED_AUTH_PROVIDERS` |
 | 6 Server quotas | Redis + Postgres credit ledger; `plan_catalog.unlimited` skips debit when operator enables it | Always on for cloud mode; dial via Admin → Plans |
 | 7 Multi-account graph | Hardware + JA4 fan-out limits | `TRIM_MAX_ACCOUNTS_PER_*` |

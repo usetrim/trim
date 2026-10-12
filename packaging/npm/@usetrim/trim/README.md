@@ -7,7 +7,11 @@ binary from [GitHub Releases](https://github.com/usetrim/trim/releases), verifie
 ```bash
 npm install -g @usetrim/trim
 trim version
+trim login
+trim start
 ```
+
+No environment variables required for Trim Cloud. Self-host overrides: see the Trim repo `cli/.env.example`.
 
 Or without a global install:
 

@@ -255,7 +255,7 @@ func BuildReceiptPDF(d ReceiptDetail) ([]byte, error) {
 		leftLines = append(leftLines, "#GAP:4", "#L:"+strings.TrimSpace(d.LabelTaxID)+"\x1e"+strings.TrimSpace(*d.TaxID)) // pt-1
 	}
 	if d.PaymentMethodSummary != nil && strings.TrimSpace(*d.PaymentMethodSummary) != "" && strings.TrimSpace(d.SectionPayment) != "" {
-		// Inside bill-to column: <p className="pt-2"> — not after the whole grid.
+		// Inside bill-to column: <p className="pt-2"> - not after the whole grid.
 		leftLines = append(leftLines, "#GAP:8", "#L:"+strings.TrimSpace(d.SectionPayment)+"\x1e"+strings.TrimSpace(*d.PaymentMethodSummary))
 	}
 
@@ -384,7 +384,7 @@ func BuildReceiptPDF(d ReceiptDetail) ([]byte, error) {
 			footerLogo = lg
 		}
 		// h is a soft hint only; footer_block sizes the band to real content
-		// (detail footer py-7 + gap-3 stack — not a tall empty gray slab).
+		// (detail footer py-7 + gap-3 stack - not a tall empty gray slab).
 		ops = append(ops, pdfOp{
 			kind:  "footer_block",
 			h:     72,
@@ -751,7 +751,7 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 	}
 
 	// Labeled value = InlineDetail / payment: <span className="font-semibold">{l}:</span> {v}
-	// Sequential Tj on one baseline — the PDF text cursor advances by real glyph
+	// Sequential Tj on one baseline - the PDF text cursor advances by real glyph
 	// widths, so bold labels never overlap values (no hand-computed X).
 	writeLabeled := func(x, ty float64, size int, label, value string, r, g, b float64) {
 		label = strings.TrimSpace(label)

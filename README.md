@@ -66,6 +66,8 @@ Package-manager ops (tokens, taps): [packaging/README.md](./packaging/README.md)
 
 ## Quick start (end users)
 
+No environment variables required for Trim Cloud (official npm / Homebrew / installers).
+
 1. Install the CLI (above).
 2. Sign in and create an API key:
    ```bash
@@ -130,7 +132,7 @@ npm run dev
 
 # CLI proxy (new terminal)
 cd cli
-cp .env.example .env   # optional for cloud login / Deep settings
+cp .env.example .env   # local builds: set TRIM_CLI_HMAC_SECRET (official releases bake it)
 go run ./cmd/trim start
 ```
 

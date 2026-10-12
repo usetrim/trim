@@ -9,7 +9,15 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// Local is the CLI / local-proxy configuration. Every required field must come from env.
+// Local is the CLI / local-proxy configuration.
+//
+// Load order (industry-standard hosted CLI):
+//  1. Official Trim Cloud product defaults (hosted.go) - zero-config for npm/Homebrew users
+//  2. Optional project .env via godotenv (fills empty OS env only)
+//  3. Explicit environment variables win over defaults
+//
+// Self-host: set TRIM_API_BASE_URL + APP_PUBLIC_URL + TRIM_CLI_HMAC_SECRET (and any
+// other overrides). Official hosted HMAC is only applied when talking to Trim Cloud.
 type Local struct {
 	Port                      string
 	UpstreamOpenAI            string
@@ -21,8 +29,8 @@ type Local struct {
 	// OpenAIOrganization / OpenAIProject are optional (TRIM_OPENAI_ORGANIZATION / TRIM_OPENAI_PROJECT).
 	OpenAIOrganization string
 	OpenAIProject      string
-	APIBaseURL                string
-	AppPublicURL              string
+	APIBaseURL         string
+	AppPublicURL       string
 	// CLIHMACSecret must match server TRIM_CLI_HMAC_SECRET for cloud API calls.
 	CLIHMACSecret string
 	// SavingsUsdPerMTok estimates dollar savings from trimmed tokens (ops-configured).
@@ -34,23 +42,23 @@ type Local struct {
 	CompressionMode string
 	// HistoryKeepTurns from TRIM_HISTORY_KEEP_TURNS when .trimrc has no history_keep_turns (0 = off).
 	HistoryKeepTurns int
-	// ProxyHTTPTimeoutSec is outbound LLM upstream timeout for the local proxy (required; no invent 120).
+	// ProxyHTTPTimeoutSec is outbound LLM upstream timeout for the local proxy.
 	ProxyHTTPTimeoutSec int
-	// CLIHTTPTimeoutSec is HTTP timeout for cloud API / chrome / telemetry / TUI (required; no invent 30/8/3).
+	// CLIHTTPTimeoutSec is HTTP timeout for cloud API / chrome / telemetry / TUI.
 	CLIHTTPTimeoutSec int
-	// DeepTimeoutSec is wall-clock kill for local Deep Mode optimizer.py (required; no invent 600).
+	// DeepTimeoutSec is wall-clock kill for local Deep Mode optimizer.py.
 	DeepTimeoutSec int
-	// HTTPReadHeaderTimeoutSec is local proxy http.Server ReadHeaderTimeout (required; no invent 10).
+	// HTTPReadHeaderTimeoutSec is local proxy http.Server ReadHeaderTimeout.
 	HTTPReadHeaderTimeoutSec int
-	// TUIRefreshSec is Bubble Tea live dashboard poll interval (required; no invent 2).
+	// TUIRefreshSec is Bubble Tea live dashboard poll interval.
 	TUIRefreshSec int
-	// StatsSeriesDays is default SQLite series window for `trim stats` and proxy /series (required; no invent 14).
+	// StatsSeriesDays is default SQLite series window for `trim stats` and proxy /series.
 	StatsSeriesDays int
-	// TUISeriesDays is SQLite series window for Bubble Tea TUI (required; no invent 7).
+	// TUISeriesDays is SQLite series window for Bubble Tea TUI.
 	TUISeriesDays int
-	// ProxyPreviewMaxChars truncates local dashboard before/after previews (required; no invent 1200).
+	// ProxyPreviewMaxChars truncates local dashboard before/after previews.
 	ProxyPreviewMaxChars int
-	// TUIErrorMaxChars truncates TUI error strings (required; no invent 80).
+	// TUIErrorMaxChars truncates TUI error strings.
 	TUIErrorMaxChars int
 	// DeepDeviceMap is machine-local (cpu/cuda). Deep model ids come from billing_settings via sync.
 	DeepDeviceMap string
@@ -59,40 +67,49 @@ type Local struct {
 func LoadLocal() (Local, error) {
 	_ = godotenv.Load()
 	var missing []string
-	get := func(key string) string {
-		v := strings.TrimSpace(os.Getenv(key))
-		if v == "" {
-			missing = append(missing, key)
+
+	envOr := func(key, def string) string {
+		if v := strings.TrimSpace(os.Getenv(key)); v != "" {
+			return v
 		}
-		return v
+		return def
 	}
 	optional := func(key string) string {
 		return strings.TrimSpace(os.Getenv(key))
 	}
 
 	cfg := Local{
-		Port:                      get("TRIM_PORT"),
-		UpstreamOpenAI:            get("UPSTREAM_OPENAI_URL"),
-		UpstreamAnthropic:         get("UPSTREAM_ANTHROPIC_URL"),
+		Port:                      envOr("TRIM_PORT", HostedPort),
+		UpstreamOpenAI:            envOr("UPSTREAM_OPENAI_URL", HostedUpstreamOpenAI),
+		UpstreamAnthropic:         envOr("UPSTREAM_ANTHROPIC_URL", HostedUpstreamAnthropic),
 		UpstreamOpenAIFailover:    optional("UPSTREAM_OPENAI_FAILOVER_URL"),
 		UpstreamAnthropicFailover: optional("UPSTREAM_ANTHROPIC_FAILOVER_URL"),
 		AnthropicWorkspaceID:      optional("TRIM_ANTHROPIC_WORKSPACE_ID"),
 		OpenAIOrganization:        optional("TRIM_OPENAI_ORGANIZATION"),
 		OpenAIProject:             optional("TRIM_OPENAI_PROJECT"),
-		APIBaseURL:                get("TRIM_API_BASE_URL"),
-		AppPublicURL:              get("APP_PUBLIC_URL"),
-		CLIHMACSecret:             get("TRIM_CLI_HMAC_SECRET"),
+		APIBaseURL:                envOr("TRIM_API_BASE_URL", HostedAPIBaseURL),
+		AppPublicURL:              envOr("APP_PUBLIC_URL", HostedAppPublicURL),
 		CheapModel:                optional("TRIM_CHEAP_MODEL"),
 		CompressionMode:           optional("TRIM_COMPRESSION_MODE"),
+		DeepDeviceMap:             envOr("TRIM_DEEP_DEVICE_MAP", HostedDeepDeviceMap),
 	}
-	savingsRaw := get("TRIM_SAVINGS_USD_PER_MTOK")
-	if savingsRaw != "" {
+
+	cfg.CLIHMACSecret = resolveCLIHMACSecret(cfg.APIBaseURL)
+	if cfg.CLIHMACSecret == "" {
+		missing = append(missing, "TRIM_CLI_HMAC_SECRET")
+	}
+
+	savingsRaw := strings.TrimSpace(os.Getenv("TRIM_SAVINGS_USD_PER_MTOK"))
+	if savingsRaw == "" {
+		cfg.SavingsUsdPerMTok = HostedSavingsUsdPerMTok
+	} else {
 		n, err := strconv.ParseFloat(savingsRaw, 64)
 		if err != nil || n <= 0 {
 			return Local{}, fmt.Errorf("CONFIG_ENV_TRIM_SAVINGS_USD_PER_MTOK_INVALID")
 		}
 		cfg.SavingsUsdPerMTok = n
 	}
+
 	if v := optional("TRIM_ROUTE_MAX_TOKENS"); v != "" {
 		n, err := strconv.Atoi(v)
 		if err != nil {
@@ -108,83 +125,75 @@ func LoadLocal() (Local, error) {
 		cfg.HistoryKeepTurns = n
 	}
 
-	proxyTO := get("TRIM_PROXY_HTTP_TIMEOUT_SEC")
-	cliTO := get("TRIM_CLI_HTTP_TIMEOUT_SEC")
-	deepTO := get("TRIM_DEEP_TIMEOUT_SEC")
-	readHdr := get("TRIM_HTTP_READ_HEADER_TIMEOUT_SEC")
-	tuiRefresh := get("TRIM_TUI_REFRESH_SEC")
-	statsDays := get("TRIM_STATS_SERIES_DAYS")
-	tuiDays := get("TRIM_TUI_SERIES_DAYS")
-	previewMax := get("TRIM_PROXY_PREVIEW_MAX_CHARS")
-	tuiErrMax := get("TRIM_TUI_ERROR_MAX_CHARS")
-	cfg.DeepDeviceMap = get("TRIM_DEEP_DEVICE_MAP")
-	// Deep model ids / force_tokens / min tokens / OOM: billing_settings via trim config sync only.
-	if proxyTO != "" {
-		n, err := strconv.Atoi(proxyTO)
-		if err != nil || n < 1 || n > 600 {
-			return Local{}, fmt.Errorf("CONFIG_ENV_TRIM_PROXY_HTTP_TIMEOUT_SEC_INVALID")
-		}
-		cfg.ProxyHTTPTimeoutSec = n
+	var err error
+	if cfg.ProxyHTTPTimeoutSec, err = intEnvOr("TRIM_PROXY_HTTP_TIMEOUT_SEC", HostedProxyHTTPTimeoutSec, 1, 600); err != nil {
+		return Local{}, err
 	}
-	if cliTO != "" {
-		n, err := strconv.Atoi(cliTO)
-		if err != nil || n < 1 || n > 300 {
-			return Local{}, fmt.Errorf("CONFIG_ENV_TRIM_CLI_HTTP_TIMEOUT_SEC_INVALID")
-		}
-		cfg.CLIHTTPTimeoutSec = n
+	if cfg.CLIHTTPTimeoutSec, err = intEnvOr("TRIM_CLI_HTTP_TIMEOUT_SEC", HostedCLIHTTPTimeoutSec, 1, 300); err != nil {
+		return Local{}, err
 	}
-	if deepTO != "" {
-		n, err := strconv.Atoi(deepTO)
-		if err != nil || n < 1 || n > 3600 {
-			return Local{}, fmt.Errorf("CONFIG_ENV_TRIM_DEEP_TIMEOUT_SEC_INVALID")
-		}
-		cfg.DeepTimeoutSec = n
+	if cfg.DeepTimeoutSec, err = intEnvOr("TRIM_DEEP_TIMEOUT_SEC", HostedDeepTimeoutSec, 1, 3600); err != nil {
+		return Local{}, err
 	}
-	if readHdr != "" {
-		n, err := strconv.Atoi(readHdr)
-		if err != nil || n < 1 || n > 120 {
-			return Local{}, fmt.Errorf("CONFIG_ENV_TRIM_HTTP_READ_HEADER_TIMEOUT_SEC_INVALID")
-		}
-		cfg.HTTPReadHeaderTimeoutSec = n
+	if cfg.HTTPReadHeaderTimeoutSec, err = intEnvOr("TRIM_HTTP_READ_HEADER_TIMEOUT_SEC", HostedHTTPReadHeaderTimeoutSec, 1, 120); err != nil {
+		return Local{}, err
 	}
-	if tuiRefresh != "" {
-		n, err := strconv.Atoi(tuiRefresh)
-		if err != nil || n < 1 || n > 60 {
-			return Local{}, fmt.Errorf("CONFIG_ENV_TRIM_TUI_REFRESH_SEC_INVALID")
-		}
-		cfg.TUIRefreshSec = n
+	if cfg.TUIRefreshSec, err = intEnvOr("TRIM_TUI_REFRESH_SEC", HostedTUIRefreshSec, 1, 60); err != nil {
+		return Local{}, err
 	}
-	if statsDays != "" {
-		n, err := strconv.Atoi(statsDays)
-		if err != nil || n < 1 || n > 365 {
-			return Local{}, fmt.Errorf("CONFIG_ENV_TRIM_STATS_SERIES_DAYS_INVALID")
-		}
-		cfg.StatsSeriesDays = n
+	if cfg.StatsSeriesDays, err = intEnvOr("TRIM_STATS_SERIES_DAYS", HostedStatsSeriesDays, 1, 365); err != nil {
+		return Local{}, err
 	}
-	if tuiDays != "" {
-		n, err := strconv.Atoi(tuiDays)
-		if err != nil || n < 1 || n > 365 {
-			return Local{}, fmt.Errorf("CONFIG_ENV_TRIM_TUI_SERIES_DAYS_INVALID")
-		}
-		cfg.TUISeriesDays = n
+	if cfg.TUISeriesDays, err = intEnvOr("TRIM_TUI_SERIES_DAYS", HostedTUISeriesDays, 1, 365); err != nil {
+		return Local{}, err
 	}
-	if previewMax != "" {
-		n, err := strconv.Atoi(previewMax)
-		if err != nil || n < 32 || n > 100000 {
-			return Local{}, fmt.Errorf("CONFIG_ENV_TRIM_PROXY_PREVIEW_MAX_CHARS_INVALID")
-		}
-		cfg.ProxyPreviewMaxChars = n
+	if cfg.ProxyPreviewMaxChars, err = intEnvOr("TRIM_PROXY_PREVIEW_MAX_CHARS", HostedProxyPreviewMaxChars, 32, 100000); err != nil {
+		return Local{}, err
 	}
-	if tuiErrMax != "" {
-		n, err := strconv.Atoi(tuiErrMax)
-		if err != nil || n < 16 || n > 2000 {
-			return Local{}, fmt.Errorf("CONFIG_ENV_TRIM_TUI_ERROR_MAX_CHARS_INVALID")
+	if cfg.TUIErrorMaxChars, err = intEnvOr("TRIM_TUI_ERROR_MAX_CHARS", HostedTUIErrorMaxChars, 16, 2000); err != nil {
+		return Local{}, err
+	}
+
+	// Structural required strings (always filled by hosted defaults unless cleared somehow).
+	for _, pair := range []struct{ key, val string }{
+		{"TRIM_PORT", cfg.Port},
+		{"UPSTREAM_OPENAI_URL", cfg.UpstreamOpenAI},
+		{"UPSTREAM_ANTHROPIC_URL", cfg.UpstreamAnthropic},
+		{"TRIM_API_BASE_URL", cfg.APIBaseURL},
+		{"APP_PUBLIC_URL", cfg.AppPublicURL},
+		{"TRIM_DEEP_DEVICE_MAP", cfg.DeepDeviceMap},
+	} {
+		if strings.TrimSpace(pair.val) == "" {
+			missing = append(missing, pair.key)
 		}
-		cfg.TUIErrorMaxChars = n
 	}
 
 	if len(missing) > 0 {
 		return Local{}, fmt.Errorf("CONFIG_ENV_MISSING:%s", strings.Join(missing, ","))
 	}
 	return cfg, nil
+}
+
+// resolveCLIHMACSecret: explicit env always wins. Else official release bake when
+// targeting Trim Cloud. Self-host custom API never inherits the hosted bake.
+func resolveCLIHMACSecret(apiBase string) string {
+	if v := strings.TrimSpace(os.Getenv("TRIM_CLI_HMAC_SECRET")); v != "" {
+		return v
+	}
+	if IsOfficialHostedAPI(apiBase) {
+		return strings.TrimSpace(HostedCLIHMACSecret)
+	}
+	return ""
+}
+
+func intEnvOr(key string, def, min, max int) (int, error) {
+	raw := strings.TrimSpace(os.Getenv(key))
+	if raw == "" {
+		return def, nil
+	}
+	n, err := strconv.Atoi(raw)
+	if err != nil || n < min || n > max {
+		return 0, fmt.Errorf("CONFIG_ENV_%s_INVALID", key)
+	}
+	return n, nil
 }

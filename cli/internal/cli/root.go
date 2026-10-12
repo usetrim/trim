@@ -23,6 +23,10 @@ func init() {
 	// Preserve AddCommand order (everyday: start/stop first; not alpha).
 	cobra.EnableCommandSorting = false
 
+	// Industry UX: both `trim version` and `trim --version` work.
+	rootCmd.Version = Version
+	rootCmd.SetVersionTemplate("{{.Version}}\n")
+
 	// Group titles come from site_messages (CLI_HELP_GROUP_*); empty until chrome loads.
 	rootCmd.AddGroup(
 		&cobra.Group{ID: helpGroupEverydayID, Title: ""},

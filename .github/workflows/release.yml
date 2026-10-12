@@ -9,6 +9,11 @@ permissions:
   contents: write
   id-token: write
 
+# Baked into every official CLI binary (GoReleaser + Tree-sitter jobs). Must match
+# production server TRIM_CLI_HMAC_SECRET. End users never set this themselves.
+env:
+  TRIM_CLI_HMAC_SECRET: ${{ secrets.TRIM_CLI_HMAC_SECRET }}
+
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
@@ -36,6 +41,18 @@ jobs:
       #   xcrun stapler staple dist/trim_darwin_arm64/trim
       # Windows EV signing similarly needs a paid cert + signtool on windows-latest.
 
+      # Official npm/Homebrew binaries must bake Trim Cloud request integrity so end users
+      # need zero env after install. Same value as production server TRIM_CLI_HMAC_SECRET.
+      - name: Require Trim Cloud CLI HMAC for official release
+        env:
+          TRIM_CLI_HMAC_SECRET: ${{ secrets.TRIM_CLI_HMAC_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "${TRIM_CLI_HMAC_SECRET:-}" ]; then
+            echo "Missing GitHub Actions secret TRIM_CLI_HMAC_SECRET (must match production server)."
+            exit 1
+          fi
+
       - uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
@@ -43,6 +60,7 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TRIM_CLI_HMAC_SECRET: ${{ secrets.TRIM_CLI_HMAC_SECRET }}
           # Optional: leave unset until the remote tap/bucket/fork exists.
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           SCOOP_BUCKET_TOKEN: ${{ secrets.SCOOP_BUCKET_TOKEN }}
@@ -150,7 +168,7 @@ jobs:
           out="trim_darwin_${arch}_treesitter"
           mkdir -p "dist/${out}"
           CGO_ENABLED=1 GOOS=darwin GOARCH="${arch}" go build -tags treesitter \
-            -ldflags="-s -w -X github.com/usetrim/trim/cli/internal/cli.Version=${VER}" \
+            -ldflags="-s -w -X github.com/usetrim/trim/cli/internal/cli.Version=${VER} -X github.com/usetrim/trim/cli/internal/config.HostedCLIHMACSecret=${TRIM_CLI_HMAC_SECRET}" \
             -o "dist/${out}/trim" ./cmd/trim
           cp optimizer/optimizer.py "dist/${out}/optimizer.py"
           cp optimizer/requirements-deep.txt "dist/${out}/requirements-deep.txt"
@@ -205,7 +223,7 @@ jobs:
           out="trim_windows_amd64_treesitter"
           mkdir -p "dist/${out}"
           CGO_ENABLED=1 GOOS=windows GOARCH=amd64 go build -tags treesitter \
-            -ldflags="-s -w -X github.com/usetrim/trim/cli/internal/cli.Version=${VER}" \
+            -ldflags="-s -w -X github.com/usetrim/trim/cli/internal/cli.Version=${VER} -X github.com/usetrim/trim/cli/internal/config.HostedCLIHMACSecret=${TRIM_CLI_HMAC_SECRET}" \
             -o "dist/${out}/trim.exe" ./cmd/trim
           cp optimizer/optimizer.py "dist/${out}/optimizer.py"
           cp optimizer/requirements-deep.txt "dist/${out}/requirements-deep.txt"
@@ -249,7 +267,7 @@ jobs:
           out="trim_linux_arm64_treesitter"
           mkdir -p "dist/${out}"
           CGO_ENABLED=1 GOOS=linux GOARCH=arm64 go build -tags treesitter \
-            -ldflags="-s -w -X github.com/usetrim/trim/cli/internal/cli.Version=${VER}" \
+            -ldflags="-s -w -X github.com/usetrim/trim/cli/internal/cli.Version=${VER} -X github.com/usetrim/trim/cli/internal/config.HostedCLIHMACSecret=${TRIM_CLI_HMAC_SECRET}" \
             -o "dist/${out}/trim" ./cmd/trim
           cp optimizer/optimizer.py "dist/${out}/optimizer.py"
           cp optimizer/requirements-deep.txt "dist/${out}/requirements-deep.txt"
@@ -292,7 +310,7 @@ jobs:
           out="trim_linux_amd64_treesitter"
           mkdir -p "dist/${out}"
           CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -tags treesitter \
-            -ldflags="-s -w -X github.com/usetrim/trim/cli/internal/cli.Version=${VER}" \
+            -ldflags="-s -w -X github.com/usetrim/trim/cli/internal/cli.Version=${VER} -X github.com/usetrim/trim/cli/internal/config.HostedCLIHMACSecret=${TRIM_CLI_HMAC_SECRET}" \
             -o "dist/${out}/trim" ./cmd/trim
           cp optimizer/optimizer.py "dist/${out}/optimizer.py"
           cp optimizer/requirements-deep.txt "dist/${out}/requirements-deep.txt"
@@ -336,7 +354,7 @@ jobs:
           out="trim_linux_amd64_treesitter_zig"
           mkdir -p "dist/${out}"
           CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -tags "treesitter,zigts" \
-            -ldflags="-s -w -X github.com/usetrim/trim/cli/internal/cli.Version=${VER}" \
+            -ldflags="-s -w -X github.com/usetrim/trim/cli/internal/cli.Version=${VER} -X github.com/usetrim/trim/cli/internal/config.HostedCLIHMACSecret=${TRIM_CLI_HMAC_SECRET}" \
             -o "dist/${out}/trim" ./cmd/trim
           cp optimizer/optimizer.py "dist/${out}/optimizer.py"
           cp optimizer/requirements-deep.txt "dist/${out}/requirements-deep.txt"
@@ -380,7 +398,7 @@ jobs:
           out="trim_linux_arm64_treesitter_zig"
           mkdir -p "dist/${out}"
           CGO_ENABLED=1 GOOS=linux GOARCH=arm64 go build -tags "treesitter,zigts" \
-            -ldflags="-s -w -X github.com/usetrim/trim/cli/internal/cli.Version=${VER}" \
+            -ldflags="-s -w -X github.com/usetrim/trim/cli/internal/cli.Version=${VER} -X github.com/usetrim/trim/cli/internal/config.HostedCLIHMACSecret=${TRIM_CLI_HMAC_SECRET}" \
             -o "dist/${out}/trim" ./cmd/trim
           cp optimizer/optimizer.py "dist/${out}/optimizer.py"
           cp optimizer/requirements-deep.txt "dist/${out}/requirements-deep.txt"
@@ -431,7 +449,7 @@ jobs:
           out="trim_darwin_${arch}_treesitter_zig"
           mkdir -p "dist/${out}"
           CGO_ENABLED=1 GOOS=darwin GOARCH="${arch}" go build -tags "treesitter,zigts" \
-            -ldflags="-s -w -X github.com/usetrim/trim/cli/internal/cli.Version=${VER}" \
+            -ldflags="-s -w -X github.com/usetrim/trim/cli/internal/cli.Version=${VER} -X github.com/usetrim/trim/cli/internal/config.HostedCLIHMACSecret=${TRIM_CLI_HMAC_SECRET}" \
             -o "dist/${out}/trim" ./cmd/trim
           cp optimizer/optimizer.py "dist/${out}/optimizer.py"
           cp optimizer/requirements-deep.txt "dist/${out}/requirements-deep.txt"
@@ -487,7 +505,7 @@ jobs:
           out="trim_windows_amd64_treesitter_zig"
           mkdir -p "dist/${out}"
           CGO_ENABLED=1 GOOS=windows GOARCH=amd64 go build -tags "treesitter,zigts" \
-            -ldflags="-s -w -X github.com/usetrim/trim/cli/internal/cli.Version=${VER}" \
+            -ldflags="-s -w -X github.com/usetrim/trim/cli/internal/cli.Version=${VER} -X github.com/usetrim/trim/cli/internal/config.HostedCLIHMACSecret=${TRIM_CLI_HMAC_SECRET}" \
             -o "dist/${out}/trim.exe" ./cmd/trim
           cp optimizer/optimizer.py "dist/${out}/optimizer.py"
           cp optimizer/requirements-deep.txt "dist/${out}/requirements-deep.txt"
