@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/usetrim/trim/cli/internal/cliout"
@@ -16,6 +17,17 @@ import (
 )
 
 const windowsRunValueName = "TrimProxy"
+
+// configureDetachedStartProc: new process group so Ctrl+C in the parent shell
+// does not stop the background `trim start` worker.
+func configureDetachedStartProc(cmd *exec.Cmd) {
+	if cmd == nil {
+		return
+	}
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP,
+	}
+}
 
 // installWindowsTask registers per-user logon autostart via HKCU Run (no admin).
 // Industry practice: CurrentVersion\Run pointing at a stable LocalAppData copy -

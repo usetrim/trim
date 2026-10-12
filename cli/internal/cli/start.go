@@ -9,7 +9,9 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
+	"os/exec"
 	"os/signal"
 	"strings"
 	"syscall"
@@ -28,7 +30,10 @@ import (
 	"github.com/usetrim/trim/server/pkg/trimmer"
 )
 
-var portFlag int
+var (
+	portFlag        int
+	startForeground bool
+)
 
 var startCmd = &cobra.Command{
 	Use:     "start",
@@ -52,7 +57,7 @@ var startCmd = &cobra.Command{
 		chrome := fetchCLIChrome(cfg)
 		ensureWindowsARPRegistration(chrome)
 		// Prefer attach: if a healthy proxy already owns the port, do not double-bind.
-		healthURL := strings.TrimSpace(chrome.ProxyHealthURL)
+		healthURL := healthURLForListenPort(chrome, listenPort)
 		if healthURL != "" {
 			to, err := requireChromeTimeout(chrome.ProxyHealthTimeoutMs, "CLI_PROXY_HEALTH_TIMEOUT_MS", chrome)
 			if err != nil {
@@ -67,6 +72,11 @@ var startCmd = &cobra.Command{
 				printStartReadyUI(chrome, startListenScheme(), listenPort, true)
 				return nil
 			}
+		}
+		// Manual start: print ready UI in a background worker, then return the shell.
+		// daemon run / --foreground stay attached in this terminal.
+		if startShouldDetach() {
+			return startDetachedAndWaitHealthy(cmd, chrome, healthURL)
 		}
 		if len(proj.CustomQueries) > 0 && !trimmer.TreeSitterAvailable() {
 			if chrome.TreesitterRequired != "" {
@@ -198,6 +208,9 @@ var startCmd = &cobra.Command{
 			"port":        listenPort,
 		})
 
+		stop := make(chan os.Signal, 1)
+		signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+
 		go func() {
 			certFile := strings.TrimSpace(os.Getenv("TRIM_TLS_CERT"))
 			keyFile := strings.TrimSpace(os.Getenv("TRIM_TLS_KEY"))
@@ -239,10 +252,13 @@ var startCmd = &cobra.Command{
 				}
 				log.Fatal(listenErr)
 			}
+			// trim stop / Shutdown closed the listener: unblock main so the process exits
+			// (important for detached `trim start` workers).
+			select {
+			case stop <- syscall.SIGTERM:
+			default:
+			}
 		}()
-
-		stop := make(chan os.Signal, 1)
-		signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 
 		// Daemon-run only: re-check pref while proxy is up (dashboard uncheck → stop).
 		// Manual `trim start` does not set TRIM_AUTOSTART_ENFORCER.
@@ -395,6 +411,111 @@ func isAddrInUse(err error) bool {
 
 func init() {
 	startCmd.Flags().IntVarP(&portFlag, "port", "p", 0, "")
+	startCmd.Flags().BoolVar(&startForeground, "foreground", false, "")
+}
+
+const trimStartWorkerEnv = "TRIM_START_WORKER"
+
+func startShouldDetach() bool {
+	if strings.TrimSpace(os.Getenv("TRIM_AUTOSTART_ENFORCER")) == "1" {
+		return false
+	}
+	if strings.TrimSpace(os.Getenv(trimStartWorkerEnv)) == "1" {
+		return false
+	}
+	return !startForeground
+}
+
+// startDetachedAndWaitHealthy spawns the same CLI as a background worker, waits
+// until /health is OK (so banners already printed), then exits so the shell returns.
+func startDetachedAndWaitHealthy(cmd *cobra.Command, chrome cliChrome, healthURL string) error {
+	exe, err := os.Executable()
+	if err != nil {
+		return err
+	}
+	args := []string{"start", "--foreground"}
+	if cmd != nil && cmd.Flags().Changed("port") {
+		args = append(args, "--port", fmt.Sprintf("%d", portFlag))
+	}
+	if flagJSON {
+		args = append(args, "--json")
+	}
+	if flagVerbose {
+		args = append(args, "--verbose")
+	}
+	child := exec.Command(exe, args...)
+	child.Env = append(os.Environ(), trimStartWorkerEnv+"=1")
+	child.Stdout = os.Stdout
+	child.Stderr = os.Stderr
+	child.Stdin = nil
+	configureDetachedStartProc(child)
+	if err := child.Start(); err != nil {
+		return fmt.Errorf("start proxy worker: %w", err)
+	}
+	waitErr := make(chan error, 1)
+	go func() { waitErr <- child.Wait() }()
+
+	to, err := requireChromeTimeout(chrome.ProxyHealthTimeoutMs, "CLI_PROXY_HEALTH_TIMEOUT_MS", chrome)
+	if err != nil {
+		_ = child.Process.Kill()
+		return err
+	}
+	if to <= 0 {
+		to = 2 * time.Second
+	}
+	// Cap parent wait so a cold-start failure cannot hold the shell for minutes.
+	waitFor := to * 6
+	if waitFor < 15*time.Second {
+		waitFor = 15 * time.Second
+	}
+	if waitFor > 30*time.Second {
+		waitFor = 30 * time.Second
+	}
+	deadline := time.Now().Add(waitFor)
+	probe := 400 * time.Millisecond
+	if to < probe {
+		probe = to
+	}
+	for time.Now().Before(deadline) {
+		select {
+		case err := <-waitErr:
+			if chrome.ProxyFailedFmt != "" {
+				return fmt.Errorf(chrome.ProxyFailedFmt, fmt.Sprintf("proxy worker exited early: %v", err))
+			}
+			return fmt.Errorf("proxy worker exited early: %w", err)
+		default:
+		}
+		if healthURL != "" && proxyHealthOK(healthURL, probe) {
+			return nil
+		}
+		time.Sleep(150 * time.Millisecond)
+	}
+	_ = child.Process.Kill()
+	if chrome.ProxyFailedFmt != "" {
+		return fmt.Errorf(chrome.ProxyFailedFmt, "proxy did not become healthy in time")
+	}
+	return fmt.Errorf("proxy did not become healthy in time")
+}
+
+func healthURLForListenPort(chrome cliChrome, listenPort string) string {
+	listenPort = strings.TrimSpace(listenPort)
+	base := strings.TrimSpace(chrome.ProxyHealthURL)
+	if listenPort == "" {
+		return base
+	}
+	if base == "" {
+		return fmt.Sprintf("http://127.0.0.1:%s/health", listenPort)
+	}
+	u, err := url.Parse(base)
+	if err != nil || u.Host == "" {
+		return base
+	}
+	host := u.Hostname()
+	if host == "" {
+		host = "127.0.0.1"
+	}
+	u.Host = net.JoinHostPort(host, listenPort)
+	return u.String()
 }
 
 // loadProviderAdapterRegistry returns nil when adapters are not synced (passthrough-only; no invent).
