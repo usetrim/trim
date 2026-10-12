@@ -2007,6 +2007,28 @@ func builtinMessageForCode(code string) string {
 		return "open browser is not supported on %s"
 	case "CLI_STATUS_NOT_LOGGED_IN":
 		return "Not logged in. Run: trim login"
+	case "CLI_STATUS_LOGGED_IN":
+		return "Logged in"
+	case "CLI_STATUS_LABEL_PLAN":
+		return "Plan"
+	case "CLI_STATUS_LABEL_CREDITS":
+		return "Credits"
+	case "CLI_STATUS_LABEL_REMAINING":
+		return "Remaining"
+	case "CLI_STATUS_LABEL_DASHBOARD":
+		return "Dashboard"
+	case "CLI_STATUS_LABEL_UPGRADE":
+		return "Upgrade"
+	case "CLI_STATUS_REMAINING_FMT":
+		return "%d / %d"
+	case "CLI_STATUS_CHECKING":
+		return "Checking account…"
+	case "CLI_STATUS_HTTP_ERROR_FMT":
+		return "Could not reach Trim Cloud (%s). Check your network and try again."
+	case "CLI_START_BASE_URL_LABEL":
+		return "IDE Base URL"
+	case "CLI_LOGIN_URL_LABEL":
+		return "Sign-in URL"
 	case "CLI_LOGIN_PHRASE_OR":
 		return " or "
 	case "CLI_LOGIN_PHRASE_COMMA":
@@ -2195,7 +2217,7 @@ func builtinMessageForCode(code string) string {
 		// Println + {port} replace only (not fmt.Printf) - use a single % so users see "0%".
 		return "Local meter: http://127.0.0.1:{port}/dashboard → Show savings detail (0% whole-body Saved on Claude Code chrome is often normal)."
 	case "CLI_STATUS_API_FMT":
-		return "API status: %s"
+		return "API status: %s" // verbose / --verbose only
 	case "CLI_DEEP_BOOTSTRAP_REQS":
 		return "Installing Deep Mode dependencies on this machine (not in Trim cloud)."
 	case "CLI_DEEP_BOOTSTRAP_PIP":

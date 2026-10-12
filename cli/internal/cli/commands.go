@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/usetrim/trim/cli/internal/clierr"
 	"github.com/usetrim/trim/cli/internal/clihttp"
+	"github.com/usetrim/trim/cli/internal/cliout"
 	"github.com/usetrim/trim/cli/internal/config"
 	"github.com/usetrim/trim/cli/internal/fingerprint"
 	"github.com/usetrim/trim/cli/internal/metrics"
@@ -40,9 +41,9 @@ var loginCmd = &cobra.Command{
 
 		chrome := fetchCLIChrome(cfg)
 		if phrase := chrome.providerPhrase(); phrase != "" && chrome.LoginSignInFmt != "" {
-			fmt.Printf(chrome.LoginSignInFmt+"\n", phrase)
+			cliout.Info(fmt.Sprintf(chrome.LoginSignInFmt, phrase))
 		} else if chrome.LoginOpeningBrowser != "" {
-			fmt.Println(chrome.LoginOpeningBrowser)
+			cliout.Info(chrome.LoginOpeningBrowser)
 		}
 
 		authURLPath := strings.TrimSpace(chrome.PathCLIAuth)
@@ -53,11 +54,15 @@ var loginCmd = &cobra.Command{
 			authURLPath = "/" + authURLPath
 		}
 		authURL := fmt.Sprintf("%s%s?hardware=%s", strings.TrimRight(cfg.AppPublicURL, "/"), authURLPath, url.QueryEscape(hw))
-		fmt.Println(authURL)
+		if urlLab := strings.TrimSpace(chrome.LoginURLLabel); urlLab != "" {
+			cliout.Table([]cliout.Row{{Label: urlLab, Value: authURL, Kind: "accent"}})
+		} else {
+			fmt.Println(authURL)
+		}
 		_ = openBrowser(authURL, chrome)
 
 		if chrome.LoginPasteKey != "" {
-			fmt.Println(chrome.LoginPasteKey)
+			cliout.Muted(chrome.LoginPasteKey)
 		}
 		var key string
 		_, _ = fmt.Scanln(&key)
@@ -68,7 +73,7 @@ var loginCmd = &cobra.Command{
 			return err
 		}
 		if chrome.LoginSuccess != "" {
-			fmt.Println(chrome.LoginSuccess)
+			cliout.Success(chrome.LoginSuccess)
 		}
 		return nil
 	},
@@ -86,7 +91,7 @@ var logoutCmd = &cobra.Command{
 		err = storage.DeleteToken()
 		if err == storage.ErrNotLoggedIn {
 			if chrome.LogoutAlready != "" {
-				fmt.Println(chrome.LogoutAlready)
+				cliout.Muted(chrome.LogoutAlready)
 			}
 			return nil
 		}
@@ -94,7 +99,7 @@ var logoutCmd = &cobra.Command{
 			return err
 		}
 		if chrome.LogoutSuccess != "" {
-			fmt.Println(chrome.LogoutSuccess)
+			cliout.Success(chrome.LogoutSuccess)
 		}
 		return nil
 	},
@@ -108,30 +113,84 @@ var statusCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
+		chrome := fetchCLIChrome(cfg)
 		token, err := storage.GetToken()
 		if err != nil || token == "" {
-			chrome := fetchCLIChrome(cfg)
-			if chrome.StatusNotLoggedIn != "" {
-				fmt.Println(chrome.StatusNotLoggedIn)
+			msg := strings.TrimSpace(chrome.StatusNotLoggedIn)
+			if flagJSON {
+				_ = json.NewEncoder(os.Stdout).Encode(map[string]interface{}{
+					"logged_in": false,
+					"message":   msg,
+				})
+				return clierr.Exit(1, "")
 			}
-			return nil
+			if msg != "" {
+				cliout.Warn(msg)
+			}
+			return clierr.Exit(1, "")
 		}
 		req, err := http.NewRequest(http.MethodGet, cfg.APIBaseURL+"/api/v1/me/quota", nil)
 		if err != nil {
 			return err
 		}
+		stopSpin := func() {}
+		if !flagJSON {
+			if label := strings.TrimSpace(chrome.StatusChecking); label != "" {
+				stopSpin = cliout.Spinner(label)
+			}
+		}
 		client := newCLIHTTPClient(cfg)
 		res, err := doCLIRequest(client, req, token, cfg.CLIHMACSecret, nil)
+		stopSpin()
 		if err != nil {
-			return err
+			if flagJSON {
+				_ = json.NewEncoder(os.Stdout).Encode(map[string]string{"error": err.Error()})
+				return clierr.Exit(1, "")
+			}
+			if chrome.StatusHTTPErrorFmt != "" {
+				cliout.ErrorLine(fmt.Sprintf(chrome.StatusHTTPErrorFmt, err.Error()))
+			} else {
+				cliout.ErrorLine(err.Error())
+			}
+			if flagVerbose {
+				cliout.Muted(fmt.Sprintf("GET %s/api/v1/me/quota", strings.TrimRight(cfg.APIBaseURL, "/")))
+			}
+			return clierr.Exit(1, "")
 		}
 		defer res.Body.Close()
-		chrome := fetchCLIChrome(cfg)
-		if chrome.StatusAPIFmt != "" {
-			fmt.Printf(chrome.StatusAPIFmt+"\n", res.Status)
-		}
 		body, _ := io.ReadAll(io.LimitReader(res.Body, 8192))
-		fmt.Println(string(body))
+
+		if flagJSON {
+			// Exact API payload for scripts/CI.
+			fmt.Println(string(body))
+			if res.StatusCode >= 400 {
+				return clierr.Exit(1, "")
+			}
+			return nil
+		}
+
+		if flagVerbose && chrome.StatusAPIFmt != "" {
+			cliout.Muted(fmt.Sprintf(chrome.StatusAPIFmt, res.Status))
+		}
+
+		if res.StatusCode >= 400 {
+			cliout.ErrorLine(strings.TrimSpace(res.Status))
+			if flagVerbose {
+				cliout.Muted(string(body))
+			}
+			printQuotaExhaustedHint(chrome, body)
+			return clierr.Exit(1, "")
+		}
+
+		q, perr := parseQuotaStatus(body)
+		if perr != nil {
+			cliout.ErrorLine(perr.Error())
+			if flagVerbose {
+				cliout.Muted(string(body))
+			}
+			return clierr.Exit(1, "")
+		}
+		printHumanStatus(chrome, q)
 		printQuotaExhaustedHint(chrome, body)
 		return nil
 	},
@@ -149,9 +208,9 @@ var upgradeCmd = &cobra.Command{
 		token, err := storage.GetToken()
 		if err != nil || token == "" {
 			if chrome.StatusNotLoggedIn != "" {
-				fmt.Println(chrome.StatusNotLoggedIn)
+				cliout.Warn(chrome.StatusNotLoggedIn)
 			}
-			return nil
+			return clierr.Exit(1, "")
 		}
 		req, err := http.NewRequest(http.MethodGet, cfg.APIBaseURL+"/api/v1/me/quota", nil)
 		if err != nil {
@@ -169,15 +228,19 @@ var upgradeCmd = &cobra.Command{
 			return chrome.fail(chrome.QuotaUpgradeURLMissing)
 		}
 		if chrome.QuotaExhaustedTitle != "" {
-			fmt.Println(chrome.QuotaExhaustedTitle)
+			cliout.Warn(chrome.QuotaExhaustedTitle)
 		}
 		if chrome.QuotaExhaustedBody != "" {
-			fmt.Println(chrome.QuotaExhaustedBody)
+			cliout.Muted(chrome.QuotaExhaustedBody)
 		}
 		if chrome.QuotaUpgradeOpening != "" {
-			fmt.Println(chrome.QuotaUpgradeOpening)
+			cliout.Info(chrome.QuotaUpgradeOpening)
 		}
-		fmt.Println(upgradeURL)
+		cliout.Table([]cliout.Row{{
+			Label: strings.TrimSpace(chrome.StatusLabelUpgrade),
+			Value: upgradeURL,
+			Kind:  "accent",
+		}})
 		_ = openBrowser(upgradeURL, chrome)
 		return nil
 	},
@@ -211,14 +274,14 @@ func printQuotaExhaustedHint(chrome cliChrome, body []byte) {
 		return
 	}
 	if chrome.QuotaExhaustedTitle != "" {
-		fmt.Println(chrome.QuotaExhaustedTitle)
+		cliout.Warn(chrome.QuotaExhaustedTitle)
 	}
 	if chrome.QuotaExhaustedBody != "" {
-		fmt.Println(chrome.QuotaExhaustedBody)
+		cliout.Muted(chrome.QuotaExhaustedBody)
 	}
 	url := strings.TrimSpace(q.TierUpgrade)
 	if url != "" && chrome.QuotaUpgradeHintFmt != "" {
-		fmt.Printf(chrome.QuotaUpgradeHintFmt+"\n", url)
+		cliout.Info(fmt.Sprintf(chrome.QuotaUpgradeHintFmt, url))
 	}
 }
 
@@ -299,15 +362,18 @@ func attachCLIHeaders(req *http.Request, token string, hmacSecret string, body [
 func fetchCLIChrome(cfg config.Local) cliChrome {
 	out := fetchCLIChromeRemote(cfg)
 	if chromeAutostartUsable(out) {
+		applyHumanChromeFallbacks(&out)
 		_ = writeCLIChromeCache(out)
 		setPOWChrome(out)
 		return out
 	}
 	// Last-known-good only: previously synced site_messages bodies (not invent).
 	if cached, ok := readCLIChromeCache(); ok {
+		applyHumanChromeFallbacks(&cached)
 		setPOWChrome(cached)
 		return cached
 	}
+	applyHumanChromeFallbacks(&out)
 	setPOWChrome(out)
 	return out
 }
@@ -347,6 +413,17 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 			ChromeUnavailable           string `json:"chrome_unavailable"`
 			BrowserUnsupportedFmt       string `json:"browser_unsupported_fmt"`
 			StatusNotLoggedIn           string `json:"status_not_logged_in"`
+			StatusLoggedIn              string `json:"status_logged_in"`
+			StatusLabelPlan             string `json:"status_label_plan"`
+			StatusLabelCredits          string `json:"status_label_credits"`
+			StatusLabelRemaining        string `json:"status_label_remaining"`
+			StatusLabelDashboard        string `json:"status_label_dashboard"`
+			StatusLabelUpgrade          string `json:"status_label_upgrade"`
+			StatusRemainingFmt          string `json:"status_remaining_fmt"`
+			StatusChecking              string `json:"status_checking"`
+			StatusHTTPErrorFmt          string `json:"status_http_error_fmt"`
+			StartBaseURLLabel           string `json:"start_base_url_label"`
+			LoginURLLabel               string `json:"login_url_label"`
 			LoginPhraseOr               string `json:"login_phrase_or"`
 			LoginPhraseComma            string `json:"login_phrase_comma"`
 			LoginPhraseCommaOr          string `json:"login_phrase_comma_or"`
@@ -653,6 +730,17 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 		ChromeUnavailable:           body.CLI.ChromeUnavailable,
 		BrowserUnsupportedFmt:       body.CLI.BrowserUnsupportedFmt,
 		StatusNotLoggedIn:           body.CLI.StatusNotLoggedIn,
+		StatusLoggedIn:              body.CLI.StatusLoggedIn,
+		StatusLabelPlan:             body.CLI.StatusLabelPlan,
+		StatusLabelCredits:          body.CLI.StatusLabelCredits,
+		StatusLabelRemaining:        body.CLI.StatusLabelRemaining,
+		StatusLabelDashboard:        body.CLI.StatusLabelDashboard,
+		StatusLabelUpgrade:          body.CLI.StatusLabelUpgrade,
+		StatusRemainingFmt:          body.CLI.StatusRemainingFmt,
+		StatusChecking:              body.CLI.StatusChecking,
+		StatusHTTPErrorFmt:          body.CLI.StatusHTTPErrorFmt,
+		StartBaseURLLabel:           body.CLI.StartBaseURLLabel,
+		LoginURLLabel:               body.CLI.LoginURLLabel,
 		LoginPhraseOr:               body.CLI.LoginPhraseOr,
 		LoginPhraseComma:            body.CLI.LoginPhraseComma,
 		LoginPhraseCommaOr:          body.CLI.LoginPhraseCommaOr,
@@ -989,6 +1077,17 @@ type cliChrome struct {
 	ChromeUnavailable           string
 	BrowserUnsupportedFmt       string
 	StatusNotLoggedIn           string
+	StatusLoggedIn              string
+	StatusLabelPlan             string
+	StatusLabelCredits          string
+	StatusLabelRemaining        string
+	StatusLabelDashboard        string
+	StatusLabelUpgrade          string
+	StatusRemainingFmt          string
+	StatusChecking              string
+	StatusHTTPErrorFmt          string
+	StartBaseURLLabel           string
+	LoginURLLabel               string
 	LoginPhraseOr               string
 	LoginPhraseComma            string
 	LoginPhraseCommaOr          string

@@ -8,10 +8,18 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "trim",
-	Short: "",
-	Long:  "",
+	Use:           "trim",
+	Short:         "",
+	Long:          "",
+	SilenceErrors: true, // main prints; ExitError must not dump "Error: exit 1"
+	SilenceUsage:  true,
 }
+
+// Global presentation flags (industry standard: human default, machine opt-in).
+var (
+	flagJSON    bool
+	flagVerbose bool
+)
 
 func Execute() error {
 	// Warm help before first --help when possible (API may be offline: blank help).
@@ -26,6 +34,9 @@ func init() {
 	// Industry UX: both `trim version` and `trim --version` work.
 	rootCmd.Version = Version
 	rootCmd.SetVersionTemplate("{{.Version}}\n")
+
+	rootCmd.PersistentFlags().BoolVar(&flagJSON, "json", false, "machine-readable JSON output where supported")
+	rootCmd.PersistentFlags().BoolVarP(&flagVerbose, "verbose", "v", false, "show extra HTTP / diagnostic detail")
 
 	// Group titles come from site_messages (CLI_HELP_GROUP_*); empty until chrome loads.
 	rootCmd.AddGroup(

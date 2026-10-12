@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/usetrim/trim/cli/internal/cliout"
 	"github.com/usetrim/trim/cli/internal/config"
 	"github.com/usetrim/trim/cli/internal/deepopt"
 	"github.com/usetrim/trim/cli/internal/metrics"
@@ -205,21 +206,32 @@ var startCmd = &cobra.Command{
 				scheme = "https"
 			}
 			if chrome.StartRunningFmt != "" {
-				fmt.Printf(chrome.StartRunningFmt+"\n", scheme, listenPort)
+				cliout.Success(fmt.Sprintf(chrome.StartRunningFmt, scheme, listenPort))
+			}
+			rows := make([]cliout.Row, 0, 4)
+			if lab := strings.TrimSpace(chrome.StartBaseURLLabel); lab != "" {
+				rows = append(rows, cliout.Row{
+					Label: lab,
+					Value: fmt.Sprintf("%s://127.0.0.1:%s/v1", scheme, listenPort),
+					Kind:  "accent",
+				})
 			}
 			if chrome.StartDashboardFmt != "" {
-				fmt.Printf(chrome.StartDashboardFmt+"\n", scheme, listenPort)
+				cliout.Info(fmt.Sprintf(chrome.StartDashboardFmt, scheme, listenPort))
 			}
 			if chrome.StartModeFmt != "" {
-				fmt.Printf(chrome.StartModeFmt+"\n", projectconfig.NormalizeMode(proj.Mode))
+				cliout.Muted(fmt.Sprintf(chrome.StartModeFmt, projectconfig.NormalizeMode(proj.Mode)))
+			}
+			if len(rows) > 0 {
+				cliout.Table(rows)
 			}
 			if chrome.StartPointIDEFmt != "" {
-				fmt.Printf(chrome.StartPointIDEFmt+"\n", scheme, listenPort)
+				cliout.Muted(fmt.Sprintf(chrome.StartPointIDEFmt, scheme, listenPort))
 			}
 			if len(proj.NeverTrimPaths) > 0 || len(proj.IgnorePaths) > 0 {
 				if chrome.StartRulesFmt != "" {
-					fmt.Printf(chrome.StartRulesFmt+"\n",
-						len(proj.NeverTrimPaths), len(proj.IgnorePaths))
+					cliout.Muted(fmt.Sprintf(chrome.StartRulesFmt,
+						len(proj.NeverTrimPaths), len(proj.IgnorePaths)))
 				}
 			}
 			var listenErr error
