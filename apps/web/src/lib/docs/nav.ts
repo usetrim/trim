@@ -50,6 +50,7 @@ export const DOC_NAV: DocNavSection[] = [
     title: "CLI",
     items: [
       { slug: "cli/overview", title: "CLI overview" },
+      { slug: "cli/claude-code", title: "Claude Code (CLI only)" },
       { slug: "cli/start", title: "trim start" },
       { slug: "cli/autostart", title: "trim autostart" },
       { slug: "cli/login", title: "trim login" },
@@ -75,7 +76,7 @@ export const DOC_NAV: DocNavSection[] = [
       { slug: "ide/aider", title: "Aider and shell clients" },
       { slug: "ide/extension", title: "Trim IDE extension" },
       { slug: "ide/openai-compatible", title: "OpenAI-compatible clients" },
-      { slug: "ide/claude-code", title: "Claude Code" },
+      { slug: "ide/claude-code", title: "Claude Code (see CLI)" },
       { slug: "ide/provider-adapters", title: "Provider adapters" },
       { slug: "ide/troubleshoot-base-url", title: "Base URL troubleshooting" },
       { slug: "ide/workflow", title: "Day-to-day workflow" },
