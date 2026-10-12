@@ -40,7 +40,11 @@ brew untap usetrim/tap
 
 ```bash
 trim version
+trim login
+trim start
 ```
+
+No environment variables required for Trim Cloud. Self-host overrides: see the Trim repo `cli/.env.example`.
 
 ## Requirements
 

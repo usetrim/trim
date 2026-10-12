@@ -21,7 +21,10 @@ builds:
       - amd64
       - arm64
     ldflags:
-      - -s -w -X github.com/usetrim/trim/cli/internal/cli.Version={{.Version}}
+      # TRIM_CLI_HMAC_SECRET must be present in the GoReleaser env (GitHub Actions secret).
+      # Bakes Trim Cloud request-integrity into official binaries so npm/Homebrew users
+      # need zero env. Never commit the secret; self-host overrides via TRIM_CLI_HMAC_SECRET.
+      - -s -w -X github.com/usetrim/trim/cli/internal/cli.Version={{.Version}} -X github.com/usetrim/trim/cli/internal/config.HostedCLIHMACSecret={{.Env.TRIM_CLI_HMAC_SECRET}}
 
   # Optional Tree-sitter grammars (CGO).
   # linux/amd64: built on GitHub ubuntu runners via this config.
@@ -40,7 +43,7 @@ builds:
     goarch:
       - amd64
     ldflags:
-      - -s -w -X github.com/usetrim/trim/cli/internal/cli.Version={{.Version}}
+      - -s -w -X github.com/usetrim/trim/cli/internal/cli.Version={{.Version}} -X github.com/usetrim/trim/cli/internal/config.HostedCLIHMACSecret={{.Env.TRIM_CLI_HMAC_SECRET}}
 
   # linux/arm64 treesitter: not in GoReleaser (CGO cross from amd64 runners fails).
   # Build on arm64 host: CGO_ENABLED=1 go build -tags treesitter ./cmd/trim

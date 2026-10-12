@@ -21,6 +21,8 @@ CI: `.github/workflows/publish-npm.yml` (OIDC; no long-lived publish token)
 ```bash
 npm install -g @usetrim/trim
 trim version
+# Hosted path (zero env): trim login && trim start
+# Release CI must set Actions secret TRIM_CLI_HMAC_SECRET (= production server)
 ```
 
 ## 2) Homebrew (`usetrim/tap/trim`)
@@ -44,6 +46,8 @@ trim version
 git clone https://github.com/usetrim/trim.git
 cd trim/cli && go install ./cmd/trim
 ```
+
+Local `go install` / `go build` without release ldflags does **not** bake `TRIM_CLI_HMAC_SECRET` - set it in env or `.env` (see `cli/.env.example`). Official npm/Homebrew/installer binaries bake it.
 
 Remote `go install github.com/usetrim/trim/cli/cmd/trim@v…` stays unsupported while `replace ../server` exists in `cli/go.mod`.
 

@@ -70,7 +70,7 @@ export const DOC_PAGES: Record<string, DocPage> = {
     [
       {
         type: "p",
-        text: "This path gets you from zero to a trimmed chat request in a few minutes. Everyday use should feel always-on with your IDE; you do not need to remember trim start every day once auto-start is enabled.",
+        text: "This path gets you from zero to a trimmed chat request in a few minutes. Everyday use should feel always-on with your IDE; you do not need to remember trim start every day once auto-start is enabled. Official installs talk to Trim Cloud with zero environment setup - you should never paste HMAC secrets or API URLs for normal use.",
       },
       { type: "h2", id: "install", text: "1. Install the CLI" },
       {
@@ -168,14 +168,14 @@ trim start`,
         type: "code",
         language: "bash",
         code: `curl -fsSL https://use-trim.com/install.sh | sh
-trim --version`,
+trim version`,
       },
       { type: "h2", id: "windows", text: "Windows" },
       {
         type: "code",
         language: "powershell",
         code: `irm https://use-trim.com/install.ps1 | iex
-trim --version`,
+trim version`,
       },
       {
         type: "p",
@@ -3271,7 +3271,7 @@ Authenticated product routes under /api/v1/...`,
         items: [
           "server/.env.example is the source of truth for API variables",
           "apps/web/.env.example covers Next public tokens and API URL",
-          "CLI optional cloud login env from cli/.env.example",
+          "Official hosted CLI needs no env; self-host / local go builds use cli/.env.example (especially TRIM_CLI_HMAC_SECRET matching the server)",
         ],
       },
       { type: "h2", id: "checklist", text: "Before production traffic" },

@@ -47,10 +47,17 @@ When the `treesitter` tag is off, TypeScript/JavaScript/Python use structural he
 
 ## CLI
 
+Official npm/Homebrew binaries ship Trim Cloud product defaults and bake
+`TRIM_CLI_HMAC_SECRET` via release ldflags (zero env for end users).
+
+Local `go run` / `go build` without ldflags still needs the HMAC (and any
+self-host overrides). Copy `.env.example` or set OS env:
+
 ```bash
 cd cli
 cp .env.example .env
-# Required: TRIM_SAVINGS_USD_PER_MTOK must match ops pricing estimate
+# Minimum for Trim Cloud against a local build: TRIM_CLI_HMAC_SECRET
+# (must match server). Other fields fall back to hosted product defaults.
 go mod tidy
 go run ./cmd/trim start --port 8888
 ```
