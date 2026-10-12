@@ -431,10 +431,10 @@ export function StepUpBar({
               {waStep2 && waBeginReg && pending ? (
                 <li className="space-y-2 pl-1">
                   <p>{waStep2}</p>
-        <Button
-          type="button"
-          size="sm"
-          variant="secondary"
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
                     isLoading={waBusy || waRegBegin.isPending || waRegFinish.isPending}
                     pendingLabel={pending}
                     onClick={() => void runRegisterPasskey()}
@@ -472,7 +472,7 @@ export function StepUpBar({
         {allowEnroll && showVerifyLabel ? (
           <Button type="button" size="sm" variant="outline" onClick={() => setPanel("methods")}>
             {showVerifyLabel}
-        </Button>
+          </Button>
         ) : null}
       </div>
       {showTotpVerify ? (

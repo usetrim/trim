@@ -65,6 +65,7 @@ export const DOC_NAV: DocNavSection[] = [
     title: "IDE",
     items: [
       { slug: "ide/connect", title: "Connect any IDE" },
+      { slug: "ide/custom-models", title: "Custom models" },
       { slug: "ide/cursor", title: "Cursor setup" },
       { slug: "ide/vscode", title: "VS Code setup" },
       { slug: "ide/continue", title: "Continue setup" },

@@ -7,6 +7,7 @@ export type DocBlock =
   | { type: "ul"; items: string[] }
   | { type: "ol"; items: string[] }
   | { type: "code"; code: string; language?: string }
+  | { type: "table"; headers: string[]; rows: string[][] }
   | { type: "callout"; title?: string; text: string }
   | { type: "note"; text: string };
 
@@ -46,6 +47,10 @@ export const DOC_PAGES: Record<string, DocPage> = {
           "Separate Admin console for operators (users, billing catalog, chrome, compliance, audit)",
         ],
       },
+      {
+        type: "p",
+        text: "New here? Start with Quickstart, then Installation, then Custom models (friendly trim-claude-sonnet style names in your IDE), then the page for your editor (Cursor, Continue, VS Code, …). Every code block in the docs has a Copy button.",
+      },
       { type: "h2", id: "how-to-use-these-docs", text: "How to use these docs" },
       {
         type: "p",
@@ -54,7 +59,7 @@ export const DOC_PAGES: Record<string, DocPage> = {
       {
         type: "callout",
         title: "Start here",
-        text: "New to Trim? Go to Quickstart. Install the CLI, leave Start Trim with your IDE on, point Cursor / Continue / VS Code Chat at the local Base URL (see IDE docs for exact files), and open your IDE. Or run trim start once for a manual session. See Always-on with IDE for the everyday loop.",
+        text: "New to Trim? Go to Quickstart → Installation → Custom models → your editor page (Cursor / Continue / VS Code). Install the CLI, leave Start Trim with your IDE on, paste the Base URL + a trim-… model id, then verify on the local dashboard. See Always-on with IDE for the everyday loop.",
       },
       { type: "h2", id: "open-core", text: "Open core" },
       {
@@ -66,36 +71,59 @@ export const DOC_PAGES: Record<string, DocPage> = {
 
   quickstart: page(
     "Quickstart",
-    "Install Trim, wire Cursor or VS Code, keep Always-on with IDE checked, and confirm savings on your first request.",
+    "Five clear steps: install, sign in, keep Trim ready, point your IDE + pick a Trim model, verify savings.",
     [
       {
         type: "p",
-        text: "This path gets you from zero to a trimmed chat request in a few minutes. Everyday use should feel always-on with your IDE; you do not need to remember trim start every day once auto-start is enabled. Official installs talk to Trim Cloud with zero environment setup - you should never paste HMAC secrets or API URLs for normal use.",
+        text: "Follow this page top to bottom. Each code block has a Copy button - paste into your terminal or IDE settings. Everyday use should feel always-on: after step 3 you should not need to remember trim start every day. Official installs talk to Trim Cloud with zero environment secrets - never paste HMAC keys for normal use.",
+      },
+      {
+        type: "table",
+        headers: ["Step", "What you do", "Where"],
+        rows: [
+          ["1", "Install the Trim CLI", "Terminal"],
+          ["2", "Sign in", "Terminal → browser"],
+          ["3", "Keep Trim ready (Always-on)", "Dashboard Preferences + terminal"],
+          [
+            "4",
+            "Point IDE Base URL + pick a model",
+            "IDE Settings → Models (or Continue / VS Code Chat)",
+          ],
+          ["5", "Verify", "Terminal + local dashboard"],
+        ],
       },
       { type: "h2", id: "install", text: "1. Install the CLI" },
+      {
+        type: "p",
+        text: "Pick one installer for your machine. Then confirm the binary works.",
+      },
       {
         type: "code",
         language: "bash",
         code: `# macOS / Linux
 curl -fsSL https://use-trim.com/install.sh | sh
+trim version
 
 # Windows (PowerShell)
 irm https://use-trim.com/install.ps1 | iex
+trim version
 
-# npm
+# npm (any OS with Node)
 npm install -g @usetrim/trim
+trim version
 
-# Homebrew
-brew install usetrim/tap/trim`,
+# Homebrew (macOS)
+brew install usetrim/tap/trim
+trim version`,
       },
       {
         type: "h2",
         id: "login",
-        text: "2. Sign in (needed for quotas, billing, and licensed use)",
+        text: "2. Sign in",
       },
       {
         type: "p",
-        text: "Trim cloud handles auth, quotas, and billing. Sign in for licensed/metered use and the dashboard. Compression runs on your machine; chat still needs an upstream model over the network.",
+        text: "Sign in so quotas, billing, and the cloud dashboard work. Compression still runs on your machine; the model reply still needs your provider key (OpenAI / Anthropic / Google) in the IDE.",
       },
       {
         type: "code",
@@ -105,43 +133,88 @@ brew install usetrim/tap/trim`,
       { type: "h2", id: "always-on", text: "3. Keep Trim ready with your IDE" },
       {
         type: "p",
-        text: "In the dashboard under Preferences, leave Start Trim with your IDE checked (default on). Local enforcers apply that preference: the Trim IDE extension, trim autostart, and optional trim daemon. The browser cannot start Trim by itself.",
+        text: "Exact place: open https://use-trim.com/dashboard → Preferences → leave Start Trim with your IDE checked (default on). Then enable local auto-start. The browser cannot start Trim by itself - the CLI and/or Trim IDE extension do.",
       },
       {
         type: "code",
         language: "bash",
-        code: `# Enable preference + best-effort OS logon (no admin on normal Windows)
+        code: `# Preference + best-effort OS logon (no admin on a normal Windows PC)
 trim autostart enable
+trim autostart status
 
-# Optional: one-shot manual session instead
+# Optional one-shot session (prints ready UI, then returns your shell; proxy stays up)
 trim start`,
       },
       {
         type: "callout",
         title: "Attach, do not double-bind",
-        text: "If a healthy proxy is already listening, trim start prints a green confirmation (Trim is already running), the IDE Base URL table, and a muted attach note - then exits 0. It does not start a second process. Prefer one proxy per machine.",
+        text: "If a healthy proxy is already listening, trim start prints a green confirmation, the IDE Base URL table, and a muted attach note - then exits 0. Prefer one proxy per machine.",
       },
       {
         type: "callout",
-        title: "Preference saved even if OS logon fails",
-        text: "On Windows, Trim uses a per-user Startup Run key pointing at %LOCALAPPDATA%\\Trim\\bin\\trim.exe (not an admin Scheduled Task, and not npm’s vendor tree). If registration is blocked, the CLI keeps your preference on and tells you to use trim start or the IDE extension. See trim autostart.",
+        title: "Windows: preference saved even if OS logon fails",
+        text: "Trim uses a per-user Startup Run key → %LOCALAPPDATA%\\Trim\\bin\\trim.exe (not an admin Scheduled Task, and not npm’s vendor tree). If registration is blocked, keep using trim start or the Trim IDE extension. See trim autostart.",
       },
-      { type: "h2", id: "point-ide", text: "4. Point your IDE or agent at Trim" },
+      { type: "h2", id: "point-ide", text: "4. Point your IDE and pick a Trim model" },
+      {
+        type: "p",
+        text: "Two things must match: (A) Base URL points at Trim, (B) the model id is a Trim-friendly name (or an official id Trim already routes). Use the Copy button on each value below.",
+      },
+      {
+        type: "h3",
+        id: "copy-base-urls",
+        text: "Copy these Base URLs",
+      },
+      {
+        type: "code",
+        language: "text",
+        code: `Cursor / Continue / Windsurf / Zed / JetBrains / most OpenAI clients
+http://127.0.0.1:8888/v1
+
+VS Code Chat → Custom Endpoint (full path required)
+http://127.0.0.1:8888/v1/chat/completions
+
+Claude Code only (origin - no /v1)
+http://127.0.0.1:8888`,
+      },
+      {
+        type: "h3",
+        id: "copy-model-ids",
+        text: "Copy these recommended model ids",
+      },
+      {
+        type: "code",
+        language: "text",
+        code: `trim-claude-sonnet
+trim-claude-haiku
+trim-claude-opus
+trim-gemini-flash
+trim-gemini-flash-latest
+gpt-4o-mini`,
+      },
+      {
+        type: "p",
+        text: "Exact IDE places (open the matching docs page for screenshots-level detail):",
+      },
       {
         type: "ol",
         items: [
-          "Cursor: Settings → Models → Override OpenAI Base URL → the URL trim start printed (example http://127.0.0.1:8888/v1)",
-          "Continue (VS Code / Cursor extension): edit ~/.continue/config.yaml - provider openai, apiBase http://127.0.0.1:8888/v1 - see Continue setup",
-          "VS Code Chat Custom Endpoint: Chat: Manage Language Models → Add Models → Custom Endpoint → full URL …/v1/chat/completions - see VS Code setup",
-          "Claude Code: export ANTHROPIC_BASE_URL=http://127.0.0.1:8888 (origin only, no /v1)",
-          "Install the Trim IDE extension (VS Code and Cursor) for auto-start with the IDE plus acceptance / LOC telemetry",
-          "Use your upstream provider key as configured for your deployment (Anthropic key for Claude models on the OpenAI door)",
+          "Cursor: Settings → Models → enable Override OpenAI Base URL → paste http://127.0.0.1:8888/v1 → add/select a model id such as trim-claude-sonnet → put the matching provider key in the OpenAI API key field (Anthropic key for Claude, OpenAI key for GPT, Google key for Gemini)",
+          "Continue: edit ~/.continue/config.yaml → provider openai, apiBase http://127.0.0.1:8888/v1, model trim-claude-sonnet → Continue sidebar → Reload config (not VS Code built-in Chat)",
+          "VS Code Chat: Command Palette → Chat: Manage Language Models → Add Models → Custom Endpoint → url = http://127.0.0.1:8888/v1/chat/completions, id = trim-claude-sonnet",
+          "Claude Code: export ANTHROPIC_BASE_URL=http://127.0.0.1:8888 (no /v1)",
+          "Optional helper: install Trim IDE (Extensions → Trim IDE by usetrim) for auto-start + dashboard charts",
         ],
       },
       {
         type: "callout",
+        title: "Custom models in your IDE",
+        text: "You can create friendly custom model entries (trim-claude-sonnet, trim-claude-haiku, trim-gemini-flash-latest, trim-gpt-4o-mini, trim-gemini-fast-latest, and your own trim-… names) in Cursor Models, Continue config.yaml, or VS Code chatLanguageModels.json. Full guide: Custom models.",
+      },
+      {
+        type: "callout",
         title: "Pick the right panel",
-        text: "In VS Code, Continue is a separate sidebar from built-in Chat. Continue models show as Claude via Trim (from config.yaml). Built-in Chat shows Custom Endpoint/… and 0 credits. Use the matching docs page for the panel you actually open.",
+        text: "In VS Code, Continue is a separate sidebar from built-in Chat. Continue shows names from config.yaml (for example Claude via Trim). Built-in Chat shows Custom Endpoint/… and 0 credits. Use the docs page for the panel you actually open.",
       },
       { type: "h2", id: "verify", text: "5. Verify" },
       {
@@ -149,28 +222,45 @@ trim start`,
         language: "bash",
         code: `trim status
 trim autostart status
-trim daemon status
-trim help autostart
-trim help daemon`,
+trim config sync
+trim stats
+
+# Local savings meter (browser)
+# http://127.0.0.1:8888/dashboard`,
       },
       {
-        type: "p",
-        text: "Send a chat request with a noisy workspace. Status and the dashboard show tokens in, tokens out, percent cut, and estimated USD direction when metering is enabled. Fast Mode always runs on the live proxy; Deep Mode also runs when Preferences Deep is on.",
+        type: "ol",
+        items: [
+          "Send one short chat (“Reply with exactly: ok”) with a noisy workspace open",
+          "Confirm http://127.0.0.1:8888/dashboard Requests increase",
+          "Cloud charts: https://use-trim.com/dashboard (Usage / Traces) when signed in",
+          "Plans and metering: Dashboard → Billing (or Plans) for your plan and quotas",
+        ],
       },
       {
         type: "note",
-        text: "Next: Always-on with IDE for the everyday loop, Installation for platform details (copyable Always-on flow), Connect any IDE (supported matrix), Continue setup, VS Code setup, Windsurf / Zed / JetBrains / Aider, Cursor setup, Claude Code, or Uninstall when you leave a machine clean.",
+        text: "Next: Installation (platform detail), Custom models (exact settings + copyable examples), Cursor setup / Continue setup / VS Code setup, Always-on with IDE, or Uninstall.",
       },
     ],
   ),
 
   installation: page(
     "Installation",
-    "Install Trim on macOS, Linux, or Windows and keep the binary updated.",
+    "Install Trim on macOS, Linux, or Windows, then finish Always-on + IDE model setup with copyable steps.",
     [
       {
         type: "p",
-        text: "Prefer the one-line installers from use-trim.com. They fetch the matching release for your OS and architecture and place trim on your PATH. The same installers are used worldwide; they pick the correct OS/CPU asset automatically.",
+        text: "Prefer the one-line installers from use-trim.com. They fetch the matching release for your OS and architecture and place trim on your PATH. The same installers work worldwide; they pick the correct OS/CPU asset automatically. Every code block below has a Copy button.",
+      },
+      {
+        type: "table",
+        headers: ["Path", "Who it is for", "Command"],
+        rows: [
+          ["curl installer", "macOS / Linux", "curl -fsSL https://use-trim.com/install.sh | sh"],
+          ["PowerShell installer", "Windows", "irm https://use-trim.com/install.ps1 | iex"],
+          ["npm", "Any OS with Node", "npm install -g @usetrim/trim"],
+          ["Homebrew", "macOS", "brew install usetrim/tap/trim"],
+        ],
       },
       { type: "h2", id: "unix", text: "macOS and Linux" },
       {
@@ -209,10 +299,21 @@ winget install Trim.CLI`,
         type: "p",
         text: "npm (@usetrim/trim) and Homebrew (usetrim/tap/trim) are live. curl/irm installers remain supported. Scoop/winget are optional. Maintainer ops: packaging/README.md.",
       },
-      { type: "h2", id: "after-install", text: "After install: Always-on" },
+      { type: "h2", id: "after-install", text: "After install: Always-on (required)" },
       {
         type: "p",
-        text: "Official installs need zero environment variables for Trim Cloud. Sign in, enable Always-on, then point your IDE at the local Base URL. Use the copy button on each block.",
+        text: "Official installs need zero environment variables for Trim Cloud. Do these in order. Exact dashboard place for the preference: https://use-trim.com/dashboard → Preferences → Start Trim with your IDE (leave checked).",
+      },
+      {
+        type: "ol",
+        items: [
+          "Confirm install: trim version",
+          "Sign in: trim login",
+          "Enable Always-on: trim autostart enable",
+          "Confirm: trim autostart status",
+          "Optional smoke: trim start (ready UI, then your shell returns; proxy stays listening)",
+          "Sync adapters + model aliases: trim config sync",
+        ],
       },
       {
         type: "code",
@@ -221,6 +322,7 @@ winget install Trim.CLI`,
 trim login
 trim autostart enable
 trim autostart status
+trim config sync
 
 # Optional advanced OS logon check
 trim daemon status
@@ -240,6 +342,57 @@ trim start`,
 Get-ItemProperty HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run |
   Select-Object TrimProxy
 Test-Path \"$env:LOCALAPPDATA\\Trim\\bin\\trim.exe\"`,
+      },
+      {
+        type: "h2",
+        id: "ide-and-models",
+        text: "After install: IDE Base URL + models",
+      },
+      {
+        type: "p",
+        text: "Installing the CLI alone does not compress chat. You must point your editor at Trim and choose a model id. Copy the values, then open the matching IDE page for click-by-click menus.",
+      },
+      {
+        type: "code",
+        language: "text",
+        code: `OpenAI-compatible Base URL (Cursor, Continue, Windsurf, Zed, JetBrains, Aider)
+http://127.0.0.1:8888/v1
+
+VS Code Chat Custom Endpoint url
+http://127.0.0.1:8888/v1/chat/completions
+
+Claude Code ANTHROPIC_BASE_URL (no /v1)
+http://127.0.0.1:8888`,
+      },
+      {
+        type: "code",
+        language: "text",
+        code: `Recommended model ids (paste into IDE model settings)
+trim-claude-sonnet
+trim-claude-haiku
+trim-claude-opus
+trim-gemini-flash
+trim-gemini-flash-latest
+gpt-4o-mini`,
+      },
+      {
+        type: "table",
+        headers: ["IDE / client", "Exact settings place", "Docs"],
+        rows: [
+          ["Cursor", "Settings → Models → Override OpenAI Base URL + model list", "Cursor setup"],
+          ["Continue", "~/.continue/config.yaml (apiBase + model)", "Continue setup"],
+          [
+            "VS Code Chat",
+            "Chat: Manage Language Models → Custom Endpoint → chatLanguageModels.json",
+            "VS Code setup",
+          ],
+          ["Claude Code", "Shell env ANTHROPIC_BASE_URL", "Claude Code"],
+          ["Any custom model name", "Same places - create a trim-… entry", "Custom models"],
+        ],
+      },
+      {
+        type: "p",
+        text: "Plans / prices / quotas live in the product dashboard, not in the IDE model dialog: https://use-trim.com/dashboard → Billing (or Plans). API keys for the Trim IDE extension: Dashboard → Settings → API keys. Provider keys (OpenAI / Anthropic / Google) stay in the IDE key fields.",
       },
       { type: "h2", id: "from-source", text: "From source (Go)" },
       {
@@ -1201,11 +1354,53 @@ export TRIM_HISTORY_KEEP_TURNS=8
 
   "ide/connect": page(
     "Connect any IDE",
-    "One Trim Base URL, two dialects: Cursor/OpenAI-compat and Claude Code/Anthropic.",
+    "One Trim Base URL, clear per-IDE places, and recommended trim-… model ids with copy buttons.",
     [
       {
         type: "p",
-        text: "Trim listens on one Base URL (for example http://127.0.0.1:8888/v1). OpenAI-shaped clients and Anthropic-shaped clients both point at that same URL. Trim compresses, then routes by path and (on the OpenAI door) by DB-driven provider adapters.",
+        text: "Trim listens on one Base URL. OpenAI-shaped clients and Anthropic-shaped clients both point at that same host. Trim compresses, then routes by path and (on the OpenAI door) by DB-driven provider adapters. Use Copy on every block below. For creating friendly trim-claude-sonnet style entries in each IDE, open Custom models.",
+      },
+      {
+        type: "h2",
+        id: "steps",
+        text: "Steps (every IDE)",
+      },
+      {
+        type: "ol",
+        items: [
+          "Install and sign in: trim version → trim login (see Quickstart / Installation)",
+          "Keep Trim ready: Dashboard → Preferences → Start Trim with your IDE, then trim autostart enable (or trim start)",
+          "Sync adapters + aliases: trim config sync",
+          "Copy the Base URL and a model id from the blocks below",
+          "Open your editor’s exact settings place (table below) and paste Base URL + model + matching provider key",
+          "Send a short chat and confirm http://127.0.0.1:8888/dashboard Requests increase",
+          "Plans / prices anytime: https://use-trim.com/dashboard → Billing",
+        ],
+      },
+      {
+        type: "h2",
+        id: "copy-first",
+        text: "Copy these first",
+      },
+      {
+        type: "code",
+        language: "text",
+        code: `OpenAI door (Cursor, Continue, Windsurf, Zed, JetBrains, Aider, most SDKs)
+http://127.0.0.1:8888/v1
+
+VS Code Chat Custom Endpoint (full path)
+http://127.0.0.1:8888/v1/chat/completions
+
+Claude Code Anthropic door (origin only - no /v1)
+http://127.0.0.1:8888
+
+Recommended model ids
+trim-claude-sonnet
+trim-claude-haiku
+trim-claude-opus
+trim-gemini-flash
+trim-gemini-flash-latest
+gpt-4o-mini`,
       },
       { type: "h2", id: "doors", text: "Two doors" },
       {
@@ -1238,21 +1433,50 @@ export TRIM_HISTORY_KEEP_TURNS=8
         type: "note",
         text: "Cursor has one OpenAI API key field per session. When you switch model family (GPT vs Gemini vs Claude), put that provider’s key in the key field. Trim routes the host from the model id automatically after trim config sync. No OpenRouter.",
       },
-      { type: "h2", id: "clients", text: "What to set (by client)" },
+      { type: "h2", id: "clients", text: "What to set (by client) - exact places" },
       {
         type: "p",
-        text: "Same Trim listen host. Exact path and config file differ by client. Prefer the dedicated pages (Cursor, Continue, VS Code, Windsurf, Zed, JetBrains, Aider/shell, Claude Code) for copy-paste blocks.",
+        text: "Same Trim listen host. Exact menus and files differ. Dedicated pages have full copy-paste blocks.",
+      },
+      {
+        type: "table",
+        headers: ["Client", "Exact place", "What to paste"],
+        rows: [
+          [
+            "Cursor",
+            "Settings → Models → Override OpenAI Base URL",
+            "http://127.0.0.1:8888/v1 + model id (trim-claude-sonnet, …)",
+          ],
+          [
+            "Continue",
+            "~/.continue/config.yaml",
+            "provider openai, apiBase …/v1, model trim-claude-sonnet",
+          ],
+          [
+            "VS Code Chat",
+            "Chat: Manage Language Models → Custom Endpoint → chatLanguageModels.json",
+            "url …/v1/chat/completions + model id",
+          ],
+          [
+            "Windsurf / Zed",
+            "User settings.json (see dedicated pages)",
+            "Base URL / api_url = …/v1",
+          ],
+          [
+            "JetBrains",
+            "AI Assistant OpenAI-compatible endpoint (hint: ~/.config/trim/jetbrains-openai.url)",
+            "…/v1",
+          ],
+          ["Aider / shell", "OPENAI_BASE_URL env", "…/v1 + --model trim-claude-sonnet"],
+          ["Claude Code", "ANTHROPIC_BASE_URL env", "http://127.0.0.1:8888 (no /v1)"],
+        ],
       },
       {
         type: "ul",
         items: [
-          "Cursor: Override OpenAI Base URL = Trim …/v1. Key = provider key for the model family you pick.",
-          "Continue: file ~/.continue/config.yaml (modern Continue; not config.json). provider: openai, apiBase: Trim …/v1, model id from GET /v1/models (example trim-claude-sonnet). Open the Continue sidebar - not VS Code built-in Chat.",
-          "VS Code Chat (Custom Endpoint / BYOK): file %APPDATA%\\Code\\User\\chatLanguageModels.json (macOS/Linux: Code User folder). url must be the full …/v1/chat/completions path. Store the API key via Add Models wizard (${input:chat.lm.secret…}) - never paste a raw sk- key into that JSON.",
-          "Windsurf / Zed / other OpenAI-compat: Base URL = Trim …/v1 (trim setup writes common settings when present).",
-          "Shell OpenAI tools / Aider: export OPENAI_BASE_URL=Trim …/v1 (same OpenAI door; key matches the model).",
-          "Claude Code: export ANTHROPIC_BASE_URL=Trim listen origin only (http://127.0.0.1:8888) - no /v1 (Claude Code appends /v1/messages).",
-          "JetBrains: trim setup writes ~/.config/trim/jetbrains-openai.url with the Trim …/v1 endpoint to paste into the IDE.",
+          "Continue: modern Continue uses config.yaml (not config.json). Open the Continue sidebar - not VS Code built-in Chat.",
+          "VS Code Chat: store the API key via the Add Models wizard (${input:chat.lm.secret…}) - never paste a raw sk- key into chatLanguageModels.json.",
+          "trim setup writes common settings when those product folders exist, and prints copy/paste blocks for Continue + VS Code Chat.",
         ],
       },
       {
@@ -1351,52 +1575,416 @@ trim start`,
     ],
   ),
 
-  "ide/cursor": page(
-    "Cursor setup",
-    "Wire Cursor chat and agents through the Trim local Base URL.",
+  "ide/custom-models": page(
+    "Custom models",
+    "Create clear trim-… model names in Cursor, Continue, VS Code Chat, and other IDEs - with copyable examples and exact settings places.",
     [
       {
         type: "p",
-        text: "Cursor is one of the primary IDE paths. Trim does not replace Composer; it sits under the OpenAI-compatible Base URL so every turn can run Fast Mode locally (and Deep when Preferences Deep is on and billing dials allow) before the upstream model. VS Code users should follow the VS Code setup page and install the Trim IDE extension for telemetry.",
+        text: "Trim works best when your IDE shows short, memorable model names such as trim-claude-sonnet or trim-gemini-flash-latest. Those names are either (1) Trim cloud aliases that map to a real upstream model, or (2) custom entries you create in the IDE that still send a valid model id through Trim. This page is for everyone: non-technical users can copy-paste; technical users can add their own aliases.",
       },
-      { type: "h2", id: "steps", text: "Setup steps" },
       {
-        type: "ol",
-        items: [
-          "Run trim start or rely on Always-on with IDE so the proxy is listening",
-          "Run trim config sync while logged in (loads provider adapters + model aliases from the database)",
-          "Open Cursor Settings → Models",
-          "Enable OpenAI-compatible / Override OpenAI Base URL only (do not mix Cursor Anthropic BYOK with this override)",
-          "Set Base URL to http://127.0.0.1:8888/v1 (or the URL trim start printed / your tunnel …/v1)",
-          "GPT path: pick a gpt-* model; put your OpenAI key in the OpenAI API key field (DB openai_compat → api.openai.com)",
-          "Claude path: pick a Claude / trim-claude-* / anthropic/claude-* model; put your Anthropic key in the OpenAI API key field (DB anthropic_messages → UPSTREAM_ANTHROPIC_URL). Prefer a workspace-scoped Anthropic key. Org-scoped keys + Cursor: set TRIM_ANTHROPIC_WORKSPACE_ID once as a user env var (see Connect any IDE → Anthropic key types).",
-          "Gemini path: pick gemini-flash-latest / gemini-* / trim-gemini-flash; put your Google key in the OpenAI API key field (DB openai_compat → Google OpenAI-compat; trim-gemini-flash aliases to gemini-flash-latest)",
-          "Keep using Composer and agents as usual",
+        type: "callout",
+        title: "Two layers (do not confuse them)",
+        text: "IDE custom model = a row you add in Cursor Models / Continue config / VS Code Chat so the picker shows a friendly name. Trim alias = a database mapping (trim-claude-sonnet → a real Claude id) maintained under Admin → Billing → Provider adapters (and openai_model_aliases for Gemini). Everyday users pick shipped Trim aliases. Operators create new worldwide aliases.",
+      },
+      {
+        type: "h2",
+        id: "recommended",
+        text: "Recommended model ids (copy)",
+      },
+      {
+        type: "p",
+        text: "Paste one of these into your IDE model field. Prefer Trim aliases over long dated provider ids - aliases stay correct when providers retire versions.",
+      },
+      {
+        type: "code",
+        language: "text",
+        code: `trim-claude-sonnet
+trim-claude-haiku
+trim-claude-opus
+trim-gemini-flash
+trim-gemini-flash-latest
+gpt-4o-mini`,
+      },
+      {
+        type: "table",
+        headers: ["Model id you type", "What it is for", "Key you put in the IDE"],
+        rows: [
+          ["trim-claude-sonnet", "Strong Claude coding (alias)", "Anthropic API key"],
+          ["trim-claude-haiku", "Fast / cheaper Claude (alias)", "Anthropic API key"],
+          ["trim-claude-opus", "Highest Claude quality (alias)", "Anthropic API key"],
+          [
+            "trim-gemini-flash / trim-gemini-flash-latest",
+            "Gemini Flash via Trim (alias)",
+            "Google API key",
+          ],
+          ["gpt-4o-mini (or your gpt-… id)", "OpenAI GPT via Trim", "OpenAI API key"],
         ],
       },
-      { type: "h2", id: "verify", text: "Verify it works" },
+      {
+        type: "h2",
+        id: "naming",
+        text: "Custom naming idea (best practice)",
+      },
+      {
+        type: "p",
+        text: "When you add your own IDE entries, use a stable pattern so teammates recognize Trim traffic:",
+      },
+      {
+        type: "code",
+        language: "text",
+        code: `trim-<provider>-<tier>
+
+Shipped-style examples (prefer these today):
+trim-claude-sonnet
+trim-claude-haiku
+trim-claude-opus
+trim-gemini-flash
+trim-gemini-flash-latest
+
+Custom naming ideas you can create in the IDE (and ask ops to alias worldwide):
+trim-gpt-4o-mini
+trim-gpt-4.1
+trim-gpt-3.2
+trim-gemini-fast
+trim-gemini-fast-latest`,
+      },
       {
         type: "ul",
         items: [
-          "Send a Composer request with a noisy workspace open",
-          "Confirm the local proxy is healthy (extension status or http://127.0.0.1:8888/health, or the host/port trim start printed)",
-          "Run trim status for tokens in vs out",
-          "Open Dashboard → Traces (or home Usage charts) when logged in",
+          "Start with trim- so it is obvious the request should go through Trim, not the vendor directly",
+          "Use the provider family next (claude, gpt, gemini)",
+          "Use a short tier word (sonnet, haiku, flash, fast, latest, 4o-mini, 3.2) - avoid long dated stamps in the display name",
+          "The id you send must still be listed by GET /v1/models or match a Trim alias / adapter prefix - Trim does not invent hosts for unknown names",
+          "IDE-only display names that Trim has never aliased will fail closed until an operator adds the alias (Admin → Billing → Provider adapters / openai_model_aliases)",
+        ],
+      },
+      {
+        type: "h2",
+        id: "list-models",
+        text: "See what Trim accepts on your machine",
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `trim start
+trim config sync
+curl -s http://127.0.0.1:8888/v1/models -H "Authorization: Bearer YOUR_PROVIDER_KEY"`,
+      },
+      {
+        type: "h2",
+        id: "cursor",
+        text: "Cursor - exact place to add a custom model",
+      },
+      {
+        type: "ol",
+        items: [
+          "Make sure Trim is listening: trim start (or Always-on)",
+          "Open Cursor → Settings → Models",
+          "Enable Override OpenAI Base URL only (do not also enable Cursor Anthropic BYOK)",
+          "Base URL → paste the copy block below",
+          "Add / enable a model whose id is trim-claude-sonnet (or another id from the list above)",
+          "OpenAI API key field → paste the provider key that matches that model family",
+          "Select that model in Chat / Composer and send a short test",
+        ],
+      },
+      {
+        type: "code",
+        language: "text",
+        code: "http://127.0.0.1:8888/v1",
+      },
+      {
+        type: "callout",
+        title: "Key must match the model",
+        text: "Claude / trim-claude-* → Anthropic key. GPT / gpt-* → OpenAI key. Gemini / trim-gemini-* → Google key. Cursor has one OpenAI key field per session - switch the key when you switch family.",
+      },
+      {
+        type: "h2",
+        id: "continue",
+        text: "Continue - exact file + copy-paste models",
+      },
+      {
+        type: "p",
+        text: "Exact file: Windows C:\\Users\\<you>\\.continue\\config.yaml · macOS/Linux ~/.continue/config.yaml. Open the Continue sidebar (not built-in Chat), then Reload config.",
+      },
+      {
+        type: "code",
+        language: "yaml",
+        code: `name: Main Config
+version: 1.0.0
+schema: v1
+models:
+  - name: Claude Sonnet via Trim
+    provider: openai
+    model: trim-claude-sonnet
+    apiBase: http://127.0.0.1:8888/v1
+    apiKey: sk-ant-YOUR_ANTHROPIC_KEY
+    roles: [chat, edit, apply]
+    capabilities: [tool_use]
+    useResponsesApi: false
+
+  - name: Claude Haiku via Trim
+    provider: openai
+    model: trim-claude-haiku
+    apiBase: http://127.0.0.1:8888/v1
+    apiKey: sk-ant-YOUR_ANTHROPIC_KEY
+    roles: [chat, edit, apply]
+    capabilities: [tool_use]
+    useResponsesApi: false
+
+  - name: GPT via Trim
+    provider: openai
+    model: gpt-4o-mini
+    apiBase: http://127.0.0.1:8888/v1
+    apiKey: sk-YOUR_OPENAI_KEY
+    roles: [chat, edit, apply]
+    capabilities: [tool_use]
+    useResponsesApi: false
+
+  - name: Gemini Flash via Trim
+    provider: openai
+    model: trim-gemini-flash-latest
+    apiBase: http://127.0.0.1:8888/v1
+    apiKey: YOUR_GOOGLE_API_KEY
+    roles: [chat, edit, apply]
+    capabilities: [tool_use]
+    useResponsesApi: false`,
+      },
+      {
+        type: "h2",
+        id: "vscode",
+        text: "VS Code Chat - exact place + copy-paste",
+      },
+      {
+        type: "ol",
+        items: [
+          "Command Palette → Chat: Manage Language Models → Add Models → Custom Endpoint → Chat Completions",
+          "When asked for an API key, paste the provider key (wizard stores ${input:chat.lm.secret…} - never paste raw sk- into the JSON file)",
+          "Edit chatLanguageModels.json (Windows %APPDATA%\\Code\\User\\chatLanguageModels.json; macOS ~/Library/Application Support/Code/User/chatLanguageModels.json; Linux ~/.config/Code/User/chatLanguageModels.json)",
+          "Set each model id + full url as below → Save → Developer: Reload Window → New Chat → pick the model → Ask mode",
+        ],
+      },
+      {
+        type: "code",
+        language: "json",
+        code: `[
+  {
+    "name": "Trim",
+    "vendor": "customendpoint",
+    "apiKey": "\${input:chat.lm.secret.LEAVE_WIZARD_VALUE}",
+    "apiType": "chat-completions",
+    "models": [
+      {
+        "id": "trim-claude-sonnet",
+        "name": "Claude Sonnet via Trim",
+        "url": "http://127.0.0.1:8888/v1/chat/completions",
+        "toolCalling": false,
+        "vision": false,
+        "maxInputTokens": 128000,
+        "maxOutputTokens": 16000
+      },
+      {
+        "id": "trim-claude-haiku",
+        "name": "Claude Haiku via Trim",
+        "url": "http://127.0.0.1:8888/v1/chat/completions",
+        "toolCalling": false,
+        "vision": false,
+        "maxInputTokens": 128000,
+        "maxOutputTokens": 16000
+      },
+      {
+        "id": "trim-gemini-flash-latest",
+        "name": "Gemini Flash via Trim",
+        "url": "http://127.0.0.1:8888/v1/chat/completions",
+        "toolCalling": false,
+        "vision": false,
+        "maxInputTokens": 128000,
+        "maxOutputTokens": 16000
+      }
+    ]
+  }
+]`,
+      },
+      {
+        type: "h2",
+        id: "other-ides",
+        text: "Windsurf, Zed, JetBrains, Aider",
+      },
+      {
+        type: "ul",
+        items: [
+          "Windsurf: User settings.json → openai.baseUrl / windsurf.openai.baseUrl = http://127.0.0.1:8888/v1, then pick/add the model id in Windsurf’s model UI",
+          "Zed: settings.json → language_models.openai.api_url = http://127.0.0.1:8888/v1 and list available_models names such as trim-claude-sonnet",
+          "JetBrains: Settings → Tools → AI Assistant → OpenAI-compatible endpoint → paste http://127.0.0.1:8888/v1 (hint file from trim setup: ~/.config/trim/jetbrains-openai.url)",
+          "Aider / shell: OPENAI_BASE_URL=http://127.0.0.1:8888/v1 and pass --model trim-claude-sonnet (or your id)",
+        ],
+      },
+      {
+        type: "h2",
+        id: "where-settings",
+        text: "Where everything lives (map)",
+      },
+      {
+        type: "table",
+        headers: ["What", "Exact place"],
+        rows: [
+          [
+            "Always-on preference",
+            "https://use-trim.com/dashboard → Preferences → Start Trim with your IDE",
+          ],
+          ["Plans / prices / quotas", "https://use-trim.com/dashboard → Billing (or Plans)"],
+          [
+            "Trim IDE extension API key",
+            "Dashboard → Settings → API keys (not your OpenAI/Anthropic/Google key)",
+          ],
+          [
+            "Provider keys for chat",
+            "IDE model settings key field (or Continue apiKey / VS Code wizard secret)",
+          ],
+          ["Cursor Base URL + models", "Cursor → Settings → Models"],
+          ["Continue models", "~/.continue/config.yaml"],
+          [
+            "VS Code Chat models",
+            "Code/User/chatLanguageModels.json via Chat: Manage Language Models",
+          ],
+          [
+            "Worldwide Trim aliases (ops)",
+            "Admin → Billing → Provider adapters (+ openai_model_aliases)",
+          ],
+          ["Local adapter sync", "Terminal: trim config sync"],
+        ],
+      },
+      {
+        type: "h2",
+        id: "ops-aliases",
+        text: "Operators: create a new Trim alias for everyone",
+      },
+      {
+        type: "ol",
+        items: [
+          "Admin console → Billing → Provider adapters",
+          "For Claude-style names: add/update model_aliases on the anthropic_messages adapter (example trim-claude-sonnet → current official Claude id)",
+          "For Gemini-style names: add a row in openai_model_aliases (client_model → upstream_model)",
+          "Optionally advertise the id in provider_discoverable_models so GET /v1/models lists it",
+          "Users run trim config sync (or restart trim start) to pull the new alias",
+        ],
+      },
+      {
+        type: "note",
+        text: "Creating only an IDE display name is not enough if Trim has never seen that model id. Unknown ids fail closed with a clear error after adapters are synced. Prefer shipped trim-… aliases, or ask an operator to add one.",
+      },
+      {
+        type: "note",
+        text: "Next: Cursor setup, Continue setup, VS Code setup, Connect any IDE, Provider adapters.",
+      },
+    ],
+  ),
+
+  "ide/cursor": page(
+    "Cursor setup",
+    "Step-by-step: Base URL, custom Trim models, provider keys, and verify - with copy buttons.",
+    [
+      {
+        type: "p",
+        text: "Cursor is a primary Trim path. Trim does not replace Composer; it sits under Override OpenAI Base URL so every turn can run Fast Mode locally (and Deep when Preferences Deep is on) before the upstream model. Use the Copy button on each value. For friendly trim-… names, also read Custom models.",
+      },
+      {
+        type: "table",
+        headers: ["Setting", "Exact place in Cursor"],
+        rows: [
+          ["Base URL", "Settings → Models → Override OpenAI Base URL"],
+          ["Model id", "Settings → Models → model list / add model"],
+          ["Provider API key", "Settings → Models → OpenAI API key field"],
+          ["Trim Always-on preference", "use-trim.com/dashboard → Preferences"],
+          ["Plans / prices", "use-trim.com/dashboard → Billing"],
+        ],
+      },
+      { type: "h2", id: "steps", text: "Setup steps (do in order)" },
+      {
+        type: "ol",
+        items: [
+          "Terminal: trim start (or rely on Always-on) so the proxy is listening",
+          "Terminal: trim config sync while logged in (loads provider adapters + model aliases)",
+          "Cursor → Settings → Models",
+          "Enable Override OpenAI Base URL only (do not mix Cursor Anthropic BYOK with this override)",
+          "Paste Base URL from the copy block below",
+          "Add or enable a model id such as trim-claude-sonnet (see Custom models for more names)",
+          "Paste the matching provider key into the OpenAI API key field",
+          "Use Chat / Composer as usual with that model selected",
+        ],
+      },
+      {
+        type: "h2",
+        id: "copy-base-url",
+        text: "Copy: Base URL",
+      },
+      {
+        type: "code",
+        language: "text",
+        code: "http://127.0.0.1:8888/v1",
+      },
+      {
+        type: "h2",
+        id: "copy-models",
+        text: "Copy: model ids to add in Settings → Models",
+      },
+      {
+        type: "code",
+        language: "text",
+        code: `trim-claude-sonnet
+trim-claude-haiku
+trim-claude-opus
+trim-gemini-flash
+trim-gemini-flash-latest
+gpt-4o-mini`,
+      },
+      {
+        type: "h2",
+        id: "keys-by-model",
+        text: "Which key goes in the OpenAI API key field?",
+      },
+      {
+        type: "table",
+        headers: ["Model you pick", "Key to paste", "What Trim does"],
+        rows: [
+          ["gpt-*", "OpenAI API key", "Routes to OpenAI (openai_compat)"],
+          [
+            "trim-claude-* / claude-* / anthropic/claude-*",
+            "Anthropic API key",
+            "Translates to Anthropic Messages",
+          ],
+          ["trim-gemini-* / gemini-*", "Google API key", "Routes to Google OpenAI-compat"],
+        ],
+      },
+      {
+        type: "callout",
+        title: "Anthropic key tip",
+        text: "Prefer a workspace-scoped Anthropic key. Org-scoped keys need TRIM_ANTHROPIC_WORKSPACE_ID once as a user env var - see Connect any IDE → Anthropic key types.",
+      },
+      { type: "h2", id: "verify", text: "Verify it works" },
+      {
+        type: "ol",
+        items: [
+          "Send a Composer request with a noisy workspace open (for example: Reply with exactly: ok)",
+          "Open http://127.0.0.1:8888/dashboard - Requests should increase",
+          "Terminal: trim status and trim stats",
+          "Cloud: https://use-trim.com/dashboard → Usage / Traces when signed in",
         ],
       },
       {
         type: "callout",
         title: "After Cursor updates",
-        text: "Model settings sometimes reset. Re-check Base URL if savings disappear suddenly.",
+        text: "Model settings sometimes reset. Re-check Base URL and your trim-… model entries if savings disappear suddenly.",
       },
       {
         type: "callout",
         title: "Cursor vs Continue in the same editor",
-        text: "If you also use the Continue extension inside Cursor/VS Code, that is a separate path (~/.continue/config.yaml + Continue sidebar). Cursor’s Override OpenAI Base URL does not configure Continue. Prefer one intentional path per chat panel.",
+        text: "Continue is a separate path (~/.continue/config.yaml + Continue sidebar). Cursor’s Override OpenAI Base URL does not configure Continue. Prefer one intentional path per chat panel.",
       },
       {
         type: "note",
-        text: "Also see Always-on with IDE, Connect any IDE (supported matrix), VS Code setup, Continue setup, Windsurf / Zed / JetBrains / Aider setup, and Trim IDE extension (auto-start + acceptance / LOC metrics).",
+        text: "Also see Custom models, Always-on with IDE, Connect any IDE, Continue setup, VS Code setup, and Trim IDE extension.",
       },
     ],
   ),
@@ -1407,7 +1995,21 @@ trim start`,
     [
       {
         type: "p",
-        text: "VS Code has two common Trim paths. (1) Built-in Chat Language Models → Custom Endpoint (BYOK). (2) The Continue extension (separate sidebar - see Continue setup). Do not confuse them: Custom Endpoint labels look like Custom Endpoint/Trim/… with 0 credits; Continue shows the model name from ~/.continue/config.yaml only.",
+        text: "VS Code has two common Trim paths. (1) Built-in Chat Language Models → Custom Endpoint (BYOK). (2) The Continue extension (separate sidebar - see Continue setup). Do not confuse them: Custom Endpoint labels look like Custom Endpoint/Trim/… with 0 credits; Continue shows the model name from ~/.continue/config.yaml only. Custom trim-… model rows: Custom models.",
+      },
+      {
+        type: "table",
+        headers: ["What", "Exact place"],
+        rows: [
+          [
+            "Custom Endpoint models",
+            "Command Palette → Chat: Manage Language Models → Add Models → Custom Endpoint",
+          ],
+          ["JSON file (Windows)", "%APPDATA%\\Code\\User\\chatLanguageModels.json"],
+          ["JSON file (macOS)", "~/Library/Application Support/Code/User/chatLanguageModels.json"],
+          ["JSON file (Linux)", "~/.config/Code/User/chatLanguageModels.json"],
+          ["Plans / prices", "https://use-trim.com/dashboard → Billing"],
+        ],
       },
       {
         type: "h2",
@@ -1444,6 +2046,10 @@ trim start`,
         text: "Exact file (Windows): %APPDATA%\\Code\\User\\chatLanguageModels.json. macOS: ~/Library/Application Support/Code/User/chatLanguageModels.json. Linux: ~/.config/Code/User/chatLanguageModels.json.",
       },
       {
+        type: "p",
+        text: "Copy-paste starter with several Trim model ids. Add more rows using the same pattern (see Custom models). Keep the wizard apiKey line unchanged.",
+      },
+      {
         type: "code",
         language: "json",
         code: `[
@@ -1455,7 +2061,25 @@ trim start`,
     "models": [
       {
         "id": "trim-claude-sonnet",
-        "name": "Claude via Trim",
+        "name": "Claude Sonnet via Trim",
+        "url": "http://127.0.0.1:8888/v1/chat/completions",
+        "toolCalling": false,
+        "vision": false,
+        "maxInputTokens": 128000,
+        "maxOutputTokens": 16000
+      },
+      {
+        "id": "trim-claude-haiku",
+        "name": "Claude Haiku via Trim",
+        "url": "http://127.0.0.1:8888/v1/chat/completions",
+        "toolCalling": false,
+        "vision": false,
+        "maxInputTokens": 128000,
+        "maxOutputTokens": 16000
+      },
+      {
+        "id": "trim-gemini-flash-latest",
+        "name": "Gemini Flash via Trim",
         "url": "http://127.0.0.1:8888/v1/chat/completions",
         "toolCalling": false,
         "vision": false,
@@ -1467,9 +2091,14 @@ trim start`,
 ]`,
       },
       {
+        type: "code",
+        language: "text",
+        code: "http://127.0.0.1:8888/v1/chat/completions",
+      },
+      {
         type: "callout",
         title: "Critical details",
-        text: "url must be the full chat completions path (…/v1/chat/completions), not only …/v1. Model id must appear in GET /v1/models for your key (prefer trim-claude-sonnet / trim-claude-haiku aliases). Raw sk- keys in apiKey are silently ignored by VS Code and cause 401 empty Bearer - apiKey must stay as the wizard ${input:chat.lm.secret…} placeholder. Do not add requestHeaders.Authorization with a pasted sk- either (same leak / ignore risk). Prefer workspace-scoped Anthropic keys. Trim’s proxy strips mismatched Content-Encoding so Custom Endpoint no longer hits ERR_CONTENT_DECODING_FAILED on rebuffered JSON.",
+        text: "url must be the full chat completions path (…/v1/chat/completions), not only …/v1. Model id must appear in GET /v1/models for your key (prefer trim-claude-sonnet / trim-claude-haiku / trim-gemini-flash-latest). Raw sk- keys in apiKey are silently ignored by VS Code and cause 401 empty Bearer - apiKey must stay as the wizard ${input:chat.lm.secret…} placeholder. Do not add requestHeaders.Authorization with a pasted sk- either. Prefer workspace-scoped Anthropic keys.",
       },
       {
         type: "h2",
@@ -1539,7 +2168,18 @@ http://127.0.0.1:8888/v1/chat/completions`,
     [
       {
         type: "p",
-        text: "Continue is a first-class Trim client for VS Code and Cursor. It speaks OpenAI chat completions. Point apiBase at Trim …/v1. Prefer modern Continue’s config.yaml (schema v1). Older Continue used config.json; if both exist, edit the file your Continue version actually loads (usually config.yaml on Continue 1.x/2.x).",
+        text: "Continue is a first-class Trim client for VS Code and Cursor. It speaks OpenAI chat completions. Point apiBase at Trim …/v1. Prefer modern Continue’s config.yaml (schema v1). Older Continue used config.json; if both exist, edit the file your Continue version actually loads (usually config.yaml on Continue 1.x/2.x). Add as many trim-… models as you want - see Custom models.",
+      },
+      {
+        type: "table",
+        headers: ["What", "Exact place"],
+        rows: [
+          ["Config file (Windows)", "C:\\Users\\<you>\\.continue\\config.yaml"],
+          ["Config file (macOS / Linux)", "~/.continue/config.yaml"],
+          ["Reload", "Command Palette → Continue: Reload config"],
+          ["Chat panel", "Continue sidebar (not VS Code built-in Chat)"],
+          ["Plans / prices", "https://use-trim.com/dashboard → Billing"],
+        ],
       },
       {
         type: "h2",
@@ -1558,7 +2198,11 @@ http://127.0.0.1:8888/v1/chat/completions`,
       {
         type: "h2",
         id: "copy-paste",
-        text: "Copy-paste config (Claude via Trim)",
+        text: "Copy-paste config (Claude, GPT, Gemini via Trim)",
+      },
+      {
+        type: "p",
+        text: "Paste into ~/.continue/config.yaml. Replace the apiKey values. Add or remove model blocks as you like - see Custom models for naming ideas (trim-claude-haiku, trim-gemini-flash-latest, …).",
       },
       {
         type: "code",
@@ -1567,11 +2211,50 @@ http://127.0.0.1:8888/v1/chat/completions`,
 version: 1.0.0
 schema: v1
 models:
-  - name: Claude via Trim
+  - name: Claude Sonnet via Trim
     provider: openai
     model: trim-claude-sonnet
     apiBase: http://127.0.0.1:8888/v1
     apiKey: sk-ant-YOUR_ANTHROPIC_KEY
+    roles:
+      - chat
+      - edit
+      - apply
+    capabilities:
+      - tool_use
+    useResponsesApi: false
+
+  - name: Claude Haiku via Trim
+    provider: openai
+    model: trim-claude-haiku
+    apiBase: http://127.0.0.1:8888/v1
+    apiKey: sk-ant-YOUR_ANTHROPIC_KEY
+    roles:
+      - chat
+      - edit
+      - apply
+    capabilities:
+      - tool_use
+    useResponsesApi: false
+
+  - name: GPT via Trim
+    provider: openai
+    model: gpt-4o-mini
+    apiBase: http://127.0.0.1:8888/v1
+    apiKey: sk-YOUR_OPENAI_KEY
+    roles:
+      - chat
+      - edit
+      - apply
+    capabilities:
+      - tool_use
+    useResponsesApi: false
+
+  - name: Gemini Flash via Trim
+    provider: openai
+    model: trim-gemini-flash-latest
+    apiBase: http://127.0.0.1:8888/v1
+    apiKey: YOUR_GOOGLE_API_KEY
     roles:
       - chat
       - edit
@@ -1584,32 +2267,11 @@ models:
         type: "ul",
         items: [
           "provider stays openai (Continue’s OpenAI client). Trim’s anthropic_messages adapter translates Claude.",
-          "apiKey is your Anthropic key for Claude models (Bearer → x-api-key inside Trim).",
-          "model must be allowed for your key - run GET /v1/models. Prefer Trim aliases: trim-claude-sonnet, trim-claude-haiku, trim-claude-opus.",
+          "apiKey must match the model family (Anthropic for trim-claude-*, OpenAI for gpt-*, Google for trim-gemini-*).",
+          "model must be allowed for your key - run GET /v1/models. Prefer Trim aliases: trim-claude-sonnet, trim-claude-haiku, trim-claude-opus, trim-gemini-flash-latest.",
           "useResponsesApi: false keeps Continue on /v1/chat/completions (required for Trim).",
           "capabilities: tool_use enables Continue Agent tool execution (without it, Agent may print raw invoke XML).",
         ],
-      },
-      {
-        type: "h2",
-        id: "gpt",
-        text: "GPT via Trim (same file)",
-      },
-      {
-        type: "code",
-        language: "yaml",
-        code: `  - name: GPT via Trim
-    provider: openai
-    model: gpt-4o-mini
-    apiBase: http://127.0.0.1:8888/v1
-    apiKey: sk-YOUR_OPENAI_KEY
-    roles:
-      - chat
-      - edit
-      - apply
-    capabilities:
-      - tool_use
-    useResponsesApi: false`,
       },
       {
         type: "h2",
@@ -1621,12 +2283,12 @@ models:
         items: [
           "trim start (dashboard http://127.0.0.1:8888/dashboard)",
           "Install the Continue extension in VS Code or Cursor",
-          "Edit ~/.continue/config.yaml with the block above (real key)",
+          "Edit ~/.continue/config.yaml with the block above (real keys)",
           "Command Palette → Continue: Reload config (or Developer: Reload Window)",
           "Open the Continue sidebar (not VS Code built-in Chat)",
-          "Select Claude via Trim",
+          "Select Claude Sonnet via Trim (or GPT / Gemini / Haiku)",
           "Send: Reply with exactly: ok",
-          "Confirm Trim Last door openai_to_anthropic (Claude) or openai (GPT)",
+          "Confirm Trim Last door openai_to_anthropic (Claude) or openai / openai_compat_* (GPT/Gemini)",
         ],
       },
       {
@@ -1670,18 +2332,28 @@ models:
       },
       {
         type: "note",
-        text: "Also see Connect any IDE, VS Code setup (Custom Endpoint), Cursor setup, Windsurf / Zed / JetBrains / Aider pages, and Base URL troubleshooting. After shipping new setup chrome (Continue / VS Code Chat blocks), apply the site_messages migration, let the API reload site_messages (restart or periodic reload), then delete ~/.config/trim/cli-chrome-cache.json (or Windows %USERPROFILE%\\.config\\trim\\cli-chrome-cache.json) so trim help setup / trim setup pick up the new copy-paste blocks.",
+        text: "Also see Custom models, Connect any IDE, VS Code setup (Custom Endpoint), Cursor setup, Windsurf / Zed / JetBrains / Aider pages, and Base URL troubleshooting. After shipping new setup chrome (Continue / VS Code Chat blocks), apply the site_messages migration, let the API reload site_messages (restart or periodic reload), then delete ~/.config/trim/cli-chrome-cache.json (or Windows %USERPROFILE%\\.config\\trim\\cli-chrome-cache.json) so trim help setup / trim setup pick up the new copy-paste blocks.",
       },
     ],
   ),
 
   "ide/windsurf": page(
     "Windsurf setup",
-    "Point Windsurf’s OpenAI-compatible Base URL at Trim (exact settings keys trim setup writes).",
+    "Step-by-step: exact settings file, copyable Base URL, Trim model ids, and verify.",
     [
       {
         type: "p",
-        text: "Windsurf can override an OpenAI-compatible Base URL. Trim setup writes common keys when Windsurf’s user settings folder exists. Prefer Always-on or trim start first.",
+        text: "Windsurf can override an OpenAI-compatible Base URL. Trim setup writes common keys when Windsurf’s user settings folder exists. Prefer Always-on or trim start first. For creating friendly trim-… model names, also see Custom models.",
+      },
+      {
+        type: "table",
+        headers: ["What", "Exact place"],
+        rows: [
+          ["Base URL keys", "Windsurf User settings.json (paths below)"],
+          ["Model picker", "Windsurf model / OpenAI-compatible model UI"],
+          ["Provider key", "Windsurf API key field for that OpenAI-compatible provider"],
+          ["Plans / prices", "https://use-trim.com/dashboard → Billing"],
+        ],
       },
       { type: "h2", id: "exact-file", text: "Exact file" },
       {
@@ -1699,9 +2371,15 @@ models:
           "trim start (or Always-on with IDE)",
           "trim setup (updates Windsurf settings when the folder exists)",
           "Or set manually: openai.baseUrl / windsurf.openai.baseUrl / codeium.openai.baseUrl = http://127.0.0.1:8888/v1",
-          "Put the provider key that matches your model (Anthropic for Claude on the OpenAI door)",
+          "In Windsurf’s model UI, pick or add trim-claude-sonnet (or another id from the copy block below)",
+          "Put the provider key that matches your model (Anthropic for Claude, OpenAI for GPT, Google for Gemini)",
           "Send a chat and confirm http://127.0.0.1:8888/dashboard Requests increase",
         ],
+      },
+      {
+        type: "h2",
+        id: "copy-base-url",
+        text: "Copy: Base URL settings",
       },
       {
         type: "code",
@@ -1713,68 +2391,110 @@ models:
 }`,
       },
       {
+        type: "h2",
+        id: "copy-models",
+        text: "Copy: model ids to pick / add",
+      },
+      {
+        type: "code",
+        language: "text",
+        code: `trim-claude-sonnet
+trim-claude-haiku
+trim-claude-opus
+trim-gemini-flash
+trim-gemini-flash-latest
+gpt-4o-mini`,
+      },
+      {
         type: "callout",
         title: "Honest limits",
-        text: "Windsurf UI labels change across releases. If a key is ignored, use Windsurf’s current OpenAI-compatible / custom Base URL setting and set it to Trim …/v1. Model ids must still match GET /v1/models / provider adapters.",
+        text: "Windsurf UI labels change across releases. If a key is ignored, use Windsurf’s current OpenAI-compatible / custom Base URL setting and set it to Trim …/v1. Model ids must still match GET /v1/models / provider adapters. See Custom models for naming ideas such as trim-gpt-4o-mini or trim-gemini-fast-latest.",
       },
     ],
   ),
 
-  "ide/zed": page("Zed setup", "Point Zed language_models.openai.api_url at Trim …/v1.", [
-    {
-      type: "p",
-      text: "Zed stores OpenAI-compatible settings under language_models.openai.api_url. trim setup merges that field when Zed’s settings file exists.",
-    },
-    { type: "h2", id: "exact-file", text: "Exact file" },
-    {
-      type: "ul",
-      items: [
-        "Windows: %APPDATA%\\Zed\\settings.json",
-        "macOS: ~/Library/Application Support/Zed/settings.json",
-        "Linux: ~/.config/zed/settings.json",
-      ],
-    },
-    { type: "h2", id: "copy-paste", text: "Copy-paste" },
-    {
-      type: "code",
-      language: "json",
-      code: `{
+  "ide/zed": page(
+    "Zed setup",
+    "Step-by-step: exact settings file, copyable api_url, multiple trim-… models, and verify.",
+    [
+      {
+        type: "p",
+        text: "Zed stores OpenAI-compatible settings under language_models.openai.api_url. trim setup merges that field when Zed’s settings file exists. Add several trim-… names so the picker stays clear - full naming guide: Custom models.",
+      },
+      {
+        type: "table",
+        headers: ["What", "Exact place"],
+        rows: [
+          ["Base URL", "settings.json → language_models.openai.api_url"],
+          ["Custom models list", "settings.json → language_models.openai.available_models"],
+          ["Provider key", "Zed OpenAI provider key UI (as Zed documents)"],
+          ["Plans / prices", "https://use-trim.com/dashboard → Billing"],
+        ],
+      },
+      { type: "h2", id: "exact-file", text: "Exact file" },
+      {
+        type: "ul",
+        items: [
+          "Windows: %APPDATA%\\Zed\\settings.json",
+          "macOS: ~/Library/Application Support/Zed/settings.json",
+          "Linux: ~/.config/zed/settings.json",
+        ],
+      },
+      { type: "h2", id: "copy-paste", text: "Copy-paste (Base URL + custom models)" },
+      {
+        type: "code",
+        language: "json",
+        code: `{
   "language_models": {
     "openai": {
       "api_url": "http://127.0.0.1:8888/v1",
       "available_models": [
-        {
-          "name": "trim-claude-sonnet",
-          "max_tokens": 16000
-        }
+        { "name": "trim-claude-sonnet", "max_tokens": 16000 },
+        { "name": "trim-claude-haiku", "max_tokens": 16000 },
+        { "name": "trim-gemini-flash-latest", "max_tokens": 16000 },
+        { "name": "gpt-4o-mini", "max_tokens": 16000 }
       ]
     }
   }
 }`,
-    },
-    {
-      type: "ol",
-      items: [
-        "trim start",
-        "trim setup (or paste the api_url above)",
-        "Configure your API key in Zed for the OpenAI provider as Zed documents",
-        "For Claude via Trim, use an Anthropic key and a Claude / trim-claude-* model id from GET /v1/models",
-        "Verify on the local Trim dashboard",
-      ],
-    },
-    {
-      type: "note",
-      text: "available_models shape can vary by Zed version - keep api_url = Trim …/v1 as the required Trim field. See OpenAI-compatible clients if your Zed build uses different keys.",
-    },
-  ]),
+      },
+      {
+        type: "ol",
+        items: [
+          "trim start",
+          "trim setup (or paste the api_url + available_models above)",
+          "Configure your API key in Zed for the OpenAI provider as Zed documents (match the model family)",
+          "Pick trim-claude-sonnet (or another listed id) in Zed",
+          "Verify on http://127.0.0.1:8888/dashboard",
+        ],
+      },
+      {
+        type: "note",
+        text: "available_models shape can vary by Zed version - keep api_url = Trim …/v1 as the required Trim field. See Custom models and OpenAI-compatible clients if your Zed build uses different keys.",
+      },
+    ],
+  ),
 
   "ide/jetbrains": page(
     "JetBrains setup",
-    "Paste the Trim OpenAI-compatible endpoint into JetBrains AI Assistant (hint file from trim setup).",
+    "Step-by-step: paste Trim …/v1, pick a trim-… model, matching provider key, verify.",
     [
       {
         type: "p",
-        text: "JetBrains does not use one portable settings.json for AI Base URL across all IDEs. trim setup writes a small hint file you paste into AI Assistant.",
+        text: "JetBrains does not use one portable settings.json for AI Base URL across all IDEs. trim setup writes a small hint file you paste into AI Assistant. Create clear trim-… model choices the same way as other IDEs - see Custom models.",
+      },
+      {
+        type: "table",
+        headers: ["What", "Exact place"],
+        rows: [
+          ["Base URL hint file", "~/.config/trim/jetbrains-openai.url (from trim setup)"],
+          [
+            "Paste target",
+            "Settings → Tools → AI Assistant → OpenAI-compatible / custom OpenAI endpoint",
+          ],
+          ["Model id", "AI Assistant model field / list"],
+          ["Plans / prices", "https://use-trim.com/dashboard → Billing"],
+        ],
       },
       { type: "h2", id: "exact-file", text: "Exact hint file" },
       {
@@ -1784,6 +2504,22 @@ models:
           "Contents: a single line like http://127.0.0.1:8888/v1",
         ],
       },
+      {
+        type: "h2",
+        id: "copy-values",
+        text: "Copy these values",
+      },
+      {
+        type: "code",
+        language: "text",
+        code: `http://127.0.0.1:8888/v1
+
+trim-claude-sonnet
+trim-claude-haiku
+trim-claude-opus
+trim-gemini-flash-latest
+gpt-4o-mini`,
+      },
       { type: "h2", id: "steps", text: "Steps" },
       {
         type: "ol",
@@ -1791,27 +2527,38 @@ models:
           "trim start",
           "trim setup (creates jetbrains-openai.url)",
           "JetBrains IDE → Settings → Tools → AI Assistant → enable OpenAI-compatible / custom OpenAI endpoint",
-          "Paste the URL from jetbrains-openai.url (Trim …/v1)",
+          "Paste http://127.0.0.1:8888/v1 (or the hint file contents)",
           "API key = provider key for the model family (Anthropic for Claude on this door)",
-          "Pick a model id Trim advertises (prefer trim-claude-sonnet / gpt-* from GET /v1/models)",
+          "Pick or type trim-claude-sonnet (or another id from the copy block)",
           "Confirm traffic on http://127.0.0.1:8888/dashboard",
         ],
       },
       {
         type: "callout",
         title: "Honest limits",
-        text: "Exact JetBrains menu names differ by IDE (IDEA, PyCharm, …) and plugin version. The Trim contract is the OpenAI-compatible Base URL = Trim …/v1 plus the matching provider key.",
+        text: "Exact JetBrains menu names differ by IDE (IDEA, PyCharm, …) and plugin version. The Trim contract is the OpenAI-compatible Base URL = Trim …/v1 plus the matching provider key and a Trim-known model id.",
       },
     ],
   ),
 
   "ide/aider": page(
     "Aider and shell clients",
-    "Point OPENAI_BASE_URL (and related shell tools) at Trim …/v1; Claude Code stays on ANTHROPIC_BASE_URL without /v1.",
+    "Copyable env vars, trim-… model ids, curl smoke test, and Claude Code door note.",
     [
       {
         type: "p",
-        text: "Many CLI coding agents (Aider and OpenAI SDK scripts) honor OPENAI_BASE_URL or an OpenAI client base_url. That is Trim’s OpenAI door. Claude Code is different - see Claude Code docs (Anthropic door).",
+        text: "Many CLI coding agents (Aider and OpenAI SDK scripts) honor OPENAI_BASE_URL or an OpenAI client base_url. That is Trim’s OpenAI door. Claude Code is different - see Claude Code docs (Anthropic door). Model naming guide: Custom models.",
+      },
+      {
+        type: "table",
+        headers: ["What", "Exact place"],
+        rows: [
+          ["OpenAI door Base URL", "Shell env OPENAI_BASE_URL"],
+          ["Model id", "Aider --model / SDK model field"],
+          ["Provider key", "OPENAI_API_KEY (must match model family)"],
+          ["Claude Code Base URL", "ANTHROPIC_BASE_URL (origin only, no /v1)"],
+          ["Plans / prices", "https://use-trim.com/dashboard → Billing"],
+        ],
       },
       { type: "h2", id: "env", text: "Environment copy-paste" },
       {
@@ -1835,6 +2582,21 @@ $env:OPENAI_API_KEY = "sk-YOUR_KEY_FOR_THIS_MODEL"
 # $env:ANTHROPIC_BASE_URL = "http://127.0.0.1:8888"
 # $env:ANTHROPIC_API_KEY = "sk-ant-YOUR_KEY"`,
       },
+      {
+        type: "h2",
+        id: "copy-models",
+        text: "Copy: model ids",
+      },
+      {
+        type: "code",
+        language: "text",
+        code: `trim-claude-sonnet
+trim-claude-haiku
+trim-claude-opus
+trim-gemini-flash
+trim-gemini-flash-latest
+gpt-4o-mini`,
+      },
       { type: "h2", id: "aider", text: "Aider" },
       {
         type: "ol",
@@ -1842,7 +2604,7 @@ $env:OPENAI_API_KEY = "sk-YOUR_KEY_FOR_THIS_MODEL"
           "trim start",
           "export OPENAI_BASE_URL=http://127.0.0.1:8888/v1",
           "export OPENAI_API_KEY to the provider key for your chosen model",
-          "Run aider with a model id Trim accepts (example: trim-claude-sonnet or gpt-4o-mini)",
+          "Run aider with a model id Trim accepts (example: --model trim-claude-sonnet)",
           "Confirm Last door on the local dashboard",
         ],
       },
@@ -1856,7 +2618,7 @@ $env:OPENAI_API_KEY = "sk-YOUR_KEY_FOR_THIS_MODEL"
       },
       {
         type: "note",
-        text: "trim setup prints shell exports for OPENAI_BASE_URL and ANTHROPIC_BASE_URL. Never point OPENAI_BASE_URL at api.anthropic.com - that skips Trim.",
+        text: "trim setup prints shell exports for OPENAI_BASE_URL and ANTHROPIC_BASE_URL. Never point OPENAI_BASE_URL at api.anthropic.com - that skips Trim. See Custom models for trim-gpt-… / trim-gemini-fast naming ideas.",
       },
     ],
   ),
@@ -1983,13 +2745,31 @@ npm run package
       },
       { type: "h2", id: "wire-chat", text: "Wire the chat client (where savings happen)" },
       {
+        type: "p",
+        text: "This extension does not set Cursor/Continue/VS Code Chat models for you. After auto-start works, point chat at Trim and pick a trim-… model. Use the Copy button on the block below. Full guide: Custom models.",
+      },
+      {
+        type: "code",
+        language: "text",
+        code: `http://127.0.0.1:8888/v1
+http://127.0.0.1:8888/v1/chat/completions
+http://127.0.0.1:8888
+
+trim-claude-sonnet
+trim-claude-haiku
+trim-claude-opus
+trim-gemini-flash-latest
+gpt-4o-mini`,
+      },
+      {
         type: "ul",
         items: [
-          "Cursor: Override OpenAI Base URL → http://127.0.0.1:8888/v1 (or the URL trim start printed) + provider key in Cursor’s key field",
-          "Continue: ~/.continue/config.yaml → provider openai, apiBase …/v1 - see Continue setup",
+          "Cursor: Settings → Models → Override OpenAI Base URL → http://127.0.0.1:8888/v1 + model id (trim-claude-sonnet, …) + provider key",
+          "Continue: ~/.continue/config.yaml → provider openai, apiBase …/v1, model trim-claude-sonnet - see Continue setup",
           "VS Code Chat: Custom Endpoint full …/v1/chat/completions + Add Models wizard secret - see VS Code setup",
           "Claude Code: ANTHROPIC_BASE_URL=http://127.0.0.1:8888 (origin only, no /v1)",
           "Provider keys stay in the IDE/agent. Trim: Set API Key is only for Trim Cloud (telemetry / quota / prefs)",
+          "Plans / prices: https://use-trim.com/dashboard → Billing (not in the extension settings)",
         ],
       },
       { type: "h2", id: "auto-start", text: "Auto-start with IDE" },
@@ -2052,18 +2832,53 @@ npm run package
       },
       {
         type: "note",
-        text: "Also see Always-on with IDE, Settings and API keys, Device binding, Cursor setup, Continue setup, and VS Code setup.",
+        text: "Also see Custom models, Always-on with IDE, Settings and API keys, Device binding, Cursor setup, Continue setup, and VS Code setup.",
       },
     ],
   ),
 
   "ide/openai-compatible": page(
     "OpenAI-compatible clients",
-    "Any client that can override an OpenAI Base URL can speak to Trim.",
+    "Any client that can override an OpenAI Base URL can speak to Trim - with copyable Base URL and trim-… model ids.",
     [
       {
         type: "p",
-        text: "Trim exposes an OpenAI-compatible chat completions surface at /v1/chat/completions. Set the client base URL to your Trim listen URL (…/v1 for most SDKs; some BYOK UIs need the full …/v1/chat/completions path - see VS Code setup). Enabled provider_adapters rows route by model prefix (openai_compat hosts or anthropic_messages for Claude). When adapters are synced, models with no matching prefix return a clear Trim error. When adapters are not synced, traffic forwards to UPSTREAM_OPENAI_URL. No OpenRouter required.",
+        text: "Trim exposes an OpenAI-compatible chat completions surface at /v1/chat/completions. Set the client base URL to your Trim listen URL (…/v1 for most SDKs; some BYOK UIs need the full …/v1/chat/completions path - see VS Code setup). Enabled provider_adapters rows route by model prefix (openai_compat hosts or anthropic_messages for Claude). When adapters are synced, models with no matching prefix return a clear Trim error. When adapters are not synced, traffic forwards to UPSTREAM_OPENAI_URL. No OpenRouter required. Friendly IDE names: Custom models.",
+      },
+      {
+        type: "h2",
+        id: "steps",
+        text: "Steps",
+      },
+      {
+        type: "ol",
+        items: [
+          "trim start (or Always-on with IDE)",
+          "trim config sync",
+          "Set the client Base URL to http://127.0.0.1:8888/v1 (or full …/v1/chat/completions if the client requires the chat path)",
+          "Pick a model id such as trim-claude-sonnet (see Custom models for naming ideas)",
+          "Put the matching provider key in the client (Anthropic / OpenAI / Google)",
+          "Send a request and confirm http://127.0.0.1:8888/dashboard",
+          "Plans / prices: https://use-trim.com/dashboard → Billing",
+        ],
+      },
+      {
+        type: "h2",
+        id: "copy-values",
+        text: "Copy these values",
+      },
+      {
+        type: "code",
+        language: "text",
+        code: `http://127.0.0.1:8888/v1
+http://127.0.0.1:8888/v1/chat/completions
+
+trim-claude-sonnet
+trim-claude-haiku
+trim-claude-opus
+trim-gemini-flash
+trim-gemini-flash-latest
+gpt-4o-mini`,
       },
       {
         type: "code",
@@ -2085,7 +2900,8 @@ npm run package
           "Run trim config sync so openai_model_aliases + provider_adapters load",
           "Confirm streaming clients still honor the Base URL",
           "OpenAI key for GPT models; Google key for Gemini models; Anthropic key for Claude models on this same OpenAI door (match the key to the model / DB route, not to a daily .env edit)",
-          "Prefer Trim aliases (trim-claude-sonnet, trim-gemini-flash) when a dated model id is rejected for your key",
+          "Prefer Trim aliases (trim-claude-sonnet, trim-gemini-flash-latest) when a dated model id is rejected for your key",
+          "Plans / prices: https://use-trim.com/dashboard → Billing",
         ],
       },
       { type: "h2", id: "failover", text: "Same-shape upstream failover" },
@@ -2098,11 +2914,21 @@ npm run package
 
   "ide/claude-code": page(
     "Claude Code",
-    "Native Anthropic /v1/messages through the same Trim Base URL.",
+    "Native Anthropic /v1/messages through Trim - copyable origin URL, key tips, verify.",
     [
       {
         type: "p",
-        text: "Claude Code speaks Anthropic’s Messages API. Point ANTHROPIC_BASE_URL at Trim’s listen origin only (for example http://127.0.0.1:8888) - not at api.anthropic.com, and not with a trailing /v1. Claude Code appends /v1/messages itself; including /v1 causes /v1/v1/messages and a false “model may not exist” error. Trim compresses, then forwards to UPSTREAM_ANTHROPIC_URL. The Anthropic SDK sends x-api-key (from ANTHROPIC_API_KEY), not an OpenAI Bearer header.",
+        text: "Claude Code speaks Anthropic’s Messages API. Point ANTHROPIC_BASE_URL at Trim’s listen origin only (for example http://127.0.0.1:8888) - not at api.anthropic.com, and not with a trailing /v1. Claude Code appends /v1/messages itself; including /v1 causes /v1/v1/messages and a false “model may not exist” error. Trim compresses, then forwards to UPSTREAM_ANTHROPIC_URL. The Anthropic SDK sends x-api-key (from ANTHROPIC_API_KEY), not an OpenAI Bearer header. For Cursor/Continue-style trim-claude-sonnet names on the OpenAI door, see Custom models.",
+      },
+      {
+        type: "table",
+        headers: ["What", "Exact place"],
+        rows: [
+          ["Base URL", "Shell env ANTHROPIC_BASE_URL (origin only)"],
+          ["API key", "ANTHROPIC_API_KEY"],
+          ["Model", "claude … --model <official Anthropic id>"],
+          ["Plans / prices", "https://use-trim.com/dashboard → Billing"],
+        ],
       },
       { type: "h2", id: "steps", text: "Setup" },
       {
@@ -2116,6 +2942,16 @@ npm run package
         ],
       },
       {
+        type: "h2",
+        id: "copy-origin",
+        text: "Copy: Claude Code origin (no /v1)",
+      },
+      {
+        type: "code",
+        language: "text",
+        code: "http://127.0.0.1:8888",
+      },
+      {
         type: "code",
         language: "powershell",
         code: `$env:ANTHROPIC_BASE_URL = "http://127.0.0.1:8888"
@@ -2127,7 +2963,7 @@ claude -p "Reply with exactly: claude-code-door-a-ok" --model claude-haiku-4-5-2
       },
       {
         type: "note",
-        text: "This is the native Anthropic door (Door A). For Claude inside Cursor, use the OpenAI Base URL + provider adapter path instead (Door C; see Cursor setup and Provider adapters). Anthropic key-type rules are the same on both doors.",
+        text: "This is the native Anthropic door (Door A). For Claude inside Cursor / Continue / VS Code Chat, use the OpenAI Base URL + trim-claude-* model path instead (Door C; see Custom models, Cursor setup, Provider adapters). Anthropic key-type rules are the same on both doors.",
       },
     ],
   ),
@@ -2181,13 +3017,28 @@ claude -p "Reply with exactly: claude-code-door-a-ok" --model claude-haiku-4-5-2
           "trim setup prints Cursor/OpenAI …/v1, Claude Code ANTHROPIC_BASE_URL (origin only, no /v1), Continue ~/.continue/config.yaml hints, and VS Code Chat Custom Endpoint …/v1/chat/completions hints.",
         ],
       },
-      { type: "h2", id: "models", text: "Which Claude model id to pick" },
+      { type: "h2", id: "models", text: "Which model id to pick" },
+      {
+        type: "p",
+        text: "Everyday users: prefer Trim aliases and create matching custom entries in the IDE (full guide: Custom models). Operators maintain the aliases in Admin.",
+      },
+      {
+        type: "code",
+        language: "text",
+        code: `trim-claude-sonnet
+trim-claude-haiku
+trim-claude-opus
+trim-gemini-flash
+trim-gemini-flash-latest
+gpt-4o-mini`,
+      },
       {
         type: "ul",
         items: [
-          "Best: use Anthropic’s current official API id (examples: claude-sonnet-5-5, claude-opus-5-5, claude-haiku-4-5-20251001). Prefix match routes them through the adapter with no invent.",
-          "Convenience: trim-claude-sonnet / trim-claude-opus / trim-claude-haiku map via provider_adapters.model_aliases in the database (Admin → Provider adapters). Those aliases are ops-owned and refreshed by migration when Anthropic retires ids.",
-          "Do not rely on retired dated ids (e.g. claude-sonnet-4-20250514) unless you intentionally keep them in the DB alias map.",
+          "Best for Claude: Trim aliases (trim-claude-sonnet / trim-claude-opus / trim-claude-haiku) map via provider_adapters.model_aliases (Admin → Billing → Provider adapters). Aliases are ops-owned and refreshed when Anthropic retires ids.",
+          "Also fine: Anthropic’s current official API id (examples: claude-sonnet-5-5, claude-opus-5-5, claude-haiku-4-5-20251001) - prefix match routes them with no invent.",
+          "Gemini: trim-gemini-flash / trim-gemini-flash-latest via openai_model_aliases.",
+          "Do not rely on retired dated ids unless you intentionally keep them in the DB alias map.",
         ],
       },
       { type: "h2", id: "anthropic-keys", text: "Anthropic workspace vs organization keys" },
@@ -2222,22 +3073,78 @@ claude -p "Reply with exactly: claude-code-door-a-ok" --model claude-haiku-4-5-2
 
   "ide/troubleshoot-base-url": page(
     "Base URL troubleshooting",
-    "Avoid the common Cursor + Claude Base URL mistakes.",
+    "Fix the common Cursor + Claude Base URL mistakes - with copyable correct values and model ids.",
     [
       {
         type: "p",
-        text: "Do not set Cursor Override OpenAI Base URL to https://api.anthropic.com (or …/v1/). Even though Anthropic publishes a limited OpenAI SDK compatibility layer there, they describe it as not a long-term production path, and pointing Cursor at Anthropic bypasses Trim compression entirely. Trim’s official path is: Base URL = Trim; Claude models on /v1/chat/completions use the DB-driven Anthropic Messages adapter (full Messages features + Fast/Deep).",
+        text: "Do not set Cursor Override OpenAI Base URL to https://api.anthropic.com (or …/v1/). Even though Anthropic publishes a limited OpenAI SDK compatibility layer there, they describe it as not a long-term production path, and pointing Cursor at Anthropic bypasses Trim compression entirely. Trim’s official path is: Base URL = Trim; Claude models on /v1/chat/completions use the DB-driven Anthropic Messages adapter (full Messages features + Fast/Deep). Friendly model names: Custom models.",
+      },
+      {
+        type: "h2",
+        id: "copy-correct",
+        text: "Copy these correct values",
+      },
+      {
+        type: "p",
+        text: "Use the Copy button on this block, then paste into your IDE settings.",
+      },
+      {
+        type: "code",
+        language: "text",
+        code: `Cursor / Continue / most OpenAI clients
+http://127.0.0.1:8888/v1
+
+VS Code Chat Custom Endpoint
+http://127.0.0.1:8888/v1/chat/completions
+
+Claude Code (origin only — no /v1)
+http://127.0.0.1:8888
+
+Recommended model ids
+trim-claude-sonnet
+trim-claude-haiku
+trim-claude-opus
+trim-gemini-flash
+trim-gemini-flash-latest
+gpt-4o-mini`,
+      },
+      {
+        type: "table",
+        headers: ["Symptom", "Likely cause", "Fix"],
+        rows: [
+          [
+            "No savings / traffic missing",
+            "Base URL points at vendor, not Trim",
+            "Paste http://127.0.0.1:8888/v1 in Settings → Models",
+          ],
+          [
+            "Model not found",
+            "Dated id or unknown custom name",
+            "Use trim-claude-sonnet / GET /v1/models / Custom models",
+          ],
+          [
+            "401 / empty key",
+            "Wrong key family or VS Code raw sk- in JSON",
+            "Match key to model; VS Code must use wizard secret",
+          ],
+          [
+            "Claude Code model may not exist",
+            "ANTHROPIC_BASE_URL includes /v1",
+            "Use origin only: http://127.0.0.1:8888",
+          ],
+        ],
       },
       { type: "h2", id: "do", text: "Do" },
       {
-        type: "ul",
+        type: "ol",
         items: [
           "Always point Cursor OpenAI Base URL at Trim (local or tunnel …/v1)",
-          "Claude in Cursor: Anthropic API key in the OpenAI key field + Claude model id + trim config sync (prefer workspace-scoped Anthropic key)",
-          "If Anthropic returns “API key is not scoped to a workspace”: your key is org/multi-workspace scoped. Create a workspace-scoped key, or set TRIM_ANTHROPIC_WORKSPACE_ID=wrkspc_… once as a user environment variable (see Connect any IDE → Anthropic key types) and restart trim start",
-          "Claude Code: ANTHROPIC_BASE_URL=Trim listen origin only (http://127.0.0.1:8888) - no /v1 suffix (Claude Code appends /v1/messages)",
-          "GPT in Cursor: OpenAI key + gpt-* model (DB routes to api.openai.com; no .env flip)",
-          "Gemini in Cursor: Google key + gemini-flash-latest / trim-gemini-flash (DB routes to Google OpenAI-compat)",
+          "Claude in Cursor: Anthropic API key in the OpenAI key field + trim-claude-sonnet (or Claude model id) + trim config sync (prefer workspace-scoped Anthropic key)",
+          "If Anthropic returns “API key is not scoped to a workspace”: create a workspace-scoped key, or set TRIM_ANTHROPIC_WORKSPACE_ID=wrkspc_… once (see Connect any IDE → Anthropic key types) and restart trim start",
+          "Claude Code: ANTHROPIC_BASE_URL=http://127.0.0.1:8888 - no /v1 suffix",
+          "GPT in Cursor: OpenAI key + gpt-* model",
+          "Gemini in Cursor: Google key + trim-gemini-flash / trim-gemini-flash-latest",
+          "Plans / prices: https://use-trim.com/dashboard → Billing",
         ],
       },
       { type: "h2", id: "dont", text: "Don’t" },
@@ -2251,6 +3158,10 @@ claude -p "Reply with exactly: claude-code-door-a-ok" --model claude-haiku-4-5-2
           "Do not treat TRIM_ANTHROPIC_WORKSPACE_ID as a daily setting; use a workspace-scoped Anthropic key when possible, or set the workspace id once for org-scoped keys",
         ],
       },
+      {
+        type: "note",
+        text: "Also see Custom models, Cursor setup, Connect any IDE, and Provider adapters.",
+      },
     ],
   ),
 
@@ -2260,20 +3171,21 @@ claude -p "Reply with exactly: claude-code-door-a-ok" --model claude-haiku-4-5-2
     [
       {
         type: "p",
-        text: "The goal is an invisible day: your IDE feels the same, while Trim removes vendor noise and log spam before the slim prompt goes upstream.",
+        text: "The goal is an invisible day: your IDE feels the same, while Trim removes vendor noise and log spam before the slim prompt goes upstream. Keep a clear trim-… model selected (see Custom models).",
       },
       {
         type: "ol",
         items: [
-          "Leave Start Trim with your IDE checked (dashboard) or trim autostart enable",
+          "Leave Start Trim with your IDE checked (https://use-trim.com/dashboard → Preferences) or run trim autostart enable",
           "Open Cursor or VS Code with the Trim extension - proxy starts or attaches automatically",
+          "Confirm your editor still points at http://127.0.0.1:8888/v1 (or …/v1/chat/completions for VS Code Chat) and a Trim model id such as trim-claude-sonnet",
           "Use the client you configured: Cursor Composer, Continue sidebar (config.yaml), VS Code Chat Custom Endpoint (Ask), or Claude Code (ANTHROPIC_BASE_URL)",
           "Confirm you are in the right panel (Continue ≠ VS Code Chat Custom Endpoint/… • 0 credits)",
           "Let Fast Mode drop vendor and log noise automatically (Deep when Preferences Deep is on)",
           "After large tasks: trim stats or http://127.0.0.1:8888/dashboard → Show savings detail",
           "Agent turns may show low whole-body Saved % with Deep chrome frozen - that is often normal",
           "Optional: trim compress for Deep file/batch jobs when you need them",
-          "Open Dashboard → Receipts, Team, or plan CTAs when you need receipts, seats, or plan changes",
+          "Plans / prices / receipts: Dashboard → Billing (or Plans) / Receipts / Team",
           "Uncheck the preference anytime to stop auto-starting",
         ],
       },
@@ -3642,10 +4554,28 @@ Optional build features: follow README flags for native parsers`,
         type: "p",
         text: "Continue = extension sidebar + ~/.continue/config.yaml (best for Agent file edits through Trim today). VS Code Chat Custom Endpoint = Chat: Manage Language Models + chatLanguageModels.json with full …/v1/chat/completions URL and wizard secrets (best for Ask chat). If the footer shows Custom Endpoint/… • 0 credits, you are not in Continue.",
       },
+      {
+        type: "h2",
+        id: "custom-models",
+        text: "How do I add custom models like trim-claude-sonnet?",
+      },
+      {
+        type: "p",
+        text: "In your IDE model settings (Cursor Settings → Models, Continue ~/.continue/config.yaml, or VS Code chatLanguageModels.json), create entries named trim-claude-sonnet, trim-claude-haiku, trim-gemini-flash-latest, and similar. Point Base URL at Trim, use the matching provider key, and prefer shipped Trim aliases from GET /v1/models. Naming ideas and exact places: Custom models. Ops can add worldwide aliases under Admin → Billing → Provider adapters.",
+      },
+      {
+        type: "h2",
+        id: "where-settings",
+        text: "Where do I change Always-on, API keys, and plan prices?",
+      },
+      {
+        type: "p",
+        text: "Always-on: https://use-trim.com/dashboard → Preferences → Start Trim with your IDE. Trim IDE extension key: Dashboard → Settings → API keys. Plans / prices / quotas: Dashboard → Billing (or Plans). Provider chat keys (OpenAI / Anthropic / Google) stay in the IDE model settings, not in Trim Dashboard.",
+      },
       { type: "h2", id: "billing", text: "Who bills me?" },
       {
         type: "p",
-        text: "Hosted plans and top-ups are billed through our payment partner as Merchant of Record. Plan prices and Unlimited metering flags live in the product catalog (Unlimited only when an operator enables that plan dial). Self-hosted operators manage their own commercial terms.",
+        text: "Hosted plans and top-ups are billed through our payment partner as Merchant of Record. Plan prices and Unlimited metering flags live in the product catalog (Unlimited only when an operator enables that plan dial) - see them in Dashboard → Billing. Self-hosted operators manage their own commercial terms.",
       },
       { type: "h2", id: "teams", text: "How do team seats work?" },
       {

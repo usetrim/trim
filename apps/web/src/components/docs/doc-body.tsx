@@ -59,6 +59,46 @@ export function DocBody({ blocks }: { blocks: DocBlock[] }) {
         if (block.type === "code") {
           return <CopyableCode key={key} code={block.code} language={block.language} />;
         }
+        if (block.type === "table") {
+          return (
+            <div
+              key={key}
+              className="overflow-x-auto rounded-lg border border-[var(--trim-border)] shadow-[var(--trim-card-shadow)]"
+            >
+              <table className="w-full min-w-[28rem] border-collapse text-left text-sm">
+                <thead className="bg-[var(--trim-bg)]">
+                  <tr>
+                    {block.headers.map((header) => (
+                      <th
+                        key={header}
+                        className="border-b border-[var(--trim-border)] px-3 py-2.5 font-semibold text-[var(--trim-fg)]"
+                      >
+                        {header}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {block.rows.map((row, rowIndex) => (
+                    <tr
+                      key={`${row.join("|")}-${rowIndex}`}
+                      className="odd:bg-[var(--trim-panel)] even:bg-[var(--trim-bg)]"
+                    >
+                      {row.map((cell, cellIndex) => (
+                        <td
+                          key={`${rowIndex}-${cellIndex}-${cell}`}
+                          className="border-b border-[var(--trim-border)] px-3 py-2.5 align-top text-[var(--trim-muted)] last:border-b-0"
+                        >
+                          {cell}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
+        }
         if (block.type === "callout") {
           return (
             <div

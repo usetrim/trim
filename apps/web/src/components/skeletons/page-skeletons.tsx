@@ -30,7 +30,7 @@ function PublicAuthSlotSkeleton({
   className?: string;
 }) {
   if (slot === "signin" && signInLabel?.trim()) {
-  return (
+    return (
       <span
         className={
           className ||
@@ -154,16 +154,16 @@ export function ChartSkeleton({
   variant?: "default" | "usage" | "outcomes";
 }) {
   if (variant === "usage") {
-  return (
-    <Card>
+    return (
+      <Card>
         <CardContent className="space-y-4 pt-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-2">
-        {title ? (
+              {title ? (
                 <CardTitle className="text-base">{title}</CardTitle>
-        ) : (
-          <Skeleton className="h-5 w-40" />
-        )}
+              ) : (
+                <Skeleton className="h-5 w-40" />
+              )}
               <Skeleton className="h-3 w-56" />
             </div>
             <Skeleton className="h-9 w-36 rounded-md" />
@@ -421,18 +421,18 @@ export function DataTableSkeleton({
       ) : (
         <CardHeader className="flex flex-col gap-3">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          {title ? (
+            {title ? (
               <CardTitle className="text-base">{title}</CardTitle>
-          ) : (
-            <Skeleton className="h-5 w-32" />
-          )}
+            ) : (
+              <Skeleton className="h-5 w-32" />
+            )}
             {toolbar === "sync" ? (
               primaryLabel ? (
                 <span className="inline-flex h-8 items-center rounded-md border border-[var(--trim-border)] bg-[var(--trim-panel)] px-3 text-xs text-[var(--trim-muted)] shadow-[var(--trim-card-shadow)]">
                   {primaryLabel}
                 </span>
               ) : (
-              <Skeleton className="h-8 w-32 rounded-md" />
+                <Skeleton className="h-8 w-32 rounded-md" />
               )
             ) : null}
           </div>
@@ -555,10 +555,10 @@ export function DashboardPageSkeleton({
         <header className="sticky top-0 z-40 border-b border-[var(--trim-border)] bg-[var(--trim-bg)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--trim-bg)]/80">
           <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-4 px-3 py-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:px-6">
             <div className="min-w-0 space-y-2">
-          <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-20" />
               <Skeleton className="h-8 w-64 sm:h-9" />
-          <Skeleton className="h-4 w-80 max-w-full" />
-        </div>
+              <Skeleton className="h-4 w-80 max-w-full" />
+            </div>
             <div className="flex flex-wrap items-center gap-2">
               {chrome?.header_primary ? <Skeleton className="h-9 w-24" /> : null}
               {chrome?.header_topup ? <Skeleton className="h-9 w-24" /> : null}
@@ -569,11 +569,11 @@ export function DashboardPageSkeleton({
                 {chrome?.header_portal ? <Skeleton className="h-9 w-24" /> : null}
                 {chrome?.header_team ? <Skeleton className="h-9 w-20" /> : null}
                 {chrome?.header_settings ? <Skeleton className="h-9 w-24" /> : null}
-        </div>
+              </div>
               {chrome?.header_portal || chrome?.header_team || chrome?.header_settings ? (
                 <Skeleton className="h-9 w-9 rounded-md md:hidden" />
               ) : null}
-      </div>
+            </div>
           </div>
         </header>
       )}
@@ -601,29 +601,29 @@ export function DashboardPageSkeleton({
           </div>
         ) : null}
         <div className={embedded ? "w-full" : undefined}>
-      <SubscriptionStatusSkeleton />
+          <SubscriptionStatusSkeleton />
 
           <div className="mt-4">
-      <MetricCardsSkeleton
-        labels={[
-          chrome?.metric_plan_label,
-          chrome?.metric_credits_label,
-          chrome?.metric_remaining_label,
-          chrome?.metric_tokens_saved_label,
-        ]}
-      />
+            <MetricCardsSkeleton
+              labels={[
+                chrome?.metric_plan_label,
+                chrome?.metric_credits_label,
+                chrome?.metric_remaining_label,
+                chrome?.metric_tokens_saved_label,
+              ]}
+            />
           </div>
 
           <div className="mt-4">
-      <MetricCardsSkeleton
-        labels={[
-          chrome?.metric_tab_label,
-          chrome?.metric_lines_added_label,
-          chrome?.metric_lines_deleted_label,
-        ]}
-        showCreditsBar={false}
-        showHintLine
-      />
+            <MetricCardsSkeleton
+              labels={[
+                chrome?.metric_tab_label,
+                chrome?.metric_lines_added_label,
+                chrome?.metric_lines_deleted_label,
+              ]}
+              showCreditsBar={false}
+              showHintLine
+            />
           </div>
 
           <div className="mt-8 space-y-8">
@@ -632,14 +632,14 @@ export function DashboardPageSkeleton({
           </div>
 
           <div className="mt-8">
-      <ChartSkeleton title={chrome?.chart_token_series_title} />
+            <ChartSkeleton title={chrome?.chart_token_series_title} />
           </div>
 
           <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-        <ChartSkeleton title={chrome?.chart_models_title} />
+            <ChartSkeleton title={chrome?.chart_models_title} />
             <ChartSkeleton title={chrome?.chart_outcomes_title} variant="outcomes" />
-        <ChartSkeleton title={chrome?.chart_modes_title} />
-      </div>
+            <ChartSkeleton title={chrome?.chart_modes_title} />
+          </div>
 
           <Skeleton className="mt-6 h-3 w-64" />
 
@@ -700,37 +700,37 @@ export function TeamPageSkeleton({
               <Skeleton className="h-4 w-72 max-w-full" />
             </div>
             <div className="flex flex-wrap items-center gap-2">
-        <Skeleton className="h-9 w-28" />
+              <Skeleton className="h-9 w-28" />
               <Skeleton className="h-8 w-8 rounded-md" />
               <Skeleton className="h-8 w-8 rounded-md" />
               <Skeleton className="h-9 w-24 rounded-md" />
-      </div>
+            </div>
           </div>
         </header>
       )}
       <div
         className={embedded ? "w-full" : "mx-auto w-full max-w-[1400px] px-3 py-6 sm:px-6 sm:py-8"}
       >
-      <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
-      <Card>
-        <CardHeader>
-          {chrome?.workspaces_title ? (
+        <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
+          <Card>
+            <CardHeader>
+              {chrome?.workspaces_title ? (
                 <CardTitle className="text-base text-[var(--trim-fg)]">
-              {chrome.workspaces_title}
-            </CardTitle>
-          ) : (
-            <Skeleton className="h-5 w-36" />
-          )}
-        </CardHeader>
-        <CardContent className="space-y-4">
+                  {chrome.workspaces_title}
+                </CardTitle>
+              ) : (
+                <Skeleton className="h-5 w-36" />
+              )}
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
                 <div className="min-w-0 flex-1 space-y-1.5">
                   <Skeleton className="h-4 w-28" />
                   <Skeleton className="h-10 w-full" />
                   <Skeleton className="h-3 w-48" />
                 </div>
-            <Skeleton className="h-10 w-20" />
-          </div>
+                <Skeleton className="h-10 w-20" />
+              </div>
               <div className="w-full space-y-1.5">
                 <Skeleton className="h-4 w-28" />
                 <Skeleton className="h-10 w-full" />
@@ -745,32 +745,32 @@ export function TeamPageSkeleton({
                 rows={wRows}
                 showPagination
               />
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          {chrome?.members_title ? (
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              {chrome?.members_title ? (
                 <CardTitle className="text-base text-[var(--trim-fg)]">
-              {chrome.members_title}
-            </CardTitle>
-          ) : (
-            <Skeleton className="h-5 w-24" />
-          )}
-        </CardHeader>
-        <CardContent className="space-y-4">
+                  {chrome.members_title}
+                </CardTitle>
+              ) : (
+                <Skeleton className="h-5 w-24" />
+              )}
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
                 <div className="min-w-0 flex-1 space-y-1.5">
                   <Skeleton className="h-4 w-28" />
                   <Skeleton className="h-10 w-full" />
                   <Skeleton className="h-3 w-48" />
                 </div>
-            <Skeleton className="h-10 w-20" />
-          </div>
+                <Skeleton className="h-10 w-20" />
+              </div>
               <div className="w-full space-y-1.5">
                 <Skeleton className="h-4 w-28" />
                 <Skeleton className="h-10 w-full" />
                 <Skeleton className="h-3 w-48" />
-                </div>
+              </div>
               <DataTableRowsSkeleton
                 columns={[
                   { label: " ", width: "h-4 w-4" },
@@ -783,18 +783,18 @@ export function TeamPageSkeleton({
                 showPagination
               />
               <div className="border-t border-[var(--trim-border)] pt-4">
-            {chrome?.invites_title ? (
+                {chrome?.invites_title ? (
                   <p className="mb-2 text-sm font-medium text-[var(--trim-fg)]">
-                {chrome.invites_title}
-              </p>
-            ) : (
-              <Skeleton className="mb-2 h-4 w-24" />
-            )}
+                    {chrome.invites_title}
+                  </p>
+                ) : (
+                  <Skeleton className="mb-2 h-4 w-24" />
+                )}
                 <div className="mb-3 w-full space-y-1.5">
                   <Skeleton className="h-4 w-28" />
                   <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-3 w-48" />
-                  </div>
+                  <Skeleton className="h-3 w-48" />
+                </div>
                 <DataTableRowsSkeleton
                   columns={[
                     { label: " ", width: "h-4 w-4" },
@@ -805,11 +805,11 @@ export function TeamPageSkeleton({
                   rows={mRows}
                   showPagination
                 />
-          </div>
-        </CardContent>
-      </Card>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-    </div>
+      </div>
     </div>
   );
 }
@@ -917,9 +917,9 @@ export function ReceiptDetailSkeleton({
               <div className="flex flex-wrap items-center gap-2.5">
                 <Skeleton className="h-7 w-36 sm:h-8 sm:w-40" />
                 <Skeleton className="h-5 w-12 rounded" />
-            </div>
+              </div>
               <Skeleton className="h-4 w-52" />
-          </div>
+            </div>
             <div className="flex shrink-0 flex-col items-start gap-1 sm:items-end">
               <Skeleton className="h-8 w-24 sm:h-9" />
               <Skeleton className="h-4 w-16" />
@@ -940,10 +940,10 @@ export function ReceiptDetailSkeleton({
             <div className="space-y-1.5">
               <Skeleton className="h-4 w-40" />
               <Skeleton className="h-4 w-56" />
-            <Skeleton className="h-4 w-36" />
-            <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-4 w-36" />
+              <Skeleton className="h-4 w-28" />
               <Skeleton className="mt-2 h-4 w-44" />
-          </div>
+            </div>
           </div>
           <div className="min-w-0 space-y-2">
             {chrome?.section_invoice_from ? (
@@ -957,7 +957,7 @@ export function ReceiptDetailSkeleton({
               <Skeleton className="h-4 w-28" />
               <Skeleton className="h-4 w-48" />
               <Skeleton className="h-4 w-40" />
-            <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-20" />
             </div>
           </div>
         </section>
@@ -966,8 +966,8 @@ export function ReceiptDetailSkeleton({
           {chrome?.section_invoice_details ? (
             <h2 className="text-[13px] font-bold text-[var(--trim-fg)]">
               {chrome.section_invoice_details}
-              </h2>
-            ) : (
+            </h2>
+          ) : (
             <Skeleton className="h-4 w-28" />
           )}
           <div className="mt-3 space-y-2">
@@ -984,8 +984,8 @@ export function ReceiptDetailSkeleton({
           {chrome?.section_transaction ? (
             <h2 className="mb-4 text-[13px] font-bold text-[var(--trim-fg)]">
               {chrome.section_transaction}
-              </h2>
-            ) : (
+            </h2>
+          ) : (
             <Skeleton className="mb-4 h-4 w-24" />
           )}
 
@@ -1062,12 +1062,12 @@ export function ReceiptDetailSkeleton({
               <div className="flex justify-between gap-8">
                 <Skeleton className="h-3 w-12" />
                 <Skeleton className="h-3 w-10" />
-          </div>
+              </div>
               <div className="flex justify-between gap-8">
-                    <Skeleton className="h-4 w-8" />
+                <Skeleton className="h-4 w-8" />
                 <Skeleton className="h-4 w-12" />
-        </div>
-        </div>
+              </div>
+            </div>
             <div className="flex justify-between gap-8 pt-2.5">
               <Skeleton className="h-4 w-16" />
               <Skeleton className="h-4 w-12" />
@@ -1080,13 +1080,13 @@ export function ReceiptDetailSkeleton({
           style={{ backgroundColor: "hsl(var(--muted))" }}
         >
           <div className="mx-auto flex max-w-lg flex-col items-center gap-3">
-        {chrome?.footer ? (
+            {chrome?.footer ? (
               <p className="text-[12px] leading-relaxed text-[var(--trim-muted)]">
-            {chrome.footer}
+                {chrome.footer}
               </p>
-        ) : (
+            ) : (
               <Skeleton className="h-3 w-72 max-w-full" />
-        )}
+            )}
             <Skeleton className="h-5 w-16" />
             <Skeleton className="h-3 w-56 max-w-full" />
           </div>
@@ -1194,10 +1194,10 @@ export function PlanGridSkeleton({
             <div className="min-w-0 space-y-1 text-left">
               <Skeleton className="h-4 w-28" />
               <Skeleton className="h-3 w-20" />
-      </div>
-            <Skeleton className="h-5 w-9 rounded-full" />
-      </div>
             </div>
+            <Skeleton className="h-5 w-9 rounded-full" />
+          </div>
+        </div>
       ) : null}
 
       {!topup ? (
@@ -1205,7 +1205,7 @@ export function PlanGridSkeleton({
           <Skeleton className="h-4 w-24" />
           <Skeleton className="h-9 w-full rounded-md" />
           <Skeleton className="h-3 w-40" />
-          </div>
+        </div>
       ) : null}
 
       <div className="grid gap-4 pt-3 md:grid-cols-2 xl:grid-cols-4">
@@ -1262,22 +1262,22 @@ export function InviteAcceptSkeleton({
       )}
       <Card className="mt-8 border-[var(--trim-border)] bg-[var(--trim-panel)]">
         <CardHeader>
-        {chrome?.status_title ? (
+          {chrome?.status_title ? (
             <CardTitle className="text-base text-[var(--trim-fg)]">{chrome.status_title}</CardTitle>
-        ) : (
+          ) : (
             <Skeleton className="h-5 w-32" />
-        )}
+          )}
         </CardHeader>
         <CardContent className="space-y-4">
-        <Skeleton className="h-4 w-48" />
-        <Skeleton className="h-4 w-40" />
-        {chrome?.accept_label ? (
+          <Skeleton className="h-4 w-48" />
+          <Skeleton className="h-4 w-40" />
+          {chrome?.accept_label ? (
             <span className="inline-flex h-10 w-full items-center justify-center rounded-md border border-[var(--trim-border)] bg-[var(--trim-panel)] text-sm text-[var(--trim-muted)] shadow-[var(--trim-card-shadow)]">
-            {chrome.accept_label}
-          </span>
-        ) : (
+              {chrome.accept_label}
+            </span>
+          ) : (
             <Skeleton className="h-10 w-full" />
-        )}
+          )}
         </CardContent>
       </Card>
     </div>
@@ -1358,17 +1358,17 @@ export function SettingsPageSkeleton({
               )}
             </div>
             <div className="flex flex-wrap items-center gap-2">
-        {chrome?.back_label ? (
+              {chrome?.back_label ? (
                 <span className="inline-flex h-9 items-center rounded-md border border-[var(--trim-border)] bg-[var(--trim-panel)] px-4 text-sm text-[var(--trim-muted)] shadow-[var(--trim-card-shadow)]">
-            {chrome.back_label}
-          </span>
-        ) : (
-          <Skeleton className="h-9 w-40" />
-        )}
+                  {chrome.back_label}
+                </span>
+              ) : (
+                <Skeleton className="h-9 w-40" />
+              )}
               <Skeleton className="h-8 w-8 rounded-md" />
               <Skeleton className="h-8 w-8 rounded-md" />
               <Skeleton className="h-9 w-24 rounded-md" />
-      </div>
+            </div>
           </div>
         </header>
       )}
@@ -1376,16 +1376,16 @@ export function SettingsPageSkeleton({
         className={embedded ? "w-full" : "mx-auto w-full max-w-[1400px] px-3 py-6 sm:px-6 sm:py-8"}
       >
         <Card className="mb-6 border-[var(--trim-border)] bg-[var(--trim-panel)]">
-        <CardHeader>
-          {chrome?.account_title ? (
+          <CardHeader>
+            {chrome?.account_title ? (
               <CardTitle className="text-base text-[var(--trim-fg)]">
-              {chrome.account_title}
-            </CardTitle>
-          ) : (
-            <Skeleton className="h-5 w-36" />
-          )}
-        </CardHeader>
-        <CardContent className="space-y-4">
+                {chrome.account_title}
+              </CardTitle>
+            ) : (
+              <Skeleton className="h-5 w-36" />
+            )}
+          </CardHeader>
+          <CardContent className="space-y-4">
             {/* Matches live identity DataTable: provider cell (icon + prefix + name + badges) + row-actions ⋯ */}
             <div className="space-y-4">
               <div className="overflow-x-auto">
@@ -1415,8 +1415,8 @@ export function SettingsPageSkeleton({
                             {chrome?.auth_provider_prefix ? (
                               <span className="text-[var(--trim-muted)]">
                                 {chrome.auth_provider_prefix}
-                    </span>
-                  ) : (
+                              </span>
+                            ) : (
                               <Skeleton className="h-4 w-24" />
                             )}
                             <Skeleton className="h-4 w-16" />
@@ -1436,43 +1436,43 @@ export function SettingsPageSkeleton({
                 </Table>
               </div>
             </div>
-          {chrome?.link_hint ? (
+            {chrome?.link_hint ? (
               <p className="text-xs text-[var(--trim-muted)]">{chrome.link_hint}</p>
-          ) : (
-            <Skeleton className="h-3 w-72 max-w-full" />
-          )}
-          <div className="flex flex-wrap gap-2">
+            ) : (
+              <Skeleton className="h-3 w-72 max-w-full" />
+            )}
+            <div className="flex flex-wrap gap-2">
               {shimmerKeys("connect", providerSlots > 0 ? Math.max(1, providerSlots - 1) : 1).map(
-              (id) => (
+                (id) => (
                   <Skeleton key={id} className="h-9 w-36 rounded-md" />
                 ),
-            )}
-          </div>
-        </CardContent>
-      </Card>
-      <div className="grid gap-6 lg:grid-cols-2">
-          <Card className="border-[var(--trim-border)] bg-[var(--trim-panel)]">
-          <CardHeader>
-            {chrome?.tier_title ? (
-                <CardTitle className="text-base text-[var(--trim-fg)]">
-                {chrome.tier_title}
-              </CardTitle>
-            ) : (
-              <Skeleton className="h-5 w-32" />
-            )}
-          </CardHeader>
-          <CardContent className="space-y-6">
-              <div className="flex items-center justify-between rounded-lg border border-[var(--trim-border)] px-4 py-3">
-              <div className="space-y-2">
-                {chrome?.deep_label ? (
-                    <p className="text-sm font-medium text-[var(--trim-fg)]">{chrome.deep_label}</p>
-                ) : (
-                  <Skeleton className="h-4 w-24" />
-                )}
-                <Skeleton className="h-3 w-48" />
-              </div>
-              <Skeleton className="h-6 w-11 rounded-full" />
+              )}
             </div>
+          </CardContent>
+        </Card>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card className="border-[var(--trim-border)] bg-[var(--trim-panel)]">
+            <CardHeader>
+              {chrome?.tier_title ? (
+                <CardTitle className="text-base text-[var(--trim-fg)]">
+                  {chrome.tier_title}
+                </CardTitle>
+              ) : (
+                <Skeleton className="h-5 w-32" />
+              )}
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between rounded-lg border border-[var(--trim-border)] px-4 py-3">
+                <div className="space-y-2">
+                  {chrome?.deep_label ? (
+                    <p className="text-sm font-medium text-[var(--trim-fg)]">{chrome.deep_label}</p>
+                  ) : (
+                    <Skeleton className="h-4 w-24" />
+                  )}
+                  <Skeleton className="h-3 w-48" />
+                </div>
+                <Skeleton className="h-6 w-11 rounded-full" />
+              </div>
               <div className="flex items-center justify-between rounded-lg border border-[var(--trim-border)] px-4 py-3">
                 <div className="space-y-2">
                   <Skeleton className="h-4 w-32" />
@@ -1482,56 +1482,56 @@ export function SettingsPageSkeleton({
               </div>
               <div className="space-y-1.5">
                 <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
                 <Skeleton className="h-3 w-48" />
               </div>
               <div className="space-y-1.5">
                 <Skeleton className="h-4 w-28" />
-            <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
                 <Skeleton className="h-3 w-52" />
               </div>
-            {chrome?.save_label ? (
+              {chrome?.save_label ? (
                 <span className="inline-flex h-9 items-center rounded-md border border-[var(--trim-border)] bg-[var(--trim-panel)] px-4 text-sm text-[var(--trim-muted)] shadow-[var(--trim-card-shadow)]">
-                {chrome.save_label}
-              </span>
-            ) : (
-              <Skeleton className="h-9 w-36" />
-            )}
-          </CardContent>
-        </Card>
+                  {chrome.save_label}
+                </span>
+              ) : (
+                <Skeleton className="h-9 w-36" />
+              )}
+            </CardContent>
+          </Card>
           <Card className="border-[var(--trim-border)] bg-[var(--trim-panel)]">
-          <CardHeader>
-            {chrome?.cli_title ? (
+            <CardHeader>
+              {chrome?.cli_title ? (
                 <CardTitle className="text-base text-[var(--trim-fg)]">
-                {chrome.cli_title}
-              </CardTitle>
-            ) : (
-              <Skeleton className="h-5 w-28" />
-            )}
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Skeleton className="h-4 w-full" />
+                  {chrome.cli_title}
+                </CardTitle>
+              ) : (
+                <Skeleton className="h-5 w-28" />
+              )}
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Skeleton className="h-4 w-full" />
               <Skeleton className="h-4 w-[83%]" />
               <Skeleton className="h-4 w-[80%]" />
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="mt-4 h-3 w-full" />
-          </CardContent>
-        </Card>
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="mt-4 h-3 w-full" />
+            </CardContent>
+          </Card>
           <Card className="border-[var(--trim-border)] bg-[var(--trim-panel)] lg:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between">
-            {chrome?.keys_title ? (
+            <CardHeader className="flex flex-row items-center justify-between">
+              {chrome?.keys_title ? (
                 <CardTitle className="text-base text-[var(--trim-fg)]">
-                {chrome.keys_title}
-              </CardTitle>
-            ) : (
-              <Skeleton className="h-5 w-24" />
-            )}
-            <div className="flex gap-2">
-              <Skeleton className="h-8 w-20" />
-              <Skeleton className="h-8 w-24" />
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
+                  {chrome.keys_title}
+                </CardTitle>
+              ) : (
+                <Skeleton className="h-5 w-24" />
+              )}
+              <div className="flex gap-2">
+                <Skeleton className="h-8 w-20" />
+                <Skeleton className="h-8 w-24" />
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <Skeleton className="h-4 w-full max-w-xl" />
               <div className="w-full max-w-md space-y-1.5">
                 <Skeleton className="h-4 w-28" />
@@ -1543,8 +1543,8 @@ export function SettingsPageSkeleton({
                 <Skeleton className="h-9 w-28" />
               </div>
               <ApiKeysListSkeleton rows={keyRows > 0 ? keyRows : 8} title={chrome?.keys_title} />
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
@@ -1747,8 +1747,8 @@ export function LandingPageSkeleton({
           {chrome?.nav_pricing ? (
             <span className="rounded px-2 py-1 font-mono text-[11px] text-[var(--trim-subtle)]">
               {chrome.nav_pricing}
-          </span>
-        ) : (
+            </span>
+          ) : (
             <Skeleton className="h-7 w-14 rounded px-2" />
           )}
           {chrome?.nav_contact ? (
@@ -1772,8 +1772,8 @@ export function LandingPageSkeleton({
                 {chrome?.nav_how ? (
                   <span className="rounded px-2 py-1 font-mono text-[11px] text-[var(--trim-subtle)]">
                     {chrome.nav_how}
-            </span>
-          ) : (
+                  </span>
+                ) : (
                   <Skeleton className="h-6 w-10" />
                 )}
                 {chrome?.nav_pricing ? (
@@ -1816,9 +1816,9 @@ export function LandingPageSkeleton({
                 </>
               ) : mode === "login" ? (
                 <>
-          {chrome?.nav_sign_in ? (
+                  {chrome?.nav_sign_in ? (
                     <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[var(--trim-subtle)]">
-              {chrome.nav_sign_in}
+                      {chrome.nav_sign_in}
                     </p>
                   ) : (
                     <Skeleton className="h-3 w-20" />
@@ -1846,7 +1846,7 @@ export function LandingPageSkeleton({
                       ←
                     </span>
                     <TrimWordmark size="sm" alt={chrome?.brand || "Trim"} />
-        </div>
+                  </div>
                 </>
               ) : mode === "contact" ? (
                 <>
@@ -1881,49 +1881,49 @@ export function LandingPageSkeleton({
                 </>
               ) : (
                 <>
-        {chrome?.eyebrow ? (
+                  {chrome?.eyebrow ? (
                     <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[var(--trim-subtle)]">
-            {chrome.eyebrow}
-          </p>
-        ) : (
+                      {chrome.eyebrow}
+                    </p>
+                  ) : (
                     <Skeleton className="h-3 w-28" />
-        )}
-        {chrome?.headline ? (
+                  )}
+                  {chrome?.headline ? (
                     <h1 className="font-display mt-5 max-w-[22rem] text-[1.5rem] font-medium leading-[1.2] tracking-[-0.025em] text-[var(--trim-subtle)] xl:text-[1.75rem]">
-            {chrome.headline}
-          </h1>
-        ) : (
+                      {chrome.headline}
+                    </h1>
+                  ) : (
                     <>
                       <Skeleton className="mt-5 h-7 w-56" />
                       <Skeleton className="mt-2 h-7 w-40" />
                     </>
-        )}
-        {chrome?.tagline ? (
+                  )}
+                  {chrome?.tagline ? (
                     <p className="mt-4 max-w-[22rem] text-[14px] leading-relaxed text-[var(--trim-subtle)]">
                       {chrome.tagline}
                     </p>
-        ) : (
-          <>
+                  ) : (
+                    <>
                       <Skeleton className="mt-4 h-4 w-full max-w-[20rem]" />
                       <Skeleton className="mt-2 h-4 w-3/4 max-w-[16rem]" />
-          </>
-        )}
+                    </>
+                  )}
                   <div className="mt-8 flex flex-wrap gap-2.5">
-          {chrome?.cta_start ? (
+                    {chrome?.cta_start ? (
                       <span className="inline-flex h-9 items-center rounded-md border border-[var(--trim-border)] px-5 text-[13px] text-[var(--trim-subtle)]">
-              {chrome.cta_start}
-            </span>
-          ) : (
+                        {chrome.cta_start}
+                      </span>
+                    ) : (
                       <Skeleton className="h-9 w-28 rounded-md" />
                     )}
                     {chrome?.cta_demo || chrome?.cta_source ? (
                       <span className="inline-flex h-9 items-center rounded-md border border-[var(--trim-border)] px-4 text-[13px] text-[var(--trim-subtle)]">
                         {chrome.cta_demo || chrome.cta_source}
-            </span>
-          ) : (
+                      </span>
+                    ) : (
                       <Skeleton className="h-9 w-24 rounded-md" />
-          )}
-        </div>
+                    )}
+                  </div>
                 </>
               )}
             </div>
@@ -1934,17 +1934,17 @@ export function LandingPageSkeleton({
                   <Skeleton className="h-3 w-40" />
                   <div className="flex flex-wrap gap-x-4 gap-y-2">
                     <Skeleton className="h-3 w-10" />
-        {chrome?.footer_privacy ? (
+                    {chrome?.footer_privacy ? (
                       <span>{chrome.footer_privacy}</span>
-        ) : (
+                    ) : (
                       <Skeleton className="h-3 w-16" />
-        )}
-        {chrome?.footer_terms ? (
+                    )}
+                    {chrome?.footer_terms ? (
                       <span>{chrome.footer_terms}</span>
-        ) : (
+                    ) : (
                       <Skeleton className="h-3 w-12" />
-        )}
-        {chrome?.footer_github ? (
+                    )}
+                    {chrome?.footer_github ? (
                       <span>{chrome.footer_github}</span>
                     ) : (
                       <Skeleton className="h-3 w-14" />
@@ -1958,7 +1958,7 @@ export function LandingPageSkeleton({
                 </div>
                 <Skeleton className="mt-0.5 h-8 w-8 rounded-md" />
               </div>
-      </footer>
+            </footer>
           </div>
         </aside>
 
