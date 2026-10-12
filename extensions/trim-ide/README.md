@@ -54,9 +54,11 @@ Also install the **`trim` CLI** on the machine and keep it on `PATH` ([installat
 | 4 | Same key → Register device | Paste the ID → agent **IDE** (not a CLI / `trim login` fingerprint) |
 | 5 | Editor | **Trim: Set API Key** → paste the Trim key |
 | 6 | Editor settings | `trim.apiUrl` = `https://api.use-trim.com` |
-| 7 | Cursor / Continue / etc. | Point Base URL at `http://127.0.0.1:8888/v1` (or the listen URL printed by `trim start`) |
+| 7 | Cursor / Continue / etc. | Point Base URL at `http://127.0.0.1:8888/v1` (or the listen URL printed by `trim start`) and pick a Trim model id such as `trim-claude-sonnet` |
 
 **Quick model:** Always-on = auto-start preference · Trim API key = Trim Cloud login · Hardware ID = this editor install may use that key.
+
+**Chat models (separate from this extension):** create friendly custom model entries in the editor (`trim-claude-sonnet`, `trim-claude-haiku`, `trim-gemini-flash-latest`, …). Step-by-step with copy buttons: [Custom models](https://use-trim.com/docs/ide/custom-models) · [Cursor](https://use-trim.com/docs/ide/cursor) · [Continue](https://use-trim.com/docs/ide/continue) · [VS Code Chat](https://use-trim.com/docs/ide/vscode).
 
 ## Configure
 

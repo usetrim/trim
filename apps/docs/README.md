@@ -10,13 +10,16 @@ Product documentation is served by the web app at [use-trim.com/docs](https://us
 - Previous / next pager
 - On-this-page table of contents
 - Theme toggle shared with the marketing site
+- Copy button on every docs code block (`CopyableCode`)
+- Tables for exact settings places and model maps
 
 ## Popular entry points
 
 | Topic | Path |
 | --- | --- |
 | Quickstart | `/docs/quickstart` |
-| Installation (Always-on after install) | `/docs/installation` |
+| Installation (Always-on + IDE models) | `/docs/installation` |
+| Custom models (`trim-claude-sonnet`, …) | `/docs/ide/custom-models` |
 | Always-on with IDE | `/docs/concepts/always-on` |
 | `trim autostart` / `trim daemon` (copyable verify) | `/docs/cli/autostart` |
 | Connect any IDE | `/docs/ide/connect` |
