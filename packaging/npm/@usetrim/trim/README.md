@@ -57,19 +57,9 @@ trim uninstall
 npm uninstall -g @usetrim/trim
 ```
 
-On Windows, a running `trim.exe` (often `daemon run` from Always-on) locks the file. If `npm uninstall` prints `EPERM … unlink … vendor\trim.exe`, stop Trim then retry:
+On Windows, Always-on registers **Startup Run → `%LOCALAPPDATA%\Trim\bin\trim.exe`** (a stable copy outside this package). That means a running OS-logon daemon does **not** lock `vendor\trim.exe`, so `npm uninstall` / upgrades no longer hit `EPERM` on the npm tree.
 
-```powershell
-# If trim is still on PATH:
-trim daemon uninstall
-trim stop
-
-# Then retry package remove; clear npm rename leftovers if any:
-npm uninstall -g @usetrim/trim
-Remove-Item -Recurse -Force "$env:LOCALAPPDATA\nvm\*\node_modules\@usetrim" -ErrorAction SilentlyContinue
-```
-
-`preuninstall` best-effort runs `daemon uninstall` + `stop` (and clears a Windows lock on this package’s `vendor\trim.exe`) so normal upgrades/removals do not hit EPERM.
+`preuninstall` still best-effort runs `daemon uninstall` + `stop` and clears any leftover process that might still hold this package’s `vendor\trim.exe` (legacy installs that ran the daemon from `node_modules`).
 
 ## License
 

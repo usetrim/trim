@@ -124,7 +124,7 @@ trim start`,
       {
         type: "callout",
         title: "Preference saved even if OS logon fails",
-        text: "On Windows, Trim uses a per-user Startup Run key (not an admin Scheduled Task). If registration is blocked, the CLI keeps your preference on and tells you to use trim start or the IDE extension. See trim autostart.",
+        text: "On Windows, Trim uses a per-user Startup Run key pointing at %LOCALAPPDATA%\\Trim\\bin\\trim.exe (not an admin Scheduled Task, and not npm’s vendor tree). If registration is blocked, the CLI keeps your preference on and tells you to use trim start or the IDE extension. See trim autostart.",
       },
       { type: "h2", id: "point-ide", text: "4. Point your IDE or agent at Trim" },
       {
@@ -231,14 +231,15 @@ trim start`,
       {
         type: "callout",
         title: "Windows: no Administrator",
-        text: "trim autostart enable registers a per-user Startup Run key (HKCU) - the same industry pattern as browsers and editors. No admin Scheduled Task. If OS registration is blocked by policy, your preference stays on - use trim start or the Trim IDE extension. See trim autostart.",
+        text: "trim autostart enable registers a per-user Startup Run key (HKCU) pointing at a stable copy under %LOCALAPPDATA%\\Trim\\bin\\trim.exe - the same industry pattern as browsers and editors (never locks npm’s vendor\\trim.exe). No admin Scheduled Task. If OS registration is blocked by policy, your preference stays on - use trim start or the Trim IDE extension. See trim autostart.",
       },
       {
         type: "code",
         language: "powershell",
-        code: `# Confirm Windows Startup Run entry after enable (optional)
+        code: `# Confirm Windows Startup Run → LocalAppData after enable (optional)
 Get-ItemProperty HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run |
-  Select-Object TrimProxy`,
+  Select-Object TrimProxy
+Test-Path \"$env:LOCALAPPDATA\\Trim\\bin\\trim.exe\"`,
       },
       { type: "h2", id: "from-source", text: "From source (Go)" },
       {
@@ -455,7 +456,7 @@ winget uninstall Trim.CLI`,
         items: [
           "macOS: launchd LaunchAgent",
           "Linux: systemd --user",
-          "Windows: HKCU Startup Run key (no Administrator on a normal PC)",
+          "Windows: HKCU Startup Run → %LOCALAPPDATA%\\Trim\\bin\\trim.exe (no Administrator on a normal PC)",
         ],
       },
       {
@@ -812,12 +813,12 @@ trim autostart disable`,
         items: [
           "macOS: launchd LaunchAgent (per-user)",
           "Linux: systemd --user unit (per-user)",
-          "Windows: per-user Startup Run key (HKCU CurrentVersion\\Run) - industry practice for apps like browsers and editors; no Administrator required on a normal PC",
+          "Windows: per-user Startup Run key (HKCU CurrentVersion\\Run) → %LOCALAPPDATA%\\Trim\\bin\\trim.exe - industry practice for apps like browsers and editors; no Administrator on a normal PC; npm uninstall never locks the package tree",
         ],
       },
       {
         type: "p",
-        text: "daemon run only starts the proxy when the preference is on (or the hosted default when unset), and attaches if a healthy proxy is already listening. Older Windows installs that used a scheduled task are migrated away on install/uninstall.",
+        text: "daemon run only starts the proxy when the preference is on (or the hosted default when unset), and attaches if a healthy proxy is already listening. On Windows, install copies the CLI into LocalAppData so package managers can remove their trees freely. Older installs that used a scheduled task or ran from node_modules are migrated away on install/uninstall.",
       },
       {
         type: "code",
@@ -849,11 +850,12 @@ trim daemon uninstall`,
       {
         type: "code",
         language: "powershell",
-        code: `# Windows: confirm per-user Startup Run (no admin)
+        code: `# Windows: confirm Startup Run → LocalAppData (no admin)
 trim daemon install
 trim daemon status
 Get-ItemProperty HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run |
   Select-Object TrimProxy
+Test-Path \"$env:LOCALAPPDATA\\Trim\\bin\\trim.exe\"
 trim daemon uninstall`,
       },
       {
@@ -3480,7 +3482,7 @@ Optional build features: follow README flags for native parsers`,
         type: "ul",
         items: [
           "Your Trim preference can still be on - Always-on with IDE and the Trim IDE extension do not require OS logon",
-          "Retry: trim autostart enable (Windows uses a per-user Startup Run key; no Administrator on a normal PC)",
+          "Retry: trim autostart enable (Windows uses Startup Run → %LOCALAPPDATA%\\Trim\\bin; no Administrator on a normal PC)",
           "Manual path: trim start",
           "IDE path: keep Start Trim with your IDE checked and open the editor with the Trim IDE extension",
           "Enterprise PCs: if Startup programs are blocked by policy, use manual or IDE start - that is expected",
@@ -3592,7 +3594,7 @@ Optional build features: follow README flags for native parsers`,
       },
       {
         type: "p",
-        text: "No for normal PCs. Trim registers a per-user Startup Run key (same pattern as browsers and editors), not an admin Scheduled Task. If your organization blocks Startup programs, keep the preference on and use trim start or the Trim IDE extension. See trim autostart.",
+        text: "No for normal PCs. Trim registers a per-user Startup Run key pointing at %LOCALAPPDATA%\\Trim\\bin\\trim.exe (same pattern as browsers and editors), not an admin Scheduled Task and not a lock on npm’s package tree. If your organization blocks Startup programs, keep the preference on and use trim start or the Trim IDE extension. See trim autostart.",
       },
       {
         type: "h2",
