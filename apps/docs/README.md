@@ -11,27 +11,34 @@ Product documentation is served by the web app at [use-trim.com/docs](https://us
 - On-this-page table of contents
 - Theme toggle shared with the marketing site
 - Copy button on every docs code block (`CopyableCode`)
-- Tables for exact settings places and model maps
+- Tables for exact settings places and path pickers
+
+## Recommended reading order (worldwide)
+
+1. [Introduction](https://use-trim.com/docs) - choose your tool
+2. [Quickstart](https://use-trim.com/docs/quickstart) - shared install + one Step 4 path
+3. Your tool guide only:
+   - [Claude Code (CLI only)](https://use-trim.com/docs/cli/claude-code) - no Cursor / no VS Code; Windows / macOS / Linux copy blocks
+   - [Cursor](https://use-trim.com/docs/ide/cursor)
+   - [Continue](https://use-trim.com/docs/ide/continue)
+   - [VS Code Chat](https://use-trim.com/docs/ide/vscode)
+4. Optional: [Custom models](https://use-trim.com/docs/ide/custom-models), [Always-on](https://use-trim.com/docs/concepts/always-on)
 
 ## Popular entry points
 
 | Topic | Path |
 | --- | --- |
+| Introduction (choose your tool) | `/docs` |
 | Quickstart | `/docs/quickstart` |
-| Installation (Always-on + IDE models) | `/docs/installation` |
-| Custom models (`trim-claude-sonnet`, …) | `/docs/ide/custom-models` |
-| Always-on with IDE | `/docs/concepts/always-on` |
-| `trim autostart` / `trim daemon` (copyable verify) | `/docs/cli/autostart` |
-| Connect any IDE | `/docs/ide/connect` |
+| Installation | `/docs/installation` |
+| Claude Code CLI only | `/docs/cli/claude-code` |
+| Custom models | `/docs/ide/custom-models` |
+| Always-on | `/docs/concepts/always-on` |
 | Cursor | `/docs/ide/cursor` |
 | Continue | `/docs/ide/continue` |
 | VS Code Chat | `/docs/ide/vscode` |
-| Claude Code | `/docs/ide/claude-code` |
-| Provider adapters | `/docs/ide/provider-adapters` |
-| Base URL troubleshooting | `/docs/ide/troubleshoot-base-url` |
-| Trim IDE extension | `/docs/ide/extension` |
-| Metering (credits / Unlimited / top-ups) | `/docs/concepts/metering` |
-| Troubleshooting (incl. Access denied OS logon) | `/docs/guides/troubleshooting` |
+| Connect any IDE | `/docs/ide/connect` |
+| Troubleshooting | `/docs/guides/troubleshooting` |
 
 Dashboard and Admin guides live under `/docs/dashboard/*` and `/docs/admin/*`.
 

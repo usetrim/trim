@@ -28,74 +28,144 @@ function page(title: string, description: string, blocks: DocBlock[]): DocPage {
 export const DOC_PAGES: Record<string, DocPage> = {
   "": page(
     "Introduction",
-    "Trim is local context optimization for AI coding tools, with a local proxy and a hosted Service for auth, quotas, and billing.",
+    "Plain map of Trim: what it is, where settings live, and which guide to open for your tool.",
     [
       {
         type: "p",
-        text: "Trim sits between your IDE (or any OpenAI-compatible client) and the upstream model. It shrinks noisy context on your machine, then forwards a smaller prompt. The hosted Service handles sign-in, metering, plans, receipts, and team seats.",
+        text: "Trim runs a small local helper on your computer. Your coding tool (Cursor, Claude Code, VS Code, …) sends chat through Trim first. Trim removes noisy context on your machine, then sends a smaller prompt to your AI provider. Sign-in, plans, and usage charts live on use-trim.com.",
       },
-      { type: "h2", id: "what-you-get", text: "What you get" },
       {
-        type: "ul",
-        items: [
-          "Local OpenAI-compatible proxy (trim start, or auto-start with your IDE)",
-          "Always-on with IDE preference: open the editor and Trim stays ready (Fast, plus Deep when Preferences Deep is on)",
-          "Fast Mode compression on your machine (always on live IDE chat)",
-          "Deep Mode via live proxy (when Preferences Deep is on) and trim compress; engines are not loaded in Trim cloud",
-          "Dashboard for usage, dedicated Traces / Receipts / Enterprise pages, Settings (keys + Preferences), and team invites",
-          "Merchant of Record billing with upgrade-aware proration rules",
-          "Separate Admin console for operators (users, billing catalog, chrome, compliance, audit)",
+        type: "callout",
+        title: "Read this first ",
+        text: "You will use four places: (1) Terminal - install and run Trim. (2) Your coding tool - tell it Trim’s address. (3) Local meter - http://127.0.0.1:8888/dashboard to see savings on this PC. (4) Cloud dashboard - https://use-trim.com/dashboard for login, Preferences, Billing, and API keys. Every docs code block has a Copy button.",
+      },
+      {
+        type: "h2",
+        id: "choose-tool",
+        text: "Choose your tool (pick one path)",
+      },
+      {
+        type: "table",
+        headers: ["I use…", "Open this guide next", "Where you change settings"],
+        rows: [
+          [
+            "Claude Code only (no Cursor / no VS Code)",
+            "Claude Code (CLI only)",
+            "Terminal env vars (ANTHROPIC_BASE_URL) - not IDE Models",
+          ],
+          ["Cursor", "Quickstart → Cursor setup", "Cursor → Settings → Models"],
+          [
+            "Continue (VS Code / Cursor extension)",
+            "Quickstart → Continue setup",
+            "~/.continue/config.yaml",
+          ],
+          ["VS Code built-in Chat", "Quickstart → VS Code setup", "Chat: Manage Language Models"],
+          ["Not sure yet", "Quickstart", "Shared install + login first, then pick a path"],
         ],
       },
       {
-        type: "p",
-        text: "New here? Start with Quickstart, then Installation, then Custom models (friendly trim-claude-sonnet style names in your IDE), then the page for your editor (Cursor, Continue, VS Code, …). Every code block in the docs has a Copy button.",
+        type: "h2",
+        id: "how-it-works",
+        text: "How it works end to end (simple)",
       },
-      { type: "h2", id: "how-to-use-these-docs", text: "How to use these docs" },
       {
-        type: "p",
-        text: "The sidebar follows industry docs practice (Cursor, Vercel, Next.js): start with Get started (including Installation and Uninstall), then Concepts, then product surfaces (CLI, IDE, Dashboard, API), then Admin console (operators - every console route and major tab), then Guides, Security, and Self-hosting. Use Prev and Next at the bottom of each page to move in order. Sidebar sections are exclusive accordions: opening one closes the previous.",
+        type: "ol",
+        items: [
+          "Install the Trim CLI on your PC (puts the trim command on PATH)",
+          "Sign in once: trim login (browser opens; cloud account for quotas/billing)",
+          "Start Trim on this PC: trim start (or trim autostart enable so it comes back after reboot)",
+          "Point your coding tool at Trim’s address (different tools use a slightly different address - see the table above)",
+          "Chat as usual → check local meter → optional cloud Usage / Billing",
+        ],
+      },
+      {
+        type: "h2",
+        id: "where-settings",
+        text: "Where settings live (map)",
+      },
+      {
+        type: "table",
+        headers: ["What", "Where"],
+        rows: [
+          [
+            "Install / start / stop Trim",
+            "Terminal: trim version, trim start, trim stop, trim status",
+          ],
+          [
+            "Always-on preference",
+            "https://use-trim.com/dashboard → Preferences → Start Trim with your IDE",
+          ],
+          ["Plans / prices / quotas", "https://use-trim.com/dashboard → Billing"],
+          [
+            "Trim IDE extension API key (optional)",
+            "Dashboard → Settings → API keys (not your Anthropic/OpenAI key)",
+          ],
+          [
+            "Provider AI keys (Anthropic / OpenAI / Google)",
+            "Inside your coding tool (or shell env for Claude Code)",
+          ],
+          ["Local savings meter", "http://127.0.0.1:8888/dashboard"],
+        ],
       },
       {
         type: "callout",
         title: "Start here",
-        text: "New to Trim? Go to Quickstart → Installation → Custom models → your editor page (Cursor / Continue / VS Code). Install the CLI, leave Start Trim with your IDE on, paste the Base URL + a trim-… model id, then verify on the local dashboard. See Always-on with IDE for the everyday loop.",
+        text: "Go to Quickstart now. If you only use Claude Code, jump straight to Claude Code (CLI only) after install + login.",
       },
       { type: "h2", id: "open-core", text: "Open core" },
       {
         type: "p",
-        text: "The CLI and much of the backend are open for inspection and self-hosting. Hosted use-trim.com adds managed auth, quotas, fraud controls, and billing. Repository licenses apply to source; these product docs describe how the shipped system behaves end to end.",
+        text: "The CLI and much of the backend are open for inspection and self-hosting. Hosted use-trim.com adds managed auth, quotas, fraud controls, and billing.",
       },
     ],
   ),
 
   quickstart: page(
     "Quickstart",
-    "Five clear steps: install, sign in, keep Trim ready, point your IDE + pick a Trim model, verify savings.",
+    "Shared install → pick your tool path → verify. Clear where / what / how for non-technical and technical users.",
     [
       {
         type: "p",
-        text: "Follow this page top to bottom. Each code block has a Copy button - paste into your terminal or IDE settings. Everyday use should feel always-on: after step 3 you should not need to remember trim start every day. Official installs talk to Trim Cloud with zero environment secrets - never paste HMAC keys for normal use.",
+        text: "Do steps 1–3 on every computer. Then open only the Step 4 path that matches your tool. Do not mix Cursor settings with Claude Code settings. Every code block has a Copy button.",
       },
       {
         type: "table",
-        headers: ["Step", "What you do", "Where"],
+        headers: ["Step", "What you do", "Where you do it", "What you should see"],
         rows: [
-          ["1", "Install the Trim CLI", "Terminal"],
-          ["2", "Sign in", "Terminal → browser"],
-          ["3", "Keep Trim ready (Always-on)", "Dashboard Preferences + terminal"],
+          ["1", "Install Trim", "Terminal", "trim version prints a version number"],
+          ["2", "Sign in", "Terminal → browser", "Browser login completes; terminal confirms"],
+          [
+            "3",
+            "Start Trim on this PC",
+            "Terminal (+ optional Dashboard Preferences)",
+            "trim start ready UI / local dashboard loads",
+          ],
           [
             "4",
-            "Point IDE Base URL + pick a model",
-            "IDE Settings → Models (or Continue / VS Code Chat)",
+            "Connect your coding tool",
+            "Only your tool’s settings (pick one path below)",
+            "Chats go through Trim",
           ],
-          ["5", "Verify", "Terminal + local dashboard"],
+          ["5", "Verify", "Browser + terminal", "Local Requests increase; optional cloud Usage"],
         ],
       },
-      { type: "h2", id: "install", text: "1. Install the CLI" },
+      {
+        type: "h2",
+        id: "before",
+        text: "Before you start",
+      },
+      {
+        type: "ul",
+        items: [
+          "You need a terminal (macOS Terminal, Windows PowerShell, or Linux shell)",
+          "You need your AI provider key later (Anthropic for Claude Code / Claude models; OpenAI for GPT; Google for Gemini)",
+          "You do not paste Trim HMAC secrets or internal API URLs for normal use",
+        ],
+      },
+      { type: "h2", id: "install", text: "1. Install the CLI (Terminal)" },
       {
         type: "p",
-        text: "Pick one installer for your machine. Then confirm the binary works.",
+        text: "Where: Terminal. What: put the trim command on your PATH. How: copy one installer, run it, then confirm.",
       },
       {
         type: "code",
@@ -117,129 +187,159 @@ brew install usetrim/tap/trim
 trim version`,
       },
       {
+        type: "p",
+        text: "After this: if trim version fails, close and reopen the terminal (PATH refresh), then retry. Platform detail: Installation.",
+      },
+      {
         type: "h2",
         id: "login",
-        text: "2. Sign in",
+        text: "2. Sign in (Terminal → browser)",
       },
       {
         type: "p",
-        text: "Sign in so quotas, billing, and the cloud dashboard work. Compression still runs on your machine; the model reply still needs your provider key (OpenAI / Anthropic / Google) in the IDE.",
+        text: "Where: Terminal, then the browser window that opens. What: link this PC to your use-trim.com account (quotas, Billing, Usage). How:",
       },
       {
         type: "code",
         language: "bash",
         code: "trim login",
       },
-      { type: "h2", id: "always-on", text: "3. Keep Trim ready with your IDE" },
       {
         type: "p",
-        text: "Exact place: open https://use-trim.com/dashboard → Preferences → leave Start Trim with your IDE checked (default on). Then enable local auto-start. The browser cannot start Trim by itself - the CLI and/or Trim IDE extension do.",
+        text: "After this: keep the provider AI key for Step 4 (Trim login is not your Anthropic/OpenAI/Google key).",
+      },
+      {
+        type: "h2",
+        id: "start-trim",
+        text: "3. Start Trim on this PC (Terminal)",
+      },
+      {
+        type: "p",
+        text: "Where: Terminal. Optional cloud toggle: https://use-trim.com/dashboard → Preferences → Start Trim with your IDE (leave checked). The website cannot start Trim by itself - the CLI does. How:",
       },
       {
         type: "code",
         language: "bash",
-        code: `# Preference + best-effort OS logon (no admin on a normal Windows PC)
-trim autostart enable
-trim autostart status
+        code: `# One-shot: start Trim now (prints ready UI, returns your shell; proxy stays up)
+trim start
 
-# Optional one-shot session (prints ready UI, then returns your shell; proxy stays up)
-trim start`,
+# Recommended: also survive reboot / logon (no admin on a normal Windows PC)
+trim autostart enable
+trim autostart status`,
       },
-      {
-        type: "callout",
-        title: "Attach, do not double-bind",
-        text: "If a healthy proxy is already listening, trim start prints a green confirmation, the IDE Base URL table, and a muted attach note - then exits 0. Prefer one proxy per machine.",
-      },
-      {
-        type: "callout",
-        title: "Windows: preference saved even if OS logon fails",
-        text: "Trim uses a per-user Startup Run key → %LOCALAPPDATA%\\Trim\\bin\\trim.exe (not an admin Scheduled Task, and not npm’s vendor tree). If registration is blocked, keep using trim start or the Trim IDE extension. See trim autostart.",
-      },
-      { type: "h2", id: "point-ide", text: "4. Point your IDE and pick a Trim model" },
       {
         type: "p",
-        text: "Two things must match: (A) Base URL points at Trim, (B) the model id is a Trim-friendly name (or an official id Trim already routes). Use the Copy button on each value below.",
+        text: "After this: open http://127.0.0.1:8888/dashboard in a browser. If it loads, Trim is listening on this PC. Claude Code users: you still need Step 4B (env vars). IDE users: Step 4A/4C/4D.",
+      },
+      {
+        type: "callout",
+        title: "Already running?",
+        text: "If Trim is already healthy, trim start confirms and exits 0 - it does not start a second copy. Prefer one Trim proxy per machine.",
+      },
+      {
+        type: "h2",
+        id: "connect-tool",
+        text: "4. Connect your coding tool (pick ONE path)",
+      },
+      {
+        type: "p",
+        text: "Do not configure every tool. Open only the page for the tool you actually use.",
+      },
+      {
+        type: "table",
+        headers: ["Path", "Who", "Where you set it", "Full guide"],
+        rows: [
+          [
+            "4A Cursor",
+            "Cursor chat / Composer",
+            "Settings → Models → Override OpenAI Base URL = http://127.0.0.1:8888/v1 + model + provider key",
+            "Cursor setup",
+          ],
+          [
+            "4B Claude Code only",
+            "claude CLI / Claude Code (no IDE)",
+            "Terminal env ANTHROPIC_BASE_URL = http://127.0.0.1:8888 (no /v1) + ANTHROPIC_API_KEY",
+            "Claude Code (CLI only)",
+          ],
+          [
+            "4C Continue",
+            "Continue sidebar",
+            "~/.continue/config.yaml apiBase + model",
+            "Continue setup",
+          ],
+          [
+            "4D VS Code Chat",
+            "Built-in VS Code Chat",
+            "Chat: Manage Language Models → Custom Endpoint → …/v1/chat/completions",
+            "VS Code setup",
+          ],
+        ],
       },
       {
         type: "h3",
-        id: "copy-base-urls",
-        text: "Copy these Base URLs",
+        id: "copy-addresses",
+        text: "Copy: Trim addresses (use the one for your path)",
       },
       {
         type: "code",
         language: "text",
-        code: `Cursor / Continue / Windsurf / Zed / JetBrains / most OpenAI clients
+        code: `Path 4A / 4C / most IDE OpenAI settings
 http://127.0.0.1:8888/v1
 
-VS Code Chat → Custom Endpoint (full path required)
+Path 4D - VS Code Chat Custom Endpoint only
 http://127.0.0.1:8888/v1/chat/completions
 
-Claude Code only (origin - no /v1)
+Path 4B - Claude Code only (origin, NO /v1)
 http://127.0.0.1:8888`,
       },
       {
-        type: "h3",
-        id: "copy-model-ids",
-        text: "Copy these recommended model ids",
+        type: "callout",
+        title: "Claude Code users (important)",
+        text: "If you only use Claude Code, skip Cursor / VS Code model menus entirely. Open Claude Code (CLI only) now and finish Step 4B there: Windows / macOS / Linux copy blocks, permanent shell profile, verify, everyday loop, and troubleshooting. Every block has a Copy button.",
       },
       {
-        type: "code",
-        language: "text",
-        code: `trim-claude-sonnet
-trim-claude-haiku
-trim-claude-opus
-trim-gemini-flash
-trim-gemini-flash-latest
-gpt-4o-mini`,
+        type: "callout",
+        title: "IDE custom model names",
+        text: "For Cursor / Continue / VS Code you can add friendly ids like trim-claude-sonnet. That is an IDE Models setting - not used by Claude Code’s Anthropic door. Guide: Custom models.",
       },
+      { type: "h2", id: "verify", text: "5. Verify (after Step 4)" },
       {
         type: "p",
-        text: "Exact IDE places (open the matching docs page for screenshots-level detail):",
+        text: "Where: Terminal + browser. What: prove traffic hits Trim. How:",
       },
       {
         type: "ol",
         items: [
-          "Cursor: Settings → Models → enable Override OpenAI Base URL → paste http://127.0.0.1:8888/v1 → add/select a model id such as trim-claude-sonnet → put the matching provider key in the OpenAI API key field (Anthropic key for Claude, OpenAI key for GPT, Google key for Gemini)",
-          "Continue: edit ~/.continue/config.yaml → provider openai, apiBase http://127.0.0.1:8888/v1, model trim-claude-sonnet → Continue sidebar → Reload config (not VS Code built-in Chat)",
-          "VS Code Chat: Command Palette → Chat: Manage Language Models → Add Models → Custom Endpoint → url = http://127.0.0.1:8888/v1/chat/completions, id = trim-claude-sonnet",
-          "Claude Code: export ANTHROPIC_BASE_URL=http://127.0.0.1:8888 (no /v1)",
-          "Optional helper: install Trim IDE (Extensions → Trim IDE by usetrim) for auto-start + dashboard charts",
+          "Send one short message in your tool (“Reply with exactly: ok”)",
+          "Open http://127.0.0.1:8888/dashboard - Requests should increase",
+          "Optional: trim status and trim stats in Terminal",
+          "Optional cloud: https://use-trim.com/dashboard → Usage / Traces",
+          "Plans / prices: https://use-trim.com/dashboard → Billing",
         ],
       },
-      {
-        type: "callout",
-        title: "Custom models in your IDE",
-        text: "You can create friendly custom model entries (trim-claude-sonnet, trim-claude-haiku, trim-gemini-flash-latest, trim-gpt-4o-mini, trim-gemini-fast-latest, and your own trim-… names) in Cursor Models, Continue config.yaml, or VS Code chatLanguageModels.json. Full guide: Custom models.",
-      },
-      {
-        type: "callout",
-        title: "Pick the right panel",
-        text: "In VS Code, Continue is a separate sidebar from built-in Chat. Continue shows names from config.yaml (for example Claude via Trim). Built-in Chat shows Custom Endpoint/… and 0 credits. Use the docs page for the panel you actually open.",
-      },
-      { type: "h2", id: "verify", text: "5. Verify" },
       {
         type: "code",
         language: "bash",
         code: `trim status
-trim autostart status
-trim config sync
-trim stats
-
-# Local savings meter (browser)
-# http://127.0.0.1:8888/dashboard`,
+trim stats`,
       },
       {
-        type: "ol",
+        type: "h2",
+        id: "after",
+        text: "After setup (everyday)",
+      },
+      {
+        type: "ul",
         items: [
-          "Send one short chat (“Reply with exactly: ok”) with a noisy workspace open",
-          "Confirm http://127.0.0.1:8888/dashboard Requests increase",
-          "Cloud charts: https://use-trim.com/dashboard (Usage / Traces) when signed in",
-          "Plans and metering: Dashboard → Billing (or Plans) for your plan and quotas",
+          "IDE users: open the editor; with Always-on, Trim stays ready (see Always-on with IDE)",
+          "Claude Code users: keep ANTHROPIC_BASE_URL set in that terminal session (or shell profile), run trim start if the local dashboard is down, then run claude as usual",
+          "If savings disappear after an editor update: re-check Step 4 address",
+          "To leave a machine clean: Uninstall",
         ],
       },
       {
         type: "note",
-        text: "Next: Installation (platform detail), Custom models (exact settings + copyable examples), Cursor setup / Continue setup / VS Code setup, Always-on with IDE, or Uninstall.",
+        text: "Next detail pages: Installation, Claude Code (CLI only), Cursor setup, Continue setup, VS Code setup, Custom models.",
       },
     ],
   ),
@@ -346,53 +446,46 @@ Test-Path \"$env:LOCALAPPDATA\\Trim\\bin\\trim.exe\"`,
       {
         type: "h2",
         id: "ide-and-models",
-        text: "After install: IDE Base URL + models",
+        text: "After install: connect your tool (pick ONE)",
       },
       {
         type: "p",
-        text: "Installing the CLI alone does not compress chat. You must point your editor at Trim and choose a model id. Copy the values, then open the matching IDE page for click-by-click menus.",
-      },
-      {
-        type: "code",
-        language: "text",
-        code: `OpenAI-compatible Base URL (Cursor, Continue, Windsurf, Zed, JetBrains, Aider)
-http://127.0.0.1:8888/v1
-
-VS Code Chat Custom Endpoint url
-http://127.0.0.1:8888/v1/chat/completions
-
-Claude Code ANTHROPIC_BASE_URL (no /v1)
-http://127.0.0.1:8888`,
-      },
-      {
-        type: "code",
-        language: "text",
-        code: `Recommended model ids (paste into IDE model settings)
-trim-claude-sonnet
-trim-claude-haiku
-trim-claude-opus
-trim-gemini-flash
-trim-gemini-flash-latest
-gpt-4o-mini`,
+        text: "Installing the CLI alone does not compress chat. Next: trim login → trim start → connect exactly one tool. Open Quickstart Step 4, or jump straight to your guide below.",
       },
       {
         type: "table",
-        headers: ["IDE / client", "Exact settings place", "Docs"],
+        headers: ["I use…", "Where I set Trim’s address", "Full guide"],
         rows: [
-          ["Cursor", "Settings → Models → Override OpenAI Base URL + model list", "Cursor setup"],
-          ["Continue", "~/.continue/config.yaml (apiBase + model)", "Continue setup"],
           [
-            "VS Code Chat",
-            "Chat: Manage Language Models → Custom Endpoint → chatLanguageModels.json",
-            "VS Code setup",
+            "Claude Code only (no IDE)",
+            "Terminal env ANTHROPIC_BASE_URL = http://127.0.0.1:8888 (no /v1)",
+            "Claude Code (CLI only)",
           ],
-          ["Claude Code", "Shell env ANTHROPIC_BASE_URL", "Claude Code"],
-          ["Any custom model name", "Same places - create a trim-… entry", "Custom models"],
+          [
+            "Cursor",
+            "Settings → Models → Override OpenAI Base URL = http://127.0.0.1:8888/v1",
+            "Cursor setup",
+          ],
+          ["Continue", "~/.continue/config.yaml → apiBase", "Continue setup"],
+          ["VS Code Chat", "Custom Endpoint url = …/v1/chat/completions", "VS Code setup"],
+          ["Friendly IDE model names", "Same IDE model settings", "Custom models"],
         ],
       },
       {
+        type: "code",
+        language: "text",
+        code: `Cursor / Continue / most IDE OpenAI settings
+http://127.0.0.1:8888/v1
+
+VS Code Chat Custom Endpoint only
+http://127.0.0.1:8888/v1/chat/completions
+
+Claude Code only (origin - NO /v1)
+http://127.0.0.1:8888`,
+      },
+      {
         type: "p",
-        text: "Plans / prices / quotas live in the product dashboard, not in the IDE model dialog: https://use-trim.com/dashboard → Billing (or Plans). API keys for the Trim IDE extension: Dashboard → Settings → API keys. Provider keys (OpenAI / Anthropic / Google) stay in the IDE key fields.",
+        text: "After connecting: open http://127.0.0.1:8888/dashboard and send one short chat. Plans / prices: https://use-trim.com/dashboard → Billing. Trim IDE extension keys (optional): Dashboard → Settings → API keys. Provider keys stay in your tool (or Claude Code shell env).",
       },
       { type: "h2", id: "from-source", text: "From source (Go)" },
       {
@@ -575,23 +668,39 @@ winget uninstall Trim.CLI`,
 
   "concepts/always-on": page(
     "Always-on with IDE",
-    "One preference, many local enforcers: open your IDE and Trim stays ready. Easy opt-out. Fast always; Deep when Preferences Deep is on.",
+    "Keep Trim running on this PC when you open your editor - or when you use Claude Code from the terminal.",
     [
       {
         type: "p",
-        text: "You want the everyday proxy to feel always-on with the IDE, with an easy opt-out - the same family as telemetry on/off. Compress stays available for file/batch. Live IDE chat always runs Fast; Deep also runs when Preferences Deep is on.",
+        text: "Always-on means: Trim should already be listening on this computer when you start working. You should not need to remember a new ritual every morning. Live chat always runs Fast; Deep also runs when Preferences Deep is on.",
       },
-      { type: "h2", id: "one-preference", text: "One preference" },
+      {
+        type: "table",
+        headers: ["I use…", "How Always-on helps", "What you still set"],
+        rows: [
+          [
+            "Cursor / VS Code",
+            "Trim IDE extension and/or trim autostart start the proxy when the editor opens",
+            "IDE Base URL + model (see Quickstart path 4A/4C/4D)",
+          ],
+          [
+            "Claude Code only",
+            "trim autostart (or trim start) keeps the proxy up - no IDE extension required",
+            "Terminal ANTHROPIC_BASE_URL + ANTHROPIC_API_KEY (see Claude Code CLI only)",
+          ],
+        ],
+      },
+      { type: "h2", id: "one-preference", text: "One preference (exact place)" },
       {
         type: "p",
-        text: "Cloud and local prefs share auto_start_with_ide (shown in the dashboard as Start Trim with your IDE). Default is on for new accounts. Uncheck anytime to stop auto-starting.",
+        text: "Where: https://use-trim.com/dashboard → Preferences → Start Trim with your IDE. Default is on. Uncheck anytime to stop auto-starting. The website cannot start Trim by itself - your PC’s CLI or Trim IDE extension does.",
       },
       {
         type: "ul",
         items: [
-          "Dashboard: control plane - checkbox + local agent online/offline",
-          "CLI: trim autostart enable|disable|status; optional trim daemon for OS logon",
-          "IDE extension: on IDE startup, if the preference is on, ensure the proxy is healthy",
+          "Dashboard: checkbox + local agent online/offline",
+          "CLI: trim autostart enable|disable|status (works for IDE and Claude Code users)",
+          "IDE extension: on editor startup, if preference is on, ensure the proxy is healthy",
         ],
       },
       {
@@ -797,59 +906,852 @@ trim compress --bootstrap`,
 
   "cli/overview": page(
     "CLI overview",
-    "The Trim CLI installs the binary, authenticates, runs the local proxy, and exposes compress tools.",
+    "What the trim command does, and which CLI guide to open next (including Claude Code-only).",
     [
       {
         type: "p",
-        text: "The CLI is the primary way developers run Trim on a workstation. It installs as a single binary, authenticates to the hosted Service when you need metering, and exposes an OpenAI-compatible listen URL for IDEs.",
+        text: "The Trim CLI is the program you install on your computer. It starts the local Trim helper, signs you in, and prints the addresses your coding tools need. IDEs and Claude Code both depend on this CLI - they are not separate Trim installs.",
+      },
+      {
+        type: "table",
+        headers: ["I want to…", "Open"],
+        rows: [
+          ["Finish first-time setup", "Quickstart"],
+          ["Use Claude Code only (no Cursor / VS Code)", "Claude Code (CLI only)"],
+          ["Start / stop the local helper", "trim start"],
+          ["Survive reboot", "trim autostart"],
+          ["Sign in again", "trim login"],
+        ],
       },
       {
         type: "code",
         language: "bash",
         code: `trim help
-trim autostart status
-trim start
-trim stop
-trim status
+trim version
 trim login
-trim uninstall
-trim compress --help
-trim config sync`,
+trim start
+trim setup
+trim autostart enable
+trim status
+trim stats
+trim stop
+trim uninstall`,
       },
       {
         type: "callout",
-        title: "trim help",
-        text: "trim help lists Everyday Commands first (start, stop, status, autostart, login, setup, uninstall), then Advanced (stats, tui, compress, daemon, telemetry, config). Run trim help <command> for details. Full machine removal: see Uninstall.",
+        title: "trim setup (helpful for Claude Code)",
+        text: "trim setup prints copy/paste blocks for Claude Code (ANTHROPIC_BASE_URL origin, no /v1), Continue, and VS Code Chat. It can also write common IDE settings files when those products are installed. Full Claude Code walkthrough: Claude Code (CLI only).",
       },
       { type: "h2", id: "roles", text: "What the CLI does" },
       {
         type: "ul",
         items: [
-          "Local OpenAI-compatible gateway for IDEs and agents",
-          "Always-on preference via trim autostart and optional trim daemon",
-          "Device-bound authentication to the hosted Service",
-          "On-machine Fast Mode for live chat completions",
-          "On-machine Deep Mode on live proxy (when Preferences Deep is on) and via trim compress for file/batch",
-          "Config sync from dashboard preferences",
-          "Full local uninstall via trim uninstall (see Uninstall)",
+          "Installs and runs the local Trim listen address on this PC",
+          "Signs in to use-trim.com for quotas and Billing",
+          "Optional OS logon via trim autostart",
+          "Fast Mode (and Deep when Preferences Deep is on) on your machine",
+          "trim setup copy/paste for Claude Code and IDEs",
+          "Full remove via trim uninstall",
         ],
       },
       { type: "h2", id: "typical-day", text: "Typical day" },
       {
         type: "ol",
         items: [
-          "Leave Start Trim with your IDE on (or trim autostart enable)",
-          "Open Cursor or VS Code - extension/daemon keep the proxy ready",
-          "Point the client at Trim: Cursor Override …/v1, Continue ~/.continue/config.yaml, VS Code Chat …/v1/chat/completions, or Claude Code ANTHROPIC_BASE_URL origin (see IDE docs)",
-          "Work in Composer / Continue / Claude Code as usual",
-          "Check trim stats or the local dashboard after large tasks",
-          "Open Dashboard → Receipts, Team, or plan CTAs for billing and seats",
+          "If local dashboard is down: trim start (or rely on trim autostart)",
+          "IDE path: open Cursor / VS Code / Continue with Base URL already set",
+          "Claude Code path: same terminal has ANTHROPIC_BASE_URL + ANTHROPIC_API_KEY, then run claude",
+          "Check http://127.0.0.1:8888/dashboard or trim stats after big tasks",
+          "Plans / prices: https://use-trim.com/dashboard → Billing",
         ],
       },
       {
         type: "callout",
         title: "Hosted auth vs on-machine compression",
-        text: "Compression runs on your machine; chat still needs an upstream model. Sign in for Trim cloud auth, quotas, usage sync, and paid entitlements.",
+        text: "Compression runs on your machine; chat still needs an upstream model key. Sign in for Trim cloud auth, quotas, usage sync, and paid entitlements.",
+      },
+    ],
+  ),
+
+  "cli/claude-code": page(
+    "Claude Code (CLI only)",
+    "World-wide Claude Code / claude CLI path (Windows, macOS, Linux). No Cursor. No VS Code. Where / what / how / why / what happens / what next - every block has a Copy button.",
+    [
+      {
+        type: "p",
+        text: "This guide is only for people who use Anthropic’s Claude Code (the claude command in a terminal). You never open Cursor Settings → Models. You never open VS Code Chat. You never paste a …/v1 Base URL into an IDE. Full path: install Claude Code → get Anthropic API key → install Trim → trim login → trim start → set ANTHROPIC_BASE_URL + ANTHROPIC_API_KEY (shell and/or ~/.claude/settings.json) → run claude → verify on the local meter. Every code block below has a Copy icon - use it, then paste into your terminal.",
+      },
+      {
+        type: "callout",
+        title: "Who should leave this page",
+        text: "If you use Cursor Composer, Continue, or VS Code Chat, leave now and open Cursor setup, Continue setup, or VS Code setup. Those tools use Trim’s OpenAI door (…/v1 or …/v1/chat/completions). Claude Code uses Trim’s Anthropic door (listen origin only, no /v1).",
+      },
+      {
+        type: "h2",
+        id: "what-happens",
+        text: "What happens when it works (plain English)",
+      },
+      {
+        type: "ol",
+        items: [
+          "You type in Claude Code (claude) as usual",
+          "Claude Code reads ANTHROPIC_BASE_URL and sends the request to Trim on this PC (http://127.0.0.1:8888) instead of straight to api.anthropic.com",
+          "Claude Code itself appends /v1/messages - so the real URL becomes http://127.0.0.1:8888/v1/messages",
+          "Trim Fast Mode (and Deep when Preferences Deep is on) shrinks noisy context on your machine",
+          "Trim forwards the smaller request to Anthropic using your ANTHROPIC_API_KEY",
+          "The reply comes back through Trim → Claude Code → your terminal",
+          "The local meter at http://127.0.0.1:8888/dashboard counts the request and shows savings",
+        ],
+      },
+      {
+        type: "code",
+        language: "text",
+        code: `You (terminal: claude)
+        │
+        │  ANTHROPIC_BASE_URL = http://127.0.0.1:8888   ← origin only, NO /v1
+        │  ANTHROPIC_API_KEY  = sk-ant-…
+        ▼
+Trim on this PC  (http://127.0.0.1:8888)
+  • receives POST /v1/messages   (Claude Code appended /v1/messages)
+  • Fast Mode (+ optional Deep) compresses on your machine
+  • local meter: http://127.0.0.1:8888/dashboard
+        │
+        ▼
+Anthropic API  (api.anthropic.com)
+        │
+        ▼
+Reply back → Trim → Claude Code → your terminal`,
+      },
+      {
+        type: "h2",
+        id: "why-no-v1",
+        text: "Why the address has NO /v1 (critical)",
+      },
+      {
+        type: "p",
+        text: "Where this matters: the value of ANTHROPIC_BASE_URL only. What Claude Code does: it always appends /v1/messages itself. Why Trim’s value must be the origin: if you set http://127.0.0.1:8888/v1, the real path becomes /v1/v1/messages and Claude Code often shows a confusing “model may not exist” error. Correct value (copy this exactly):",
+      },
+      {
+        type: "code",
+        language: "text",
+        code: "http://127.0.0.1:8888",
+      },
+      {
+        type: "table",
+        headers: ["Value you set", "What Claude Code actually calls", "Result"],
+        rows: [
+          [
+            "http://127.0.0.1:8888  (correct)",
+            "http://127.0.0.1:8888/v1/messages",
+            "Works through Trim",
+          ],
+          [
+            "http://127.0.0.1:8888/v1  (wrong)",
+            "http://127.0.0.1:8888/v1/v1/messages",
+            "Broken / “model may not exist”",
+          ],
+          [
+            "https://api.anthropic.com  (default, bypasses Trim)",
+            "https://api.anthropic.com/v1/messages",
+            "Works, but no Trim savings",
+          ],
+        ],
+      },
+      {
+        type: "h2",
+        id: "map",
+        text: "Where everything lives (map)",
+      },
+      {
+        type: "table",
+        headers: ["What", "Where you do it", "Example / value", "Why"],
+        rows: [
+          [
+            "Claude Code app",
+            "Terminal: Anthropic installer (Step 0)",
+            "claude --version",
+            "You need the claude command first",
+          ],
+          [
+            "Anthropic API key",
+            "Browser: console.anthropic.com (Step 0b)",
+            "sk-ant-…",
+            "Your provider secret (not Trim login)",
+          ],
+          [
+            "Install Trim",
+            "Terminal (PowerShell / Terminal.app / Linux / WSL)",
+            "curl … | sh  or  irm … | iex",
+            "Puts the trim command on PATH",
+          ],
+          [
+            "Trim Cloud account",
+            "Terminal: trim login → browser",
+            "use-trim.com sign-in",
+            "Quotas, billing, Preferences",
+          ],
+          [
+            "Trim running on this PC",
+            "Terminal: trim start / trim autostart",
+            "http://127.0.0.1:8888/dashboard",
+            "Local proxy must be listening",
+          ],
+          [
+            "Claude Code → Trim address",
+            "Shell env and/or ~/.claude/settings.json env",
+            "http://127.0.0.1:8888 (NO /v1)",
+            "Intercepts Claude Code traffic",
+          ],
+          [
+            "Your Anthropic API key (runtime)",
+            "Shell env and/or settings.json env",
+            "sk-ant-…",
+            "Trim forwards to Anthropic with your key",
+          ],
+          [
+            "Optional model list helper",
+            "CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY=1",
+            "1",
+            "Lets Claude Code discover models via Trim",
+          ],
+          [
+            "Copy/paste helper",
+            "Terminal: trim setup",
+            "Prints Claude Code block for current port",
+            "Avoid typing the URL by hand",
+          ],
+          [
+            "Plans / prices",
+            "Browser: use-trim.com/dashboard → Billing",
+            "Your plan",
+            "Cloud billing, not local",
+          ],
+          [
+            "Local savings meter",
+            "Browser: http://127.0.0.1:8888/dashboard",
+            "Requests / Saved",
+            "Proof traffic hit this PC’s Trim",
+          ],
+          [
+            "Deep Mode toggle (optional)",
+            "Browser: use-trim.com/dashboard → Preferences",
+            "Deep on/off",
+            "Extra compression when enabled",
+          ],
+        ],
+      },
+      {
+        type: "h2",
+        id: "before-you-start",
+        text: "Before you start (checklist)",
+      },
+      {
+        type: "ul",
+        items: [
+          "Terminal: Windows → use PowerShell (not old cmd.exe). macOS → Terminal / iTerm / Warp. Linux → bash or zsh. WSL on Windows → use the Linux copy blocks, not PowerShell",
+          "You will install Claude Code (claude) in Step 0 if you do not have it yet",
+          "You will create an Anthropic API key (sk-ant-…) in Step 0b - prefer a workspace-scoped key in the Anthropic Console",
+          "You are on this page because you do not need Cursor or VS Code for this Claude Code-only path",
+          "Every code block on this page has a Copy icon in the top-right of the block",
+        ],
+      },
+      {
+        type: "h2",
+        id: "when",
+        text: "When to do each step",
+      },
+      {
+        type: "table",
+        headers: ["When", "Step", "Where"],
+        rows: [
+          [
+            "First time on this PC",
+            "0 → 0b → 1 → 2 → 3 → 4 (or 4b/4c) → 5 → Verify",
+            "Terminal + browser",
+          ],
+          [
+            "Every day after setup",
+            "Everyday loop (trim start if meter down → claude)",
+            "Terminal",
+          ],
+          [
+            "After reboot",
+            "If autostart enabled, Trim may already be up; else trim start. Env must still be set (4b/4c)",
+            "Terminal + local dashboard",
+          ],
+          [
+            "New terminal window",
+            "If you only did session exports (Step 4), paste Step 4 again - or use permanent 4b/4c",
+            "That new terminal",
+          ],
+          [
+            "Port is not 8888",
+            "Use the origin printed by trim start / trim setup (still NO /v1)",
+            "Terminal",
+          ],
+        ],
+      },
+      {
+        type: "h2",
+        id: "steps",
+        text: "Setup steps (do in order)",
+      },
+      {
+        type: "p",
+        text: "Do Step 0 → 0b → 1 → 2 → 3 → 4 → 5 on every computer the first time. Use only the copy block for your OS. Do not mix Windows PowerShell syntax into bash, or bash export into PowerShell. WSL users: follow Linux blocks.",
+      },
+      {
+        type: "h3",
+        id: "step0",
+        text: "Step 0 - Install Claude Code (Anthropic)",
+      },
+      {
+        type: "p",
+        text: "Where: Terminal on this PC. What: install Anthropic’s claude command (separate from Trim). How: Copy the block for your OS → paste → Enter. What happens: the Claude Code installer puts claude on your PATH. What next: claude --version (or claude -v) should print a version. Why first: Trim only intercepts Claude Code after claude exists. Official Anthropic installers (native recommended; npm is deprecated by Anthropic).",
+      },
+      {
+        type: "code",
+        language: "powershell",
+        code: `# Windows PowerShell - Claude Code (Anthropic) - Copy this block
+irm https://claude.ai/install.ps1 | iex
+claude --version
+
+# Alternative (WinGet):
+# winget install Anthropic.ClaudeCode`,
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `# macOS - Claude Code (Anthropic) - Copy this block
+curl -fsSL https://claude.ai/install.sh | bash
+claude --version
+
+# Alternative (Homebrew cask):
+# brew install --cask claude-code`,
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `# Linux / WSL - Claude Code (Anthropic) - Copy this block
+curl -fsSL https://claude.ai/install.sh | bash
+claude --version`,
+      },
+      {
+        type: "h3",
+        id: "step0b",
+        text: "Step 0b - Get your Anthropic API key",
+      },
+      {
+        type: "p",
+        text: "Where: browser → https://console.anthropic.com → Settings → API keys. What: create a key (prefer inside a workspace = workspace-scoped). How: copy the sk-ant-… secret once and keep it ready for Step 4. Why: Trim forwards to Anthropic with YOUR key - Trim Cloud login (Step 2) is a different account. When: do this once; rotate the key if it leaks.",
+      },
+      {
+        type: "code",
+        language: "text",
+        code: "https://console.anthropic.com",
+      },
+      {
+        type: "h3",
+        id: "step1",
+        text: "Step 1 - Install Trim",
+      },
+      {
+        type: "p",
+        text: "Where: Terminal on this PC. What: install the trim command onto your PATH. How: Copy the block for your OS → paste → Enter. What happens: the installer downloads Trim and registers the trim command. Why: Claude Code talks to Trim’s local helper - without the trim CLI you cannot start or meter that helper. What next: trim version must print a version number. If the command is not found, close the terminal, open a new one, and try again (PATH refresh).",
+      },
+      {
+        type: "code",
+        language: "powershell",
+        code: `# Windows (PowerShell) - Copy this block
+irm https://use-trim.com/install.ps1 | iex
+trim version`,
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `# macOS (Terminal / iTerm / Warp) - Copy this block
+curl -fsSL https://use-trim.com/install.sh | sh
+trim version`,
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `# Linux / WSL (bash / zsh) - Copy this block
+curl -fsSL https://use-trim.com/install.sh | sh
+trim version`,
+      },
+      {
+        type: "h3",
+        id: "step2",
+        text: "Step 2 - Sign in to Trim Cloud",
+      },
+      {
+        type: "p",
+        text: "Where: same Terminal. What: link this PC to your Trim account. How: Copy → paste → Enter. What happens: a browser window opens for sign-in; when you finish, the terminal confirms. Why: cloud quotas, Billing, and Preferences. What next: leave the Anthropic key for Step 4 - trim login is NOT your Anthropic key.",
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `# Windows / macOS / Linux / WSL - Copy this
+trim login`,
+      },
+      {
+        type: "h3",
+        id: "step3",
+        text: "Step 3 - Start Trim on this PC",
+      },
+      {
+        type: "p",
+        text: "Where: same Terminal. What: start the local Trim helper so it listens on this PC (default port 8888). How: Copy → paste → Enter. What happens: Trim starts in the background (or shows a ready UI); the local meter becomes available. Why: Claude Code can only reach Trim if something is listening on 127.0.0.1:8888. What next: open the local dashboard URL below in a browser - if it loads, Step 3 succeeded. Optional: trim autostart enable so Trim comes back after reboot. Non-default port: if trim start prints a different port, use that host:port as the origin in Step 4 (still NO /v1) - easiest: run trim setup and copy its Claude Code block.",
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `# Windows / macOS / Linux / WSL - Copy this
+trim start
+trim autostart enable`,
+      },
+      {
+        type: "code",
+        language: "text",
+        code: "http://127.0.0.1:8888/dashboard",
+      },
+      {
+        type: "p",
+        text: "Optional helper - Where: Terminal. What: print ready-made Claude Code copy/paste lines for the port Trim is actually using (best when the port is not 8888). How:",
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `# Windows / macOS / Linux / WSL - Copy this
+trim setup`,
+      },
+      {
+        type: "h3",
+        id: "step4",
+        text: "Step 4 - Point Claude Code at Trim (intercept)",
+      },
+      {
+        type: "p",
+        text: "Where: the same terminal window where you will run claude (session), or permanent options in Step 4b (shell/User env) / Step 4c (Claude Code settings.json - recommended for background agents). What: set ANTHROPIC_BASE_URL to Trim’s origin and ANTHROPIC_API_KEY to your Anthropic key. How: Copy only your OS block → paste → replace sk-ant-YOUR_KEY with your real key → Enter. What happens: from this moment, any claude process started in that terminal talks to Trim first. Why: without these two variables, Claude Code goes straight to Anthropic and Trim never sees the traffic.",
+      },
+      {
+        type: "callout",
+        title: "Replace the placeholder",
+        text: "Change sk-ant-YOUR_KEY to your real Anthropic API key before you run the block. Prefer creating the key inside a workspace in the Anthropic Console (workspace-scoped keys need no extra Trim workspace setting).",
+      },
+      {
+        type: "code",
+        language: "powershell",
+        code: `# Windows PowerShell - current session only - Copy this block
+$env:ANTHROPIC_BASE_URL = "http://127.0.0.1:8888"
+$env:ANTHROPIC_API_KEY = "sk-ant-YOUR_KEY"
+$env:CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY = "1"
+
+# Confirm (should print http://127.0.0.1:8888 with NO /v1)
+echo $env:ANTHROPIC_BASE_URL`,
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `# macOS (zsh / bash) - current session only - Copy this block
+export ANTHROPIC_BASE_URL="http://127.0.0.1:8888"
+export ANTHROPIC_API_KEY="sk-ant-YOUR_KEY"
+export CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY=1
+
+# Confirm (should print http://127.0.0.1:8888 with NO /v1)
+echo "$ANTHROPIC_BASE_URL"`,
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `# Linux (bash / zsh) - current session only - Copy this block
+export ANTHROPIC_BASE_URL="http://127.0.0.1:8888"
+export ANTHROPIC_API_KEY="sk-ant-YOUR_KEY"
+export CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY=1
+
+# Confirm (should print http://127.0.0.1:8888 with NO /v1)
+echo "$ANTHROPIC_BASE_URL"`,
+      },
+      {
+        type: "p",
+        text: "Org / multi-workspace Anthropic keys only (most users can skip). Where: User environment (once) or shell profile. What: tell Trim which Anthropic workspace id to send. How: set TRIM_ANTHROPIC_WORKSPACE_ID, then open a new terminal and run trim start again.",
+      },
+      {
+        type: "code",
+        language: "powershell",
+        code: `# Windows - org / multi-workspace keys ONLY (once). Then close/reopen PowerShell + trim start
+[System.Environment]::SetEnvironmentVariable("TRIM_ANTHROPIC_WORKSPACE_ID","wrkspc_YOUR_ID","User")`,
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `# macOS (zsh) / Linux zsh - org / multi-workspace keys ONLY (once). Then new terminal + trim start
+echo 'export TRIM_ANTHROPIC_WORKSPACE_ID="wrkspc_YOUR_ID"' >> ~/.zshrc
+source ~/.zshrc`,
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `# Linux bash - org / multi-workspace keys ONLY (once). Then new terminal + trim start
+echo 'export TRIM_ANTHROPIC_WORKSPACE_ID="wrkspc_YOUR_ID"' >> ~/.bashrc
+source ~/.bashrc`,
+      },
+      {
+        type: "h3",
+        id: "step4-permanent",
+        text: "Step 4b - Make the intercept permanent in your shell (optional)",
+      },
+      {
+        type: "p",
+        text: "Where: your shell startup file (macOS/Linux) or Windows User environment variables. What: so every new terminal keeps ANTHROPIC_BASE_URL pointed at Trim. Why: session-only exports disappear when you close the window. How: Copy your OS block. Security note: storing ANTHROPIC_API_KEY in a startup file is convenient but less safe than a secret manager - many teams set the Base URL permanently and paste the key per session. Prefer Step 4c if you also use Claude Code background agents. macOS note: default shell is zsh (~/.zshrc). If you use bash on macOS, append to ~/.bash_profile or ~/.bashrc instead.",
+      },
+      {
+        type: "code",
+        language: "powershell",
+        code: `# Windows - permanent User env (survives new PowerShell windows)
+# Copy → run → fully close PowerShell → open a new window
+[System.Environment]::SetEnvironmentVariable("ANTHROPIC_BASE_URL","http://127.0.0.1:8888","User")
+[System.Environment]::SetEnvironmentVariable("CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY","1","User")
+# Optional (stores the key for your Windows user):
+# [System.Environment]::SetEnvironmentVariable("ANTHROPIC_API_KEY","sk-ant-YOUR_KEY","User")`,
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `# macOS (zsh default) - permanent - Copy this block, then open a new Terminal tab
+echo 'export ANTHROPIC_BASE_URL="http://127.0.0.1:8888"' >> ~/.zshrc
+echo 'export CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY=1' >> ~/.zshrc
+# Optional (stores the key in your profile - understand the risk first):
+# echo 'export ANTHROPIC_API_KEY="sk-ant-YOUR_KEY"' >> ~/.zshrc
+source ~/.zshrc
+echo "$ANTHROPIC_BASE_URL"`,
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `# macOS (bash only) - permanent - Copy this if your macOS shell is bash
+echo 'export ANTHROPIC_BASE_URL="http://127.0.0.1:8888"' >> ~/.bash_profile
+echo 'export CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY=1' >> ~/.bash_profile
+source ~/.bash_profile
+echo "$ANTHROPIC_BASE_URL"`,
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `# Linux (bash) - permanent - Copy this block, then open a new terminal
+echo 'export ANTHROPIC_BASE_URL="http://127.0.0.1:8888"' >> ~/.bashrc
+echo 'export CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY=1' >> ~/.bashrc
+# Optional (stores the key in your profile - understand the risk first):
+# echo 'export ANTHROPIC_API_KEY="sk-ant-YOUR_KEY"' >> ~/.bashrc
+source ~/.bashrc
+echo "$ANTHROPIC_BASE_URL"`,
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `# Linux (zsh) / WSL zsh - permanent - Copy this block if your login shell is zsh
+echo 'export ANTHROPIC_BASE_URL="http://127.0.0.1:8888"' >> ~/.zshrc
+echo 'export CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY=1' >> ~/.zshrc
+source ~/.zshrc
+echo "$ANTHROPIC_BASE_URL"`,
+      },
+      {
+        type: "h3",
+        id: "step4c-settings",
+        text: "Step 4c - Make the intercept permanent in Claude Code settings (recommended)",
+      },
+      {
+        type: "p",
+        text: "Where: Claude Code user settings file on this PC. What: put ANTHROPIC_BASE_URL (and optionally the key) in the env block so every Claude Code session - including background agents - uses Trim. Why: Anthropic’s gateway docs prefer settings-file env over shell-only exports when you want it everywhere; if both are set, the settings-file value wins. How: create or edit the file below, paste the JSON (replace the key), save, then start a new claude session. Confirm inside Claude Code with /status (Base URL should show Trim’s origin).",
+      },
+      {
+        type: "table",
+        headers: ["OS", "File to edit"],
+        rows: [
+          ["macOS / Linux / WSL", "~/.claude/settings.json"],
+          ["Windows", "%USERPROFILE%\\.claude\\settings.json"],
+        ],
+      },
+      {
+        type: "p",
+        text: "Where to create/open the file (Copy your OS block first if the folder does not exist yet):",
+      },
+      {
+        type: "code",
+        language: "powershell",
+        code: `# Windows PowerShell - create folder + open settings.json in Notepad - Copy this
+New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\\.claude" | Out-Null
+if (-not (Test-Path "$env:USERPROFILE\\.claude\\settings.json")) {
+  Set-Content -Path "$env:USERPROFILE\\.claude\\settings.json" -Value "{}"
+}
+notepad "$env:USERPROFILE\\.claude\\settings.json"`,
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `# macOS - create folder + open settings.json - Copy this
+mkdir -p ~/.claude
+test -f ~/.claude/settings.json || echo '{}' > ~/.claude/settings.json
+open -e ~/.claude/settings.json`,
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `# Linux / WSL - create folder + open settings.json - Copy this
+mkdir -p ~/.claude
+test -f ~/.claude/settings.json || echo '{}' > ~/.claude/settings.json
+# Use your editor (examples):
+nano ~/.claude/settings.json
+# code ~/.claude/settings.json
+# vim ~/.claude/settings.json`,
+      },
+      {
+        type: "p",
+        text: "Paste this JSON into the file (replace sk-ant-YOUR_KEY), save, then start a new claude session:",
+      },
+      {
+        type: "code",
+        language: "json",
+        code: `{
+  "env": {
+    "ANTHROPIC_BASE_URL": "http://127.0.0.1:8888",
+    "ANTHROPIC_API_KEY": "sk-ant-YOUR_KEY",
+    "CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY": "1"
+  }
+}`,
+      },
+      {
+        type: "callout",
+        title: "Security for settings.json",
+        text: "This file can store your Anthropic key on disk for convenience. If your org forbids that, keep only ANTHROPIC_BASE_URL in settings.json and export ANTHROPIC_API_KEY per terminal session (Step 4).",
+      },
+      {
+        type: "h3",
+        id: "step5",
+        text: "Step 5 - Run Claude Code through Trim",
+      },
+      {
+        type: "p",
+        text: "Where: the same terminal where Step 4 env vars are set (check with echo), or any terminal after Step 4c settings.json. What: use Claude Code exactly as you normally do - Trim is now in the middle. How: Copy a smoke-test block first, then use interactive claude for daily work. Why: this is the real usage path - setup only matters if claude traffic actually flows through Trim. What happens: the request hits Trim → Anthropic → back. What next: verify on the local meter (next section). Inside Claude Code you can also run /status to confirm the Base URL.",
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `# Windows / macOS / Linux - one-shot smoke test - Copy this
+claude -p "Reply with exactly: claude-code-trim-ok" --model claude-haiku-4-5-20251001`,
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `# Windows / macOS / Linux - interactive Claude Code (everyday) - Copy this
+claude`,
+      },
+      {
+        type: "h2",
+        id: "verify",
+        text: "Verify it worked (do not skip)",
+      },
+      {
+        type: "p",
+        text: "Where: browser + terminal. When: right after the smoke test or first interactive turn. What you should see: local Requests go up; Claude answered; Base URL still has no /v1.",
+      },
+      {
+        type: "ol",
+        items: [
+          "Browser: open http://127.0.0.1:8888/dashboard - Requests should increase after the claude command",
+          "Terminal: run trim status (proxy healthy) and trim stats (door / savings lines)",
+          'Terminal: confirm Base URL - Windows: echo $env:ANTHROPIC_BASE_URL | macOS/Linux/WSL: echo "$ANTHROPIC_BASE_URL" - must be http://127.0.0.1:8888 (or your printed origin) with NO /v1',
+          "Inside Claude Code: run /status - Base URL / credential source should point at Trim (especially after Step 4c)",
+          "Optional cloud Usage: https://use-trim.com/dashboard",
+          "Plans / prices: https://use-trim.com/dashboard → Billing",
+        ],
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `# Windows / macOS / Linux - Copy this
+trim status
+trim stats`,
+      },
+      {
+        type: "code",
+        language: "powershell",
+        code: `# Windows - confirm intercept is still set - Copy this
+echo $env:ANTHROPIC_BASE_URL
+echo $env:ANTHROPIC_API_KEY.Substring(0,7)   # shows sk-ant- prefix only`,
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `# macOS / Linux - confirm intercept is still set - Copy this
+echo "$ANTHROPIC_BASE_URL"
+echo "$ANTHROPIC_API_KEY" | cut -c1-7   # shows sk-ant- prefix only`,
+      },
+      {
+        type: "h2",
+        id: "after",
+        text: "Everyday loop (after setup)",
+      },
+      {
+        type: "ol",
+        items: [
+          "If http://127.0.0.1:8888/dashboard will not load: Terminal → trim start (or rely on trim autostart enable from Step 3)",
+          "Open a terminal where ANTHROPIC_BASE_URL is set (Step 4b shell, Step 4c settings.json, or paste Step 4 again)",
+          "Run claude as usual - write code, ask questions, use agents",
+          "Optional: inside Claude Code, /status to confirm Trim’s origin",
+          "Check the local meter when you want proof of savings",
+          "You do not need the Trim IDE extension for this Claude Code-only path",
+          "You do not set Cursor Override OpenAI Base URL for Claude Code",
+          "You do not put /v1 on ANTHROPIC_BASE_URL",
+        ],
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `# Everyday - if the local meter is down, Copy this first
+trim start
+
+# Then (same terminal with env set)
+claude`,
+      },
+      {
+        type: "h2",
+        id: "do-not",
+        text: "What NOT to do on this path",
+      },
+      {
+        type: "ul",
+        items: [
+          "Do not open Cursor Settings → Models for Claude Code intercept",
+          "Do not set Override OpenAI Base URL to …/v1 for this path",
+          "Do not set ANTHROPIC_BASE_URL to http://127.0.0.1:8888/v1",
+          "Do not expect trim-* custom model ids from Cursor - those are IDE Models names, not Claude Code Anthropic door settings",
+          "Do not confuse trim login (Trim Cloud) with ANTHROPIC_API_KEY (Anthropic)",
+          "Do not skip trim start - if nothing listens on :8888 (or your port), Claude Code cannot reach Trim",
+          "Do not use Windows cmd.exe for the PowerShell blocks - open PowerShell (or use WSL + Linux blocks)",
+          "Do not paste macOS/Linux export lines into PowerShell (and the reverse)",
+        ],
+      },
+      {
+        type: "h2",
+        id: "revert",
+        text: "How to turn Trim intercept off (revert)",
+      },
+      {
+        type: "p",
+        text: "Where: same places you set the intercept. When: if you want Claude Code to talk to Anthropic directly again (no Trim savings). What: remove or blank ANTHROPIC_BASE_URL. How:",
+      },
+      {
+        type: "ol",
+        items: [
+          "Session: close the terminal, or unset the variable (Windows: Remove-Item Env:ANTHROPIC_BASE_URL | macOS/Linux: unset ANTHROPIC_BASE_URL)",
+          "Step 4b shell profile: delete the export / SetEnvironmentVariable lines you added, then open a new terminal",
+          "Step 4c settings.json: remove ANTHROPIC_BASE_URL from the env block (or delete the env block), save, start a new claude session",
+          "Optional: trim stop if you also want the local proxy off; trim autostart disable if you do not want it after reboot",
+        ],
+      },
+      {
+        type: "code",
+        language: "powershell",
+        code: `# Windows PowerShell - turn off intercept for this session - Copy this
+Remove-Item Env:ANTHROPIC_BASE_URL -ErrorAction SilentlyContinue
+# Optional: stop local Trim
+trim stop`,
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `# macOS / Linux / WSL - turn off intercept for this session - Copy this
+unset ANTHROPIC_BASE_URL
+# Optional: stop local Trim
+trim stop`,
+      },
+      {
+        type: "h2",
+        id: "troubleshoot",
+        text: "If something fails",
+      },
+      {
+        type: "table",
+        headers: ["Symptom", "Likely cause", "Where to fix", "Fix"],
+        rows: [
+          [
+            "model may not exist / path looks like /v1/v1",
+            "ANTHROPIC_BASE_URL includes /v1",
+            "Terminal env or settings.json",
+            "Set origin only: http://127.0.0.1:8888 (no /v1)",
+          ],
+          [
+            "Connection refused / failed to fetch",
+            "Trim not running on this PC",
+            "Terminal",
+            "trim start → open local dashboard",
+          ],
+          [
+            "Auth / 401 from Anthropic",
+            "Missing or wrong ANTHROPIC_API_KEY",
+            "Terminal env or settings.json",
+            "Export / set a valid sk-ant-… key",
+          ],
+          [
+            "Workspace scope error",
+            "Org-scoped Anthropic key",
+            "User env / shell profile",
+            "Prefer workspace-scoped key, or set TRIM_ANTHROPIC_WORKSPACE_ID once then trim start",
+          ],
+          [
+            "No new Requests on local meter",
+            "Traffic bypassed Trim",
+            "Same terminal as claude /settings",
+            "echo Base URL or claude /status - must show 127.0.0.1; re-run Step 4 or 4c",
+          ],
+          [
+            "trim: command not found",
+            "Installer PATH not refreshed",
+            "New terminal",
+            "Close terminal, open new one, trim version",
+          ],
+          [
+            "claude: command not found",
+            "Claude Code not installed / PATH",
+            "Terminal",
+            "Redo Step 0 for your OS; new terminal; claude --version",
+          ],
+          [
+            "Works in one window, fails in another",
+            "Session-only export",
+            "Shell profile / settings.json",
+            "Do Step 4b and/or Step 4c",
+          ],
+          [
+            "Background agent bypasses Trim",
+            "Only shell export was set",
+            "Claude Code settings.json",
+            "Do Step 4c (settings env applies to agents too)",
+          ],
+          [
+            "Wrong port / still 8888 but trim uses another",
+            "Hardcoded port mismatch",
+            "Terminal",
+            "Run trim setup and copy the printed origin",
+          ],
+          [
+            "0% Saved on agent turns",
+            "Often normal agent chrome",
+            "Local dashboard",
+            "Open Show savings detail - Deep may still apply on compressible text",
+          ],
+        ],
+      },
+      {
+        type: "h2",
+        id: "related",
+        text: "Related pages",
+      },
+      {
+        type: "note",
+        text: "Quickstart (shared install), trim start, CLI overview (trim setup), Connect any IDE (why Cursor uses a different address), Base URL troubleshooting, Always-on with IDE, FAQ (Claude Code only).",
       },
     ],
   ),
@@ -1354,16 +2256,42 @@ export TRIM_HISTORY_KEEP_TURNS=8
 
   "ide/connect": page(
     "Connect any IDE",
-    "One Trim Base URL, clear per-IDE places, and recommended trim-… model ids with copy buttons.",
+    "Pick your tool first, then copy the matching address. Clear where / what / how for each client.",
     [
       {
         type: "p",
-        text: "Trim listens on one Base URL. OpenAI-shaped clients and Anthropic-shaped clients both point at that same host. Trim compresses, then routes by path and (on the OpenAI door) by DB-driven provider adapters. Use Copy on every block below. For creating friendly trim-claude-sonnet style entries in each IDE, open Custom models.",
+        text: "Trim runs on your PC. Your coding tool must send chat to Trim’s address. Different tools use slightly different addresses. Use the Copy button on every block. For friendly IDE model names, see Custom models.",
+      },
+      {
+        type: "callout",
+        title: "Claude Code only? Wrong page for full setup",
+        text: "If you use Claude Code and not Cursor/VS Code, open Claude Code (CLI only) instead. That guide is terminal-only (ANTHROPIC_BASE_URL origin, no /v1). This page is the hub for IDE-style clients.",
+      },
+      {
+        type: "table",
+        headers: ["I use…", "Address to paste", "Where"],
+        rows: [
+          [
+            "Claude Code only",
+            "http://127.0.0.1:8888 (no /v1)",
+            "Terminal env - full guide: Claude Code (CLI only)",
+          ],
+          [
+            "Cursor / Continue / Windsurf / Zed / JetBrains",
+            "http://127.0.0.1:8888/v1",
+            "That product’s OpenAI Base URL setting",
+          ],
+          [
+            "VS Code Chat Custom Endpoint",
+            "http://127.0.0.1:8888/v1/chat/completions",
+            "Chat: Manage Language Models",
+          ],
+        ],
       },
       {
         type: "h2",
         id: "steps",
-        text: "Steps (every IDE)",
+        text: "Steps (every client)",
       },
       {
         type: "ol",
@@ -2047,7 +2975,7 @@ gpt-4o-mini`,
       },
       {
         type: "p",
-        text: "Copy-paste starter with several Trim model ids. Add more rows using the same pattern (see Custom models). Keep the wizard apiKey line unchanged.",
+        text: "Use the Copy button on the starter below. Add more model rows using the same pattern (see Custom models). Keep the wizard apiKey line unchanged.",
       },
       {
         type: "code",
@@ -2198,11 +3126,11 @@ http://127.0.0.1:8888/v1/chat/completions`,
       {
         type: "h2",
         id: "copy-paste",
-        text: "Copy-paste config (Claude, GPT, Gemini via Trim)",
+        text: "Copy these config blocks (Claude, GPT, Gemini via Trim)",
       },
       {
         type: "p",
-        text: "Paste into ~/.continue/config.yaml. Replace the apiKey values. Add or remove model blocks as you like - see Custom models for naming ideas (trim-claude-haiku, trim-gemini-flash-latest, …).",
+        text: "Use the Copy button, then paste into ~/.continue/config.yaml. Replace the apiKey values. Add or remove model blocks as you like - see Custom models for naming ideas (trim-claude-haiku, trim-gemini-flash-latest, …).",
       },
       {
         type: "code",
@@ -2913,38 +3841,17 @@ gpt-4o-mini`,
   ),
 
   "ide/claude-code": page(
-    "Claude Code",
-    "Native Anthropic /v1/messages through Trim - copyable origin URL, key tips, verify.",
+    "Claude Code (see CLI)",
+    "Claude Code is a terminal / CLI path - not an IDE Models menu. Full guide lives under CLI.",
     [
       {
+        type: "callout",
+        title: "Wrong section?",
+        text: "If you only use Claude Code (no Cursor, no VS Code), open the full guide: Claude Code (CLI only). That page has line-by-line where / what / how / why / what happens / verify / everyday steps, plus separate Windows, macOS, and Linux copy blocks (each with a Copy button).",
+      },
+      {
         type: "p",
-        text: "Claude Code speaks Anthropic’s Messages API. Point ANTHROPIC_BASE_URL at Trim’s listen origin only (for example http://127.0.0.1:8888) - not at api.anthropic.com, and not with a trailing /v1. Claude Code appends /v1/messages itself; including /v1 causes /v1/v1/messages and a false “model may not exist” error. Trim compresses, then forwards to UPSTREAM_ANTHROPIC_URL. The Anthropic SDK sends x-api-key (from ANTHROPIC_API_KEY), not an OpenAI Bearer header. For Cursor/Continue-style trim-claude-sonnet names on the OpenAI door, see Custom models.",
-      },
-      {
-        type: "table",
-        headers: ["What", "Exact place"],
-        rows: [
-          ["Base URL", "Shell env ANTHROPIC_BASE_URL (origin only)"],
-          ["API key", "ANTHROPIC_API_KEY"],
-          ["Model", "claude … --model <official Anthropic id>"],
-          ["Plans / prices", "https://use-trim.com/dashboard → Billing"],
-        ],
-      },
-      { type: "h2", id: "steps", text: "Setup" },
-      {
-        type: "ol",
-        items: [
-          "trim start (or Always-on with IDE)",
-          "export ANTHROPIC_BASE_URL=http://127.0.0.1:8888 (or your tunnel origin; no /v1 suffix)",
-          "export ANTHROPIC_API_KEY=sk-ant-… (prefer a workspace-scoped key from Anthropic Console → create key inside a workspace)",
-          "If you use an organization / multi-workspace key instead: set TRIM_ANTHROPIC_WORKSPACE_ID=wrkspc_… once as a user environment variable (Windows User env, or export in ~/.zshrc / ~/.bashrc), then restart trim start. Developers in the repo may use cli/.env instead. Not a daily change. See Connect any IDE → Anthropic key types.",
-          "Run claude as usual",
-        ],
-      },
-      {
-        type: "h2",
-        id: "copy-origin",
-        text: "Copy: Claude Code origin (no /v1)",
+        text: "Claude Code uses Trim’s Anthropic door: set ANTHROPIC_BASE_URL to the Trim listen origin only (http://127.0.0.1:8888) with no /v1. Cursor / Continue / VS Code Chat use a different address (…/v1 or …/v1/chat/completions) and are documented on their own IDE pages.",
       },
       {
         type: "code",
@@ -2953,17 +3860,17 @@ gpt-4o-mini`,
       },
       {
         type: "code",
-        language: "powershell",
-        code: `$env:ANTHROPIC_BASE_URL = "http://127.0.0.1:8888"
-$env:ANTHROPIC_API_KEY = "sk-ant-YOUR_KEY"
-# Only if the key is org/multi-workspace scoped (skip for workspace-scoped keys):
-# Prefer OS user env TRIM_ANTHROPIC_WORKSPACE_ID=wrkspc_... (see docs → Anthropic key types)
-# Developers in this repo may instead set it in cli/.env
-claude -p "Reply with exactly: claude-code-door-a-ok" --model claude-haiku-4-5-20251001`,
+        language: "bash",
+        code: `# Preview only - use the full OS-specific blocks on Claude Code (CLI only)
+trim start
+trim setup
+export ANTHROPIC_BASE_URL="http://127.0.0.1:8888"
+export ANTHROPIC_API_KEY="sk-ant-YOUR_KEY"
+claude`,
       },
       {
         type: "note",
-        text: "This is the native Anthropic door (Door A). For Claude inside Cursor / Continue / VS Code Chat, use the OpenAI Base URL + trim-claude-* model path instead (Door C; see Custom models, Cursor setup, Provider adapters). Anthropic key-type rules are the same on both doors.",
+        text: "Full CLI-only walkthrough: Claude Code (CLI only). For Claude inside Cursor, use Cursor setup + Custom models instead.",
       },
     ],
   ),
@@ -3097,7 +4004,7 @@ http://127.0.0.1:8888/v1
 VS Code Chat Custom Endpoint
 http://127.0.0.1:8888/v1/chat/completions
 
-Claude Code (origin only — no /v1)
+Claude Code (origin only - no /v1)
 http://127.0.0.1:8888
 
 Recommended model ids
@@ -3167,26 +4074,55 @@ gpt-4o-mini`,
 
   "ide/workflow": page(
     "Day-to-day workflow",
-    "Recommended loop when Trim sits under Cursor, Continue, VS Code Chat, Claude Code, or any OpenAI-compatible client.",
+    "Pick your path, then follow only that everyday loop - IDE or Claude Code CLI only.",
     [
       {
         type: "p",
-        text: "The goal is an invisible day: your IDE feels the same, while Trim removes vendor noise and log spam before the slim prompt goes upstream. Keep a clear trim-… model selected (see Custom models).",
+        text: "After first-time setup (Quickstart), your goal is an invisible day. Use only the loop that matches your tool.",
+      },
+      {
+        type: "table",
+        headers: ["I use…", "Everyday loop (where / what)"],
+        rows: [
+          [
+            "Cursor / VS Code / Continue",
+            "Preferences Always-on on → open editor → chat with Base URL already set → check local dashboard after big tasks",
+          ],
+          [
+            "Claude Code only (no IDE)",
+            "If local dashboard is down: trim start → terminal has ANTHROPIC_BASE_URL → run claude → check local dashboard (full guide: Claude Code CLI only)",
+          ],
+        ],
+      },
+      {
+        type: "h2",
+        id: "ide-loop",
+        text: "IDE loop (Cursor / Continue / VS Code Chat)",
       },
       {
         type: "ol",
         items: [
           "Leave Start Trim with your IDE checked (https://use-trim.com/dashboard → Preferences) or run trim autostart enable",
-          "Open Cursor or VS Code with the Trim extension - proxy starts or attaches automatically",
-          "Confirm your editor still points at http://127.0.0.1:8888/v1 (or …/v1/chat/completions for VS Code Chat) and a Trim model id such as trim-claude-sonnet",
-          "Use the client you configured: Cursor Composer, Continue sidebar (config.yaml), VS Code Chat Custom Endpoint (Ask), or Claude Code (ANTHROPIC_BASE_URL)",
-          "Confirm you are in the right panel (Continue ≠ VS Code Chat Custom Endpoint/… • 0 credits)",
-          "Let Fast Mode drop vendor and log noise automatically (Deep when Preferences Deep is on)",
+          "Open Cursor or VS Code - proxy starts or attaches automatically",
+          "Confirm Base URL is still http://127.0.0.1:8888/v1 (or …/v1/chat/completions for VS Code Chat) and a model such as trim-claude-sonnet",
+          "Chat in the correct panel (Continue sidebar ≠ VS Code Chat Custom Endpoint/… • 0 credits)",
           "After large tasks: trim stats or http://127.0.0.1:8888/dashboard → Show savings detail",
-          "Agent turns may show low whole-body Saved % with Deep chrome frozen - that is often normal",
-          "Optional: trim compress for Deep file/batch jobs when you need them",
-          "Plans / prices / receipts: Dashboard → Billing (or Plans) / Receipts / Team",
-          "Uncheck the preference anytime to stop auto-starting",
+          "Plans / prices / receipts: Dashboard → Billing / Receipts / Team",
+        ],
+      },
+      {
+        type: "h2",
+        id: "claude-loop",
+        text: "Claude Code loop (CLI only)",
+      },
+      {
+        type: "ol",
+        items: [
+          "Confirm http://127.0.0.1:8888/dashboard loads (else: trim start)",
+          "Open a terminal where ANTHROPIC_BASE_URL=http://127.0.0.1:8888 (no /v1) and ANTHROPIC_API_KEY are set",
+          "Run claude as usual",
+          "Check the local dashboard Requests / Saved",
+          "Plans / prices: https://use-trim.com/dashboard → Billing",
         ],
       },
       { type: "h2", id: "quality", text: "If quality dips" },
@@ -3197,12 +4133,12 @@ gpt-4o-mini`,
           "Widen keep rules in .trimrc for that repo",
           "Sync milder Preferences from the dashboard",
           "Compare tokens in vs out so you know Trim is still on the path",
-          "Confirm Last door on the local meter matches the client (openai_to_anthropic for Claude via Continue/Cursor OpenAI door)",
+          "Confirm Last door on the local meter matches the client",
         ],
       },
       {
         type: "note",
-        text: "Deep Mode is on-machine LLMLingua: live IDE proxy when Preferences Deep is on, plus trim compress for file/batch jobs. Interactive chat still needs an upstream model over the network. See Always-on with IDE, Continue setup, and VS Code setup.",
+        text: "See Always-on with IDE, Claude Code (CLI only), Cursor setup, Continue setup, and VS Code setup.",
       },
     ],
   ),
@@ -4543,7 +5479,16 @@ Optional build features: follow README flags for native parsers`,
       { type: "h2", id: "works-with-other-ides", text: "Does Trim work outside Cursor?" },
       {
         type: "p",
-        text: "Yes. Documented first-class paths: Cursor, Continue (config.yaml), VS Code Chat Custom Endpoint (Ask), Claude Code, Windsurf/Zed/OpenAI SDKs, and curl. Install the Trim IDE extension in VS Code or Cursor for acceptance / LOC telemetry. See Connect any IDE for the honest supported matrix (VS Code Chat Agent + Custom Endpoint is not guaranteed).",
+        text: "Yes. Documented first-class paths: Cursor, Continue (config.yaml), VS Code Chat Custom Endpoint (Ask), Claude Code CLI only (no IDE - see Claude Code (CLI only)), Windsurf/Zed/OpenAI SDKs, and curl. Install the Trim IDE extension in VS Code or Cursor for acceptance / LOC telemetry when you use those editors. See Connect any IDE for the honest supported matrix (VS Code Chat Agent + Custom Endpoint is not guaranteed).",
+      },
+      {
+        type: "h2",
+        id: "claude-code-only",
+        text: "I only use Claude Code - no Cursor. What do I do?",
+      },
+      {
+        type: "p",
+        text: "Follow Claude Code (CLI only): install Trim → trim login → trim start → set ANTHROPIC_BASE_URL=http://127.0.0.1:8888 (no /v1) and ANTHROPIC_API_KEY → run claude. Do not open Cursor Settings → Models. That page has separate Windows / macOS / Linux copy blocks (Copy button on each), permanent profile steps, verify, and troubleshooting. Optional: trim setup prints the copy/paste block for your listen port.",
       },
       {
         type: "h2",
