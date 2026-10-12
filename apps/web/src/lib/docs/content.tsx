@@ -147,7 +147,11 @@ trim start`,
       {
         type: "code",
         language: "bash",
-        code: "trim status",
+        code: `trim status
+trim autostart status
+trim daemon status
+trim help autostart
+trim help daemon`,
       },
       {
         type: "p",
@@ -155,7 +159,7 @@ trim start`,
       },
       {
         type: "note",
-        text: "Next: Always-on with IDE for the everyday loop, Installation for platform details, Connect any IDE (supported matrix), Continue setup, VS Code setup, Windsurf / Zed / JetBrains / Aider, Cursor setup, Claude Code, or Uninstall when you leave a machine clean.",
+        text: "Next: Always-on with IDE for the everyday loop, Installation for platform details (copyable Always-on flow), Connect any IDE (supported matrix), Continue setup, VS Code setup, Windsurf / Zed / JetBrains / Aider, Cursor setup, Claude Code, or Uninstall when you leave a machine clean.",
       },
     ],
   ),
@@ -204,6 +208,37 @@ winget install Trim.CLI`,
       {
         type: "p",
         text: "npm (@usetrim/trim) and Homebrew (usetrim/tap/trim) are live. curl/irm installers remain supported. Scoop/winget are optional. Maintainer ops: packaging/README.md.",
+      },
+      { type: "h2", id: "after-install", text: "After install: Always-on" },
+      {
+        type: "p",
+        text: "Official installs need zero environment variables for Trim Cloud. Sign in, enable Always-on, then point your IDE at the local Base URL. Use the copy button on each block.",
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `trim version
+trim login
+trim autostart enable
+trim autostart status
+
+# Optional advanced OS logon check
+trim daemon status
+
+# One-shot manual session (any time)
+trim start`,
+      },
+      {
+        type: "callout",
+        title: "Windows: no Administrator",
+        text: "trim autostart enable registers a per-user Startup Run key (HKCU) - the same industry pattern as browsers and editors. No admin Scheduled Task. If OS registration is blocked by policy, your preference stays on - use trim start or the Trim IDE extension. See trim autostart.",
+      },
+      {
+        type: "code",
+        language: "powershell",
+        code: `# Confirm Windows Startup Run entry after enable (optional)
+Get-ItemProperty HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run |
+  Select-Object TrimProxy`,
       },
       { type: "h2", id: "from-source", text: "From source (Go)" },
       {
@@ -775,6 +810,36 @@ trim autostart disable`,
 trim daemon install
 trim daemon uninstall`,
       },
+      { type: "h2", id: "verify", text: "Verify on your machine" },
+      {
+        type: "p",
+        text: "Copy these checks after install. Docs code blocks include a copy control in the product docs UI.",
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `# Everyday path
+trim autostart enable
+trim autostart status
+trim daemon status
+
+# Soft-fail detail only when needed
+trim autostart enable -v
+
+# Cleanup / opt-out
+trim autostart disable
+trim daemon uninstall`,
+      },
+      {
+        type: "code",
+        language: "powershell",
+        code: `# Windows: confirm per-user Startup Run (no admin)
+trim daemon install
+trim daemon status
+Get-ItemProperty HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run |
+  Select-Object TrimProxy
+trim daemon uninstall`,
+      },
       {
         type: "callout",
         title: "If OS logon registration fails",
@@ -787,7 +852,7 @@ trim daemon uninstall`,
       },
       {
         type: "note",
-        text: "Managed off: DO_NOT_TRACK=1, TRIM_AUTOSTART_DISABLED=1, or a ~/.config/trim/autostart.off marker blocks auto-start without inventing enable.",
+        text: "CLI help: trim help autostart and trim help daemon. Managed off: DO_NOT_TRACK=1, TRIM_AUTOSTART_DISABLED=1, or a ~/.config/trim/autostart.off marker.",
       },
     ],
   ),

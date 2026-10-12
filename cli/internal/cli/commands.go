@@ -684,6 +684,7 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 			HelpSetupFlagTls            string `json:"help_setup_flag_tls"`
 			HelpVersionShort            string `json:"help_version_short"`
 			HelpDaemonShort             string `json:"help_daemon_short"`
+			HelpDaemonLong              string `json:"help_daemon_long"`
 			HelpDaemonInstallShort      string `json:"help_daemon_install_short"`
 			HelpDaemonUninstallShort    string `json:"help_daemon_uninstall_short"`
 			HelpDaemonStatusShort       string `json:"help_daemon_status_short"`
@@ -694,6 +695,7 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 			HelpTelemetryDisableShort   string `json:"help_telemetry_disable_short"`
 			HelpTelemetryEnableShort    string `json:"help_telemetry_enable_short"`
 			HelpAutostartShort          string `json:"help_autostart_short"`
+			HelpAutostartLong           string `json:"help_autostart_long"`
 			HelpAutostartStatusShort    string `json:"help_autostart_status_short"`
 			HelpAutostartEnableShort    string `json:"help_autostart_enable_short"`
 			HelpAutostartDisableShort   string `json:"help_autostart_disable_short"`
@@ -1009,6 +1011,7 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 		HelpSetupFlagTls:            body.CLI.HelpSetupFlagTls,
 		HelpVersionShort:            body.CLI.HelpVersionShort,
 		HelpDaemonShort:             body.CLI.HelpDaemonShort,
+		HelpDaemonLong:              body.CLI.HelpDaemonLong,
 		HelpDaemonInstallShort:      body.CLI.HelpDaemonInstallShort,
 		HelpDaemonUninstallShort:    body.CLI.HelpDaemonUninstallShort,
 		HelpDaemonStatusShort:       body.CLI.HelpDaemonStatusShort,
@@ -1019,6 +1022,7 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 		HelpTelemetryDisableShort:   body.CLI.HelpTelemetryDisableShort,
 		HelpTelemetryEnableShort:    body.CLI.HelpTelemetryEnableShort,
 		HelpAutostartShort:          body.CLI.HelpAutostartShort,
+		HelpAutostartLong:           body.CLI.HelpAutostartLong,
 		HelpAutostartStatusShort:    body.CLI.HelpAutostartStatusShort,
 		HelpAutostartEnableShort:    body.CLI.HelpAutostartEnableShort,
 		HelpAutostartDisableShort:   body.CLI.HelpAutostartDisableShort,
@@ -1364,6 +1368,7 @@ type cliChrome struct {
 	HelpSetupFlagTls            string
 	HelpVersionShort            string
 	HelpDaemonShort             string
+	HelpDaemonLong              string
 	HelpDaemonInstallShort      string
 	HelpDaemonUninstallShort    string
 	HelpDaemonStatusShort       string
@@ -1374,6 +1379,7 @@ type cliChrome struct {
 	HelpTelemetryDisableShort   string
 	HelpTelemetryEnableShort    string
 	HelpAutostartShort          string
+	HelpAutostartLong           string
 	HelpAutostartStatusShort    string
 	HelpAutostartEnableShort    string
 	HelpAutostartDisableShort   string

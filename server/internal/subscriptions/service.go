@@ -1401,12 +1401,14 @@ func builtinMessageForCode(code string) string {
 		return "auto-start-with-ide=%v"
 	case "CLI_HELP_AUTOSTART_SHORT":
 		return "Auto-start proxy with your IDE (synced preference)"
+	case "CLI_HELP_AUTOSTART_LONG":
+		return "Synced Always-on preference (Start Trim with your IDE).\n\n  trim autostart status\n  trim autostart enable\n  trim autostart disable\n\nenable turns the preference on and best-effort registers OS logon:\n  macOS launchd · Linux systemd --user · Windows per-user Startup Run (no Administrator on a normal PC)\n\nIf OS registration fails, your preference stays on. The CLI prints a yellow warning, muted guidance, and next steps (trim start / IDE). Use -v for raw OS detail.\n\nPrefer this over trim daemon for everyday use.\nDocs: https://use-trim.com/docs/cli/autostart"
 	case "CLI_HELP_AUTOSTART_STATUS_SHORT":
 		return "Show whether auto-start with IDE is on"
 	case "CLI_HELP_AUTOSTART_ENABLE_SHORT":
-		return "Enable auto-start and install OS login daemon when supported"
+		return "Enable auto-start and best-effort OS logon (Windows Startup Run, no admin)"
 	case "CLI_HELP_AUTOSTART_DISABLE_SHORT":
-		return "Disable auto-start and uninstall OS login daemon when supported"
+		return "Disable auto-start and uninstall OS logon when supported"
 	case "LOCAL_AGENT_ONLINE_WITHIN_SEC":
 		return "900"
 	case "LOCAL_AGENT_ONLINE_WITHIN_SEC_MISSING":
@@ -2531,13 +2533,15 @@ func builtinMessageForCode(code string) string {
 	case "CLI_HELP_VERSION_SHORT":
 		return "Print CLI version"
 	case "CLI_HELP_DAEMON_SHORT":
-		return "Background OS service for auto-start"
+		return "OS logon autostart (launchd / systemd user / Windows Startup Run)"
+	case "CLI_HELP_DAEMON_LONG":
+		return "Advanced OS logon entrypoint (same hook as trim autostart enable).\n\n  trim daemon status\n  trim daemon install\n  trim daemon uninstall\n  trim daemon run\n\nPlatforms:\n  macOS: launchd LaunchAgent (per-user)\n  Linux: systemd --user (per-user)\n  Windows: HKCU Startup Run key - no Administrator on a normal PC (not an admin Scheduled Task)\n\ndaemon run only starts when auto-start is on, and attaches if a healthy proxy is already listening.\nPrefer trim autostart enable for everyday Always-on.\nDocs: https://use-trim.com/docs/cli/autostart"
 	case "CLI_HELP_DAEMON_INSTALL_SHORT":
 		return "Install Trim proxy to start on login (launchd / systemd --user / Windows Startup Run)"
 	case "CLI_HELP_DAEMON_UNINSTALL_SHORT":
-		return "Remove the Trim background service"
+		return "Remove OS logon autostart (Startup Run / launchd / systemd user)"
 	case "CLI_HELP_DAEMON_STATUS_SHORT":
-		return "Show whether the Trim background service is installed"
+		return "Show whether OS logon autostart is installed"
 	case "CLI_HELP_DAEMON_RUN_SHORT":
 		return "Start proxy only when auto-start preference is on (used by OS login service)"
 	case "CLI_HELP_DAEMON_SERVICE_DESC":

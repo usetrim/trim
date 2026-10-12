@@ -46,6 +46,7 @@ func applyCLIHelpChrome(ch cliChrome) {
 	versionCmd.Short = ch.HelpVersionShort
 
 	daemonCmd.Short = ch.HelpDaemonShort
+	daemonCmd.Long = ch.HelpDaemonLong
 	daemonInstallCmd.Short = ch.HelpDaemonInstallShort
 	daemonUninstallCmd.Short = ch.HelpDaemonUninstallShort
 	daemonStatusCmd.Short = ch.HelpDaemonStatusShort
@@ -57,6 +58,7 @@ func applyCLIHelpChrome(ch cliChrome) {
 	telemetryEnableCmd.Short = ch.HelpTelemetryEnableShort
 
 	autostartCmd.Short = ch.HelpAutostartShort
+	autostartCmd.Long = ch.HelpAutostartLong
 	autostartStatusCmd.Short = ch.HelpAutostartStatusShort
 	autostartEnableCmd.Short = ch.HelpAutostartEnableShort
 	autostartDisableCmd.Short = ch.HelpAutostartDisableShort
