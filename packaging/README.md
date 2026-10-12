@@ -33,6 +33,8 @@ empty secrets never fail the release; manifests still appear under `dist/` and o
 5. Apple / Windows signing jobs soft-skip until cert secrets are set (see below).
 6. Frozen Deep Mode: **default on** every tag via `deep-attach` → `build-trim-deep.yml` (`continue-on-error` if torch OOM). Opt out: repository variable `TRIM_SKIP_DEEP_ON_RELEASE=true`. Manual fallback: Actions → **Build trim-deep** with `upload_to_release=<tag>`.
 
+Darwin Tree-sitter CGO jobs: **arm64** on `macos-14`, **amd64** on `macos-15-intel` (GitHub retired `macos-13` in Dec 2025 - do not restore that label or Intel jobs queue forever).
+
 ## Local verify (no publish)
 
 ```bash

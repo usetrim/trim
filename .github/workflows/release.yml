@@ -137,6 +137,7 @@ jobs:
 
   # Tree-sitter CGO must build on a matching OS/arch (no linux→darwin CGO cross).
   # Publishes trim_darwin_{amd64,arm64}_treesitter.tar.gz beside ubuntu artifacts.
+  # macos-13 was retired by GitHub (Dec 2025); Intel amd64 uses macos-15-intel.
   treesitter-darwin:
     needs: goreleaser
     strategy:
@@ -145,7 +146,7 @@ jobs:
         include:
           - os: macos-14
             arch: arm64
-          - os: macos-13
+          - os: macos-15-intel
             arch: amd64
     runs-on: ${{ matrix.os }}
     steps:
@@ -417,6 +418,7 @@ jobs:
             --clobber
 
   # Optional Zig grammar on darwin (CGO + zigts; larger binary).
+  # macos-13 retired → macos-15-intel for darwin/amd64 (same as treesitter-darwin).
   treesitter-darwin-zig:
     needs: goreleaser
     strategy:
@@ -425,7 +427,7 @@ jobs:
         include:
           - os: macos-14
             arch: arm64
-          - os: macos-13
+          - os: macos-15-intel
             arch: amd64
     runs-on: ${{ matrix.os }}
     steps:
