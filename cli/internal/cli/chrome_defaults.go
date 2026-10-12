@@ -35,6 +35,7 @@ func applyHumanChromeFallbacks(ch *cliChrome) {
 	ch.StartDashboardFmt = "Local dashboard: %s://127.0.0.1:%s/dashboard"
 	ch.StartPointIDEFmt = "Point your IDE Base URL at %s://127.0.0.1:%s/v1 (Cursor Override / Continue apiBase). VS Code Chat Custom Endpoint needs …/v1/chat/completions - see docs."
 	ch.StartBaseURLLabel = "IDE Base URL"
+	ch.HelpStartLong = "Starts the local proxy for IDE traffic, then returns your shell (proxy keeps running in the background). Stop with: trim stop. Use --foreground to keep this terminal attached (Ctrl+C stops).\n\nFast Mode always runs. When account preferences set Deep Mode on, each request also runs Deep (LLMLingua) after Fast before forwarding upstream.\n\nAfter traffic flows, check savings with:\n  trim stats\n  http://127.0.0.1:<port>/dashboard → Show savings detail"
 
 	// Always refresh Windows / OS-hook copy: HKCU Run → stable LocalAppData binary
 	// (never node_modules). Ensures worldwide CLIs show correct guidance before API catch-up.

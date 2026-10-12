@@ -2,7 +2,19 @@
 
 package cli
 
-import "fmt"
+import (
+	"fmt"
+	"os/exec"
+	"syscall"
+)
+
+// configureDetachedStartProc: new session so the worker survives parent exit / Ctrl+C.
+func configureDetachedStartProc(cmd *exec.Cmd) {
+	if cmd == nil {
+		return
+	}
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+}
 
 func installWindowsTask(exe string, chrome cliChrome) error {
 	_ = exe

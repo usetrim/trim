@@ -2437,7 +2437,7 @@ func builtinMessageForCode(code string) string {
 	case "CLI_HELP_START_SHORT":
 		return "Start the local Trim Fast Mode proxy"
 	case "CLI_HELP_START_LONG":
-		return "Starts the local proxy for IDE traffic. Fast Mode always runs. When account preferences set Deep Mode on, each request also runs Deep (LLMLingua) after Fast before forwarding upstream.\n\nAfter traffic flows, check savings clearly with:\n  trim stats\n  http://127.0.0.1:<port>/dashboard → Show savings detail\n\nWhole-body Saved %% can look low on agent chrome; Deep stage and Deep status explain why."
+		return "Starts the local proxy for IDE traffic, then returns your shell (proxy keeps running in the background). Stop with: trim stop. Use --foreground to keep this terminal attached (Ctrl+C stops).\n\nFast Mode always runs. When account preferences set Deep Mode on, each request also runs Deep (LLMLingua) after Fast before forwarding upstream.\n\nAfter traffic flows, check savings with:\n  trim stats\n  http://127.0.0.1:<port>/dashboard → Show savings detail"
 	case "CLI_HELP_START_FLAG_PORT":
 		return "Override TRIM_PORT for this process"
 	case "CLI_HELP_LOGIN_SHORT":
