@@ -35,6 +35,7 @@
   ],
   "scripts": {
     "postinstall": "node scripts/install.js",
+    "preuninstall": "node scripts/preuninstall.js",
     "test": "node --test scripts/*.test.js"
   },
   "engines": {

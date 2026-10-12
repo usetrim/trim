@@ -43,5 +43,14 @@ func applyHumanChromeFallbacks(ch *cliChrome) {
 	ch.AutostartOSHookNextIDELabel = "With IDE"
 	ch.AutostartOSHookNextIDEValue = "Keep “Start Trim with your IDE” on in the dashboard / extension"
 	ch.AutostartOSHookDetailLabel = "Details"
+	// Always refresh help so trim help autostart / trim help daemon match HKCU Run + soft-fail UX.
+	ch.HelpDaemonShort = "OS logon autostart (launchd / systemd user / Windows Startup Run)"
+	ch.HelpDaemonLong = "Advanced OS logon entrypoint (same hook as trim autostart enable).\n\n  trim daemon status\n  trim daemon install\n  trim daemon uninstall\n  trim daemon run\n\nPlatforms:\n  macOS: launchd LaunchAgent (per-user)\n  Linux: systemd --user (per-user)\n  Windows: HKCU Startup Run key - no Administrator on a normal PC (not an admin Scheduled Task)\n\ndaemon run only starts when auto-start is on, and attaches if a healthy proxy is already listening.\nPrefer trim autostart enable for everyday Always-on.\nDocs: https://use-trim.com/docs/cli/autostart"
 	ch.HelpDaemonInstallShort = "Install Trim proxy to start on login (launchd / systemd --user / Windows Startup Run)"
+	ch.HelpDaemonUninstallShort = "Remove OS logon autostart (Startup Run / launchd / systemd user)"
+	ch.HelpDaemonStatusShort = "Show whether OS logon autostart is installed"
+	ch.HelpAutostartShort = "Auto-start proxy with your IDE (synced preference)"
+	ch.HelpAutostartLong = "Synced Always-on preference (Start Trim with your IDE).\n\n  trim autostart status\n  trim autostart enable\n  trim autostart disable\n\nenable turns the preference on and best-effort registers OS logon:\n  macOS launchd · Linux systemd --user · Windows per-user Startup Run (no Administrator on a normal PC)\n\nIf OS registration fails, your preference stays on. The CLI prints a yellow warning, muted guidance, and next steps (trim start / IDE). Use -v for raw OS detail.\n\nPrefer this over trim daemon for everyday use.\nDocs: https://use-trim.com/docs/cli/autostart"
+	ch.HelpAutostartEnableShort = "Enable auto-start and best-effort OS logon (Windows Startup Run, no admin)"
+	ch.HelpAutostartDisableShort = "Disable auto-start and uninstall OS logon when supported"
 }

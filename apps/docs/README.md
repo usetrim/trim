@@ -16,8 +16,9 @@ Product documentation is served by the web app at [use-trim.com/docs](https://us
 | Topic | Path |
 | --- | --- |
 | Quickstart | `/docs/quickstart` |
+| Installation (Always-on after install) | `/docs/installation` |
 | Always-on with IDE | `/docs/concepts/always-on` |
-| `trim autostart` (OS logon + soft-fail UX) | `/docs/cli/autostart` |
+| `trim autostart` / `trim daemon` (copyable verify) | `/docs/cli/autostart` |
 | Connect any IDE | `/docs/ide/connect` |
 | Cursor | `/docs/ide/cursor` |
 | Continue | `/docs/ide/continue` |

@@ -87,7 +87,7 @@ No environment variables required for Trim Cloud (official npm / Homebrew / inst
 
 Always-on: leave **Start Trim with your IDE** checked in the dashboard (or `trim autostart enable`). OS logon uses launchd / systemd user / Windows per-user Startup Run - preference stays on even if OS registration is blocked; then use `trim start` or the IDE extension. Docs: [Always-on](https://use-trim.com/docs/concepts/always-on), [`trim autostart`](https://use-trim.com/docs/cli/autostart).
 
-Everyday vs advanced commands: `trim help`.
+Everyday vs advanced commands: `trim help`. Always-on details: `trim help autostart` · `trim help daemon`.
 
 Uninstall:
 
