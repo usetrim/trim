@@ -484,6 +484,14 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 			DaemonSystemdRemoved        string `json:"daemon_systemd_removed"`
 			DaemonWindowsOk             string `json:"daemon_windows_ok"`
 			DaemonWindowsRemoved        string `json:"daemon_windows_removed"`
+			DaemonWindowsRunLabel       string `json:"daemon_windows_run_label"`
+			AutostartOSHookFailedTitle  string `json:"autostart_os_hook_failed_title"`
+			AutostartOSHookFailedBody   string `json:"autostart_os_hook_failed_body"`
+			AutostartOSHookAccessDeniedBody string `json:"autostart_os_hook_access_denied_body"`
+			AutostartOSHookNextStartLabel   string `json:"autostart_os_hook_next_start_label"`
+			AutostartOSHookNextIDELabel     string `json:"autostart_os_hook_next_ide_label"`
+			AutostartOSHookNextIDEValue     string `json:"autostart_os_hook_next_ide_value"`
+			AutostartOSHookDetailLabel      string `json:"autostart_os_hook_detail_label"`
 			TelemetryEnabled            string `json:"telemetry_enabled"`
 			TelemetryDisableHint        string `json:"telemetry_disable_hint"`
 			TelemetryEnvHint            string `json:"telemetry_env_hint"`
@@ -801,6 +809,14 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 		DaemonSystemdRemoved:        body.CLI.DaemonSystemdRemoved,
 		DaemonWindowsOk:             body.CLI.DaemonWindowsOk,
 		DaemonWindowsRemoved:        body.CLI.DaemonWindowsRemoved,
+		DaemonWindowsRunLabel:       body.CLI.DaemonWindowsRunLabel,
+		AutostartOSHookFailedTitle:  body.CLI.AutostartOSHookFailedTitle,
+		AutostartOSHookFailedBody:   body.CLI.AutostartOSHookFailedBody,
+		AutostartOSHookAccessDeniedBody: body.CLI.AutostartOSHookAccessDeniedBody,
+		AutostartOSHookNextStartLabel:   body.CLI.AutostartOSHookNextStartLabel,
+		AutostartOSHookNextIDELabel:     body.CLI.AutostartOSHookNextIDELabel,
+		AutostartOSHookNextIDEValue:     body.CLI.AutostartOSHookNextIDEValue,
+		AutostartOSHookDetailLabel:      body.CLI.AutostartOSHookDetailLabel,
 		TelemetryEnabled:            body.CLI.TelemetryEnabled,
 		TelemetryDisableHint:        body.CLI.TelemetryDisableHint,
 		TelemetryEnvHint:            body.CLI.TelemetryEnvHint,
@@ -1148,6 +1164,14 @@ type cliChrome struct {
 	DaemonSystemdRemoved        string
 	DaemonWindowsOk             string
 	DaemonWindowsRemoved        string
+	DaemonWindowsRunLabel       string
+	AutostartOSHookFailedTitle  string
+	AutostartOSHookFailedBody   string
+	AutostartOSHookAccessDeniedBody string
+	AutostartOSHookNextStartLabel   string
+	AutostartOSHookNextIDELabel     string
+	AutostartOSHookNextIDEValue     string
+	AutostartOSHookDetailLabel      string
 	TelemetryEnabled            string
 	TelemetryDisableHint        string
 	TelemetryEnvHint            string

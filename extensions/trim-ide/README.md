@@ -78,6 +78,7 @@ See [Device binding](https://use-trim.com/docs/security/device-binding).
 - While the IDE stays open, it re-checks the dashboard preference so turning Always-on off can stop auto-start
 - Proxy start failures do **not** block the editor (you’ll see a warning; details in **Output → Trim**)
 - The browser cannot start Trim; this extension and/or the CLI handle the local proxy
+- Optional OS logon (`trim autostart enable`): macOS launchd, Linux systemd user, Windows per-user Startup Run (no admin on a normal PC). If OS registration fails, keep Always-on on and use this extension or `trim start` - see [trim autostart](https://use-trim.com/docs/cli/autostart)
 
 ## Settings
 

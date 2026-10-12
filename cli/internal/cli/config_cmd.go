@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 
@@ -263,8 +262,8 @@ var configSyncCmd = &cobra.Command{
 			_ = applyDaemonForAutostart(false, chrome)
 			_ = stopCmd.RunE(stopCmd, nil)
 		} else if err := applyDaemonForAutostart(p.AutoStartEnabled(), chrome); err != nil {
-			// Preferences already saved from cloud; OS scheduler may be denied on locked-down hosts.
-			fmt.Fprintf(os.Stderr, "%v\n", err)
+			// Preferences already saved from cloud; OS logon hook is best-effort.
+			printAutostartOSHookGuidance(chrome, p.AutoStartEnabled(), err)
 		} else if !p.AutoStartEnabled() {
 			if err := stopCmd.RunE(stopCmd, nil); err == nil && chrome.StopOnDisableOk != "" {
 				fmt.Println(chrome.StopOnDisableOk)

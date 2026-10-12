@@ -15,6 +15,9 @@ Product documentation is served by the web app at [use-trim.com/docs](https://us
 
 | Topic | Path |
 | --- | --- |
+| Quickstart | `/docs/quickstart` |
+| Always-on with IDE | `/docs/concepts/always-on` |
+| `trim autostart` (OS logon + soft-fail UX) | `/docs/cli/autostart` |
 | Connect any IDE | `/docs/ide/connect` |
 | Cursor | `/docs/ide/cursor` |
 | Continue | `/docs/ide/continue` |
@@ -24,6 +27,7 @@ Product documentation is served by the web app at [use-trim.com/docs](https://us
 | Base URL troubleshooting | `/docs/ide/troubleshoot-base-url` |
 | Trim IDE extension | `/docs/ide/extension` |
 | Metering (credits / Unlimited / top-ups) | `/docs/concepts/metering` |
+| Troubleshooting (incl. Access denied OS logon) | `/docs/guides/troubleshooting` |
 
 Dashboard and Admin guides live under `/docs/dashboard/*` and `/docs/admin/*`.
 

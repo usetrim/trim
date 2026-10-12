@@ -1388,11 +1388,11 @@ func builtinMessageForCode(code string) string {
 	case "CLI_AUTOSTART_DISABLE_HINT":
 		return "Disable with: trim autostart disable"
 	case "CLI_AUTOSTART_ENABLED_OK":
-		return "Auto-start with IDE enabled. Daemon install attempted when supported."
+		return "Auto-start with IDE enabled"
 	case "CLI_AUTOSTART_DISABLED_OK":
-		return "Auto-start with IDE disabled. Daemon uninstall attempted when supported."
+		return "Auto-start with IDE disabled"
 	case "CLI_AUTOSTART_DAEMON_HINT":
-		return "OS login start uses trim daemon install/uninstall. Extension attaches to a healthy local proxy."
+		return "OS logon starts Trim for your user account. The Trim IDE extension also attaches to a healthy local proxy."
 	case "CLI_AUTOSTART_DAEMON_SKIPPED_OFF":
 		return "Auto-start with IDE is off - daemon run exiting without starting proxy"
 	case "CLI_AUTOSTART_DAEMON_SKIPPED_UNSET":
@@ -2136,7 +2136,7 @@ func builtinMessageForCode(code string) string {
 	case "CLI_DAEMON_SYSTEMD_MISSING":
 		return "systemd user unit not installed. Run: trim daemon install"
 	case "CLI_DAEMON_WINDOWS_MISSING":
-		return "Windows scheduled task not installed. Run: trim daemon install"
+		return "Windows logon autostart is not installed. Run: trim autostart enable"
 	case "CLI_DAEMON_LAUNCHD_OK_FMT":
 		return "Installed launchd agent: %s"
 	case "CLI_DAEMON_LAUNCHD_HINT":
@@ -2148,9 +2148,25 @@ func builtinMessageForCode(code string) string {
 	case "CLI_DAEMON_SYSTEMD_REMOVED":
 		return "Removed systemd user unit"
 	case "CLI_DAEMON_WINDOWS_OK":
-		return "Installed Windows scheduled task: TrimProxy"
+		return "Windows logon autostart registered (per-user Startup Run key - no admin required)"
 	case "CLI_DAEMON_WINDOWS_REMOVED":
-		return "Removed Windows scheduled task: TrimProxy"
+		return "Windows logon autostart removed"
+	case "CLI_DAEMON_WINDOWS_RUN_LABEL":
+		return "Run command"
+	case "CLI_AUTOSTART_OS_HOOK_FAILED_TITLE":
+		return "Preference saved, but OS logon autostart could not be registered"
+	case "CLI_AUTOSTART_OS_HOOK_FAILED_BODY":
+		return "Your Trim preference is on. IDE auto-start can still work. Fix OS logon registration below, or start manually."
+	case "CLI_AUTOSTART_OS_HOOK_ACCESS_DENIED_BODY":
+		return "Windows blocked the logon registration (Access denied). Trim now uses a per-user Startup entry that normally needs no Administrator. Retry: trim autostart enable. If it still fails, your organization may block Startup programs - use trim start or the Trim IDE extension."
+	case "CLI_AUTOSTART_OS_HOOK_NEXT_START_LABEL":
+		return "Manual start"
+	case "CLI_AUTOSTART_OS_HOOK_NEXT_IDE_LABEL":
+		return "With IDE"
+	case "CLI_AUTOSTART_OS_HOOK_NEXT_IDE_VALUE":
+		return "Keep “Start Trim with your IDE” on in the dashboard / extension"
+	case "CLI_AUTOSTART_OS_HOOK_DETAIL_LABEL":
+		return "Details"
 	case "CLI_TELEMETRY_ENABLED":
 		return "Telemetry: enabled"
 	case "CLI_TELEMETRY_DISABLE_HINT":
@@ -2517,7 +2533,7 @@ func builtinMessageForCode(code string) string {
 	case "CLI_HELP_DAEMON_SHORT":
 		return "Background OS service for auto-start"
 	case "CLI_HELP_DAEMON_INSTALL_SHORT":
-		return "Install Trim proxy to start on login (launchd / systemd --user / Windows task)"
+		return "Install Trim proxy to start on login (launchd / systemd --user / Windows Startup Run)"
 	case "CLI_HELP_DAEMON_UNINSTALL_SHORT":
 		return "Remove the Trim background service"
 	case "CLI_HELP_DAEMON_STATUS_SHORT":
