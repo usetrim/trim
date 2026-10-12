@@ -1063,7 +1063,12 @@ func setPOWChrome(c cliChrome) {
 func loadCLIChrome() cliChrome {
 	cfg, err := config.LoadLocal()
 	if err != nil {
-		return cliChrome{}
+		// Still apply worldwide human UX fallbacks (Windows LocalAppData copy,
+		// soft-fail OS-hook copy, start attach banners) when config/HMAC is
+		// unavailable - never return a fully blank chrome struct.
+		var out cliChrome
+		applyHumanChromeFallbacks(&out)
+		return out
 	}
 	return fetchCLIChrome(cfg)
 }

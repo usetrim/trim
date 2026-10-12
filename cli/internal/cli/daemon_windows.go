@@ -4,8 +4,12 @@ package cli
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/usetrim/trim/cli/internal/cliout"
 	"golang.org/x/sys/windows/registry"
@@ -14,15 +18,23 @@ import (
 const windowsRunValueName = "TrimProxy"
 
 // installWindowsTask registers per-user logon autostart via HKCU Run (no admin).
-// Industry practice (VS Code, browsers, Slack): CurrentVersion\Run - not schtasks ONLOGON.
-// Legacy TrimProxy scheduled tasks are best-effort removed so upgrades migrate cleanly.
+// Industry practice: CurrentVersion\Run pointing at a stable LocalAppData copy -
+// never at node_modules (npm uninstall cannot delete a running vendor\trim.exe).
 func installWindowsTask(exe string, chrome cliChrome) error {
-	if err := setWindowsRunKey(exe); err != nil {
+	stable, err := syncWindowsStableDaemonExe(exe)
+	if err != nil {
+		return err
+	}
+	// Migrate off any leftover npm/node_modules daemon so LocalAppData owns the lock.
+	stopWindowsTrimPathContains(`node_modules\@usetrim`)
+	stopWindowsTrimPathContains(`/node_modules/@usetrim/`)
+
+	if err := setWindowsRunKey(stable); err != nil {
 		return err
 	}
 	removeLegacyWindowsScheduledTask()
-	// Start now (parity with old schtasks /Run and macOS/Linux enable --now).
-	cmd := exec.Command(exe, "daemon", "run")
+
+	cmd := exec.Command(stable, "daemon", "run")
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("start daemon: %w", err)
 	}
@@ -35,6 +47,15 @@ func installWindowsTask(exe string, chrome cliChrome) error {
 func uninstallWindowsTask(chrome cliChrome) error {
 	_ = deleteWindowsRunKey()
 	removeLegacyWindowsScheduledTask()
+	// Stop stable + legacy npm-locked processes, then best-effort remove stable binary.
+	if stable, err := windowsStableDaemonExe(); err == nil {
+		stopWindowsTrimExactPath(stable)
+		_ = os.Remove(stable)
+		_ = os.Remove(filepath.Dir(stable)) // bin/
+		_ = os.Remove(filepath.Dir(filepath.Dir(stable))) // Trim/ if empty
+	}
+	stopWindowsTrimPathContains(`node_modules\@usetrim`)
+	stopWindowsTrimPathContains(`/node_modules/@usetrim/`)
 	if chrome.DaemonWindowsRemoved != "" {
 		cliout.Success(chrome.DaemonWindowsRemoved)
 	}
@@ -59,6 +80,78 @@ func printWindowsAutostartStatus(chrome cliChrome) {
 	}})
 }
 
+// windowsStableDaemonExe is the durable autostart binary location (outside package managers).
+func windowsStableDaemonExe() (string, error) {
+	base := strings.TrimSpace(os.Getenv("LOCALAPPDATA"))
+	if base == "" {
+		cfg, err := os.UserConfigDir()
+		if err != nil || strings.TrimSpace(cfg) == "" {
+			return "", fmt.Errorf("windows stable daemon path: LOCALAPPDATA unset")
+		}
+		base = cfg
+	}
+	return filepath.Join(base, "Trim", "bin", "trim.exe"), nil
+}
+
+// syncWindowsStableDaemonExe copies the current CLI into LocalAppData so OS logon
+// does not lock npm/Scoop/Homebrew install trees.
+func syncWindowsStableDaemonExe(src string) (string, error) {
+	src, err := filepath.Abs(src)
+	if err != nil {
+		return "", err
+	}
+	dst, err := windowsStableDaemonExe()
+	if err != nil {
+		return "", err
+	}
+	srcEval, _ := filepath.EvalSymlinks(src)
+	dstEval, _ := filepath.EvalSymlinks(dst)
+	if srcEval != "" && dstEval != "" && strings.EqualFold(srcEval, dstEval) {
+		return dst, nil
+	}
+	if strings.EqualFold(src, dst) {
+		return dst, nil
+	}
+
+	stopWindowsTrimExactPath(dst)
+	if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
+		return "", fmt.Errorf("windows stable daemon dir: %w", err)
+	}
+
+	tmp := dst + ".tmp"
+	_ = os.Remove(tmp)
+	if err := copyFileReplace(src, tmp); err != nil {
+		_ = os.Remove(tmp)
+		return "", fmt.Errorf("windows stable daemon copy: %w", err)
+	}
+	_ = os.Remove(dst) // may fail if still locked; rename often still works after stop
+	if err := os.Rename(tmp, dst); err != nil {
+		// Fallback: direct overwrite after stop.
+		_ = os.Remove(tmp)
+		if err2 := copyFileReplace(src, dst); err2 != nil {
+			return "", fmt.Errorf("windows stable daemon install: %w", err2)
+		}
+	}
+	return dst, nil
+}
+
+func copyFileReplace(src, dst string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+	out, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o755)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+	if _, err := io.Copy(out, in); err != nil {
+		return err
+	}
+	return out.Close()
+}
+
 func setWindowsRunKey(exe string) error {
 	k, _, err := registry.CreateKey(registry.CURRENT_USER,
 		`Software\Microsoft\Windows\CurrentVersion\Run`, registry.SET_VALUE)
@@ -66,7 +159,6 @@ func setWindowsRunKey(exe string) error {
 		return fmt.Errorf("windows run key: %w", err)
 	}
 	defer k.Close()
-	// Quote path so spaces in Program Files work.
 	val := fmt.Sprintf(`"%s" daemon run`, exe)
 	if err := k.SetStringValue(windowsRunValueName, val); err != nil {
 		return fmt.Errorf("windows run key set: %w", err)
@@ -101,4 +193,44 @@ func windowsRunKeyCommand() (string, bool) {
 
 func removeLegacyWindowsScheduledTask() {
 	_, _ = exec.Command("schtasks", "/Delete", "/F", "/TN", "TrimProxy").CombinedOutput()
+}
+
+func stopWindowsTrimExactPath(exe string) {
+	exe = strings.TrimSpace(exe)
+	if exe == "" {
+		return
+	}
+	// Never kill this process (install/uninstall may be the same binary path).
+	// Prefer stopping OS-logon "daemon run" holders so vendor trees unlock.
+	stopWindowsTrimPS(fmt.Sprintf(
+		`$exact = '%s'; $self = %d; Get-CimInstance Win32_Process | Where-Object { $_.Name -eq 'trim.exe' -and $_.ProcessId -ne $self } | ForEach-Object { $p = [string]$_.ExecutablePath; $c = [string]$_.CommandLine; if ($p -and ($p -ieq $exact)) { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue } }; Start-Sleep -Milliseconds 600`,
+		powershellSingleQuote(exe),
+		os.Getpid(),
+	))
+}
+
+func stopWindowsTrimPathContains(substr string) {
+	substr = strings.TrimSpace(substr)
+	if substr == "" {
+		return
+	}
+	// Target legacy npm-locked daemons only. Do not kill this CLI (e.g. trim
+	// daemon install running from node_modules\@usetrim\...\vendor\trim.exe).
+	stopWindowsTrimPS(fmt.Sprintf(
+		`$sub = '%s'; $self = %d; Get-CimInstance Win32_Process | Where-Object { $_.Name -eq 'trim.exe' -and $_.ProcessId -ne $self } | ForEach-Object { $p = [string]$_.ExecutablePath; $c = [string]$_.CommandLine; $pathHit = ($p -and ($p -like ('*'+$sub+'*'))) -or ($c -and ($c -like ('*'+$sub+'*'))); $daemon = ($c -and ($c -match '(?i)\bdaemon\s+run\b')); if ($pathHit -and $daemon) { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue } }; Start-Sleep -Milliseconds 400`,
+		powershellSingleQuote(substr),
+		os.Getpid(),
+	))
+}
+
+func powershellSingleQuote(s string) string {
+	return strings.ReplaceAll(s, "'", "''")
+}
+
+func stopWindowsTrimPS(command string) {
+	cmd := exec.Command("powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", command)
+	cmd.Stdout = nil
+	cmd.Stderr = nil
+	_ = cmd.Run()
+	time.Sleep(200 * time.Millisecond)
 }

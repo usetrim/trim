@@ -1,14 +1,19 @@
 "use strict";
 
 /**
- * Best-effort stop before npm removes vendor/trim.exe.
+ * Best-effort cleanup before npm removes vendor/trim.exe.
  *
- * On Windows a running trim.exe (usually `daemon run`) locks the file. npm may
- * rename the package dir to `.trim-*` and then fail with EPERM unlink if any
- * process still holds the binary - including after a rename.
+ * Current Trim registers Windows OS logon against
+ * %LOCALAPPDATA%\Trim\bin\trim.exe (stable copy), so a healthy Always-on
+ * daemon does not lock this package’s vendor binary.
+ *
+ * This hook still:
+ *   1) stops any legacy trim.exe still running from node_modules/@usetrim
+ *   2) runs `daemon uninstall` + `stop` via vendor (clears Run key + LocalAppData)
+ * so upgrades/removals stay clean for older installs.
  *
  * Prefer: trim uninstall (or trim daemon uninstall && trim stop) before npm uninstall.
- * This hook soft-fails so package removal still proceeds.
+ * Soft-fails so package removal still proceeds.
  */
 
 const { execFileSync, spawnSync } = require("node:child_process");
