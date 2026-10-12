@@ -73,15 +73,19 @@ No environment variables required for Trim Cloud (official npm / Homebrew / inst
    ```bash
    trim login
    ```
-3. Start the local proxy:
+3. Start the local proxy (one-shot), or enable Always-on:
    ```bash
    trim start
+   # everyday: preference + best-effort OS logon (no admin on normal Windows)
+   trim autostart enable
    ```
 4. In your IDE, set the OpenAI-compatible Base URL to:
    ```text
    http://127.0.0.1:8888/v1
    ```
 5. Optional: install **Trim IDE** (publisher `usetrim`) from the VS Code Marketplace or Open VSX for Always-on proxy + dashboard metrics. See [extensions/trim-ide/README.md](./extensions/trim-ide/README.md).
+
+Always-on: leave **Start Trim with your IDE** checked in the dashboard (or `trim autostart enable`). OS logon uses launchd / systemd user / Windows per-user Startup Run - preference stays on even if OS registration is blocked; then use `trim start` or the IDE extension. Docs: [Always-on](https://use-trim.com/docs/concepts/always-on), [`trim autostart`](https://use-trim.com/docs/cli/autostart).
 
 Everyday vs advanced commands: `trim help`.
 

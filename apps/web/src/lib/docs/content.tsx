@@ -110,7 +110,7 @@ brew install usetrim/tap/trim`,
       {
         type: "code",
         language: "bash",
-        code: `# Enable and align OS login daemon when supported
+        code: `# Enable preference + best-effort OS logon (no admin on normal Windows)
 trim autostart enable
 
 # Optional: one-shot manual session instead
@@ -120,6 +120,11 @@ trim start`,
         type: "callout",
         title: "Attach, do not double-bind",
         text: "If a healthy proxy is already listening, another trim start or IDE opener attaches to it instead of fighting for the port. Prefer one proxy per machine.",
+      },
+      {
+        type: "callout",
+        title: "Preference saved even if OS logon fails",
+        text: "On Windows, Trim uses a per-user Startup Run key (not an admin Scheduled Task). If registration is blocked, the CLI keeps your preference on and tells you to use trim start or the IDE extension. See trim autostart.",
       },
       { type: "h2", id: "point-ide", text: "4. Point your IDE or agent at Trim" },
       {
@@ -396,7 +401,7 @@ winget uninstall Trim.CLI`,
         type: "ul",
         items: [
           "Dashboard: control plane - checkbox + local agent online/offline",
-          "CLI: trim autostart enable|disable|status; optional trim daemon for OS login",
+          "CLI: trim autostart enable|disable|status; optional trim daemon for OS logon",
           "IDE extension: on IDE startup, if the preference is on, ensure the proxy is healthy",
         ],
       },
@@ -405,6 +410,23 @@ winget uninstall Trim.CLI`,
         title: "Hard constraint",
         text: "The web dashboard cannot start a process on your laptop by itself. Cloud only stores the boolean and syncs it down. CLI, daemon, or the IDE extension apply it on the machine.",
       },
+      { type: "h2", id: "os-logon", text: "OS logon (optional)" },
+      {
+        type: "p",
+        text: "trim autostart enable also best-effort registers a per-user logon hook so Trim can start with your OS session. This is the same industry pattern used by editors and browsers - never a machine-wide admin Scheduled Task on Windows.",
+      },
+      {
+        type: "ul",
+        items: [
+          "macOS: launchd LaunchAgent",
+          "Linux: systemd --user",
+          "Windows: HKCU Startup Run key (no Administrator on a normal PC)",
+        ],
+      },
+      {
+        type: "p",
+        text: "If logon registration fails, your preference stays on. The CLI shows a yellow warning, muted guidance, and a next-step table (trim start / keep IDE Always-on). Use trim -v only when you need raw OS detail.",
+      },
       { type: "h2", id: "daily", text: "Daily flow" },
       {
         type: "ol",
@@ -412,7 +434,7 @@ winget uninstall Trim.CLI`,
           "Install the CLI (and optionally the Trim IDE extension)",
           "Sign in when you need quotas and the dashboard",
           "Point the IDE Base URL at the URL trim start printed (example http://127.0.0.1:8888/v1)",
-          "Leave Start Trim with your IDE checked",
+          "Leave Start Trim with your IDE checked (or run trim autostart enable)",
           "Open the IDE - Trim should already be trimming (Fast; Deep if Preferences Deep is on)",
           "Optional: trim compress / Deep when you want file or batch compression",
           "Anytime: uncheck the preference - extension and daemon honor it and stop auto-starting",
@@ -435,7 +457,7 @@ winget uninstall Trim.CLI`,
       },
       {
         type: "note",
-        text: "Always-on starts the local proxy with your IDE. Deep Mode still only runs when Preferences set Deep on (Fast then Deep per request). Everyday loop = trim start.",
+        text: "Always-on starts the local proxy with your IDE. Deep Mode still only runs when Preferences set Deep on (Fast then Deep per request). Everyday loop = open IDE (or trim start).",
       },
     ],
   ),
@@ -696,7 +718,7 @@ trim config sync`,
     [
       {
         type: "p",
-        text: "trim autostart mirrors telemetry-style UX for the everyday proxy preference. It syncs auto_start_with_ide with Trim cloud and can install or remove the OS login daemon when supported.",
+        text: "trim autostart mirrors telemetry-style UX for the everyday proxy preference. It syncs auto_start_with_ide with Trim Cloud and best-effort aligns an OS logon hook so Trim can start with your user session when supported.",
       },
       {
         type: "code",
@@ -710,14 +732,41 @@ trim autostart disable`,
         type: "ul",
         items: [
           "status - show whether auto-start with IDE is on, off, or unset",
-          "enable - turn the preference on and align daemon install when the OS supports it",
-          "disable - turn the preference off and uninstall the login daemon when supported",
+          "enable - turn the preference on and best-effort register OS logon when the OS supports it",
+          "disable - turn the preference off and uninstall the OS logon hook when supported",
         ],
       },
-      { type: "h2", id: "daemon", text: "Optional trim daemon" },
+      { type: "h2", id: "preference-first", text: "Preference first, OS hook second" },
       {
         type: "p",
-        text: "trim daemon install|uninstall|status|run covers OS login survival (launchd / systemd user / Windows task). daemon run only starts the proxy when the preference is on, and attaches if a healthy proxy is already listening.",
+        text: "The synced preference is the source of truth (dashboard, CLI, IDE extension). The OS logon hook is best-effort: if registration fails, Trim still saves your preference and prints clear next steps - it does not dump raw OS errors as the only message.",
+      },
+      {
+        type: "ul",
+        items: [
+          "Success (green): Auto-start with IDE enabled - preference is on",
+          "Warn (yellow) only if OS logon could not be registered: Preference saved, but OS logon autostart could not be registered",
+          "Muted guidance: what happened (for example Access denied) and what to do next",
+          "Table next steps: Manual start → trim start; With IDE → keep Start Trim with your IDE on",
+          "Details / raw OS text: only with trim --verbose (or -v)",
+        ],
+      },
+      { type: "h2", id: "daemon", text: "Optional trim daemon (OS logon)" },
+      {
+        type: "p",
+        text: "trim daemon install|uninstall|status|run is the advanced OS logon entrypoint. Prefer trim autostart enable for everyday use - it calls the same install path when turning the preference on.",
+      },
+      {
+        type: "ul",
+        items: [
+          "macOS: launchd LaunchAgent (per-user)",
+          "Linux: systemd --user unit (per-user)",
+          "Windows: per-user Startup Run key (HKCU CurrentVersion\\Run) - industry practice for apps like browsers and editors; no Administrator required on a normal PC",
+        ],
+      },
+      {
+        type: "p",
+        text: "daemon run only starts the proxy when the preference is on (or the hosted default when unset), and attaches if a healthy proxy is already listening. Older Windows installs that used a scheduled task are migrated away on install/uninstall.",
       },
       {
         type: "code",
@@ -725,6 +774,11 @@ trim autostart disable`,
         code: `trim daemon status
 trim daemon install
 trim daemon uninstall`,
+      },
+      {
+        type: "callout",
+        title: "If OS logon registration fails",
+        text: "Your preference is still on. Run trim start for a manual session, or open your IDE with the Trim IDE extension / Start Trim with your IDE checked. On locked-down Windows, an organization policy may block Startup programs - that is expected; use manual or IDE start.",
       },
       {
         type: "callout",
@@ -3336,6 +3390,22 @@ Optional build features: follow README flags for native parsers`,
           "Run trim stop then trim start if you need a clean manual session",
         ],
       },
+      {
+        type: "h2",
+        id: "os-logon-blocked",
+        text: "OS logon autostart failed (Access denied)",
+      },
+      {
+        type: "ul",
+        items: [
+          "Your Trim preference can still be on - Always-on with IDE and the Trim IDE extension do not require OS logon",
+          "Retry: trim autostart enable (Windows uses a per-user Startup Run key; no Administrator on a normal PC)",
+          "Manual path: trim start",
+          "IDE path: keep Start Trim with your IDE checked and open the editor with the Trim IDE extension",
+          "Enterprise PCs: if Startup programs are blocked by policy, use manual or IDE start - that is expected",
+          "Need raw OS text: trim autostart enable -v (Details row only)",
+        ],
+      },
       { type: "h2", id: "cursor-ignores-trim", text: "Cursor still hits the provider directly" },
       {
         type: "ul",
@@ -3433,6 +3503,15 @@ Optional build features: follow README flags for native parsers`,
       {
         type: "p",
         text: "No. Leave Start Trim with your IDE checked, install the Trim IDE extension and/or trim autostart enable. Open the IDE and Trim stays ready. Use trim start when you want a one-shot manual session. See Always-on with IDE.",
+      },
+      {
+        type: "h2",
+        id: "windows-admin",
+        text: "Do I need Administrator on Windows for autostart?",
+      },
+      {
+        type: "p",
+        text: "No for normal PCs. Trim registers a per-user Startup Run key (same pattern as browsers and editors), not an admin Scheduled Task. If your organization blocks Startup programs, keep the preference on and use trim start or the Trim IDE extension. See trim autostart.",
       },
       {
         type: "h2",

@@ -179,14 +179,8 @@ var daemonStatusCmd = &cobra.Command{
 				fmt.Println(chrome.DaemonSystemdMissing)
 			}
 		case "windows":
-			out, err := exec.Command("schtasks", "/Query", "/TN", "TrimProxy").CombinedOutput()
-			if err != nil {
-				if chrome.DaemonWindowsMissing != "" {
-					fmt.Println(chrome.DaemonWindowsMissing)
-				}
-				return nil
-			}
-			fmt.Println(string(out))
+			printWindowsAutostartStatus(chrome)
+			return nil
 		default:
 			return chrome.failFmt(chrome.DaemonUnsupportedFmt, "status", runtime.GOOS)
 		}
@@ -319,35 +313,6 @@ func uninstallSystemdUser(chrome cliChrome) error {
 	_ = exec.Command("systemctl", "--user", "daemon-reload").Run()
 	if chrome.DaemonSystemdRemoved != "" {
 		fmt.Println(chrome.DaemonSystemdRemoved)
-	}
-	return nil
-}
-
-func installWindowsTask(exe string, chrome cliChrome) error {
-	cmd := exec.Command("schtasks", "/Create", "/F", "/SC", "ONLOGON", "/RL", "LIMITED",
-		"/TN", "TrimProxy", "/TR", fmt.Sprintf("\"%s\" daemon run", exe))
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("schtasks: %w: %s", err, strings.TrimSpace(string(out)))
-	}
-	// Start immediately (Create alone only registers ONLOGON; macOS/Linux enable --now parity).
-	runOut, runErr := exec.Command("schtasks", "/Run", "/TN", "TrimProxy").CombinedOutput()
-	if runErr != nil {
-		return fmt.Errorf("schtasks /Run: %w: %s", runErr, strings.TrimSpace(string(runOut)))
-	}
-	if chrome.DaemonWindowsOk != "" {
-		fmt.Println(chrome.DaemonWindowsOk)
-	}
-	return nil
-}
-
-func uninstallWindowsTask(chrome cliChrome) error {
-	out, err := exec.Command("schtasks", "/Delete", "/F", "/TN", "TrimProxy").CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("schtasks delete: %w: %s", err, strings.TrimSpace(string(out)))
-	}
-	if chrome.DaemonWindowsRemoved != "" {
-		fmt.Println(chrome.DaemonWindowsRemoved)
 	}
 	return nil
 }

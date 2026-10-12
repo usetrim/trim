@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/usetrim/trim/cli/internal/cliout"
 	"github.com/usetrim/trim/cli/internal/config"
 	"github.com/usetrim/trim/cli/internal/deepopt"
 	"github.com/usetrim/trim/cli/internal/storage"
@@ -109,28 +110,72 @@ func setAutostart(on bool) error {
 	if err := pushAutostartPreference(on, chrome); err != nil {
 		return err
 	}
-	if err := applyDaemonForAutostart(on, chrome); err != nil {
-		return err
-	}
+	// Preference is source of truth (IDE + cloud). OS login hook is best-effort:
+	// never dump raw schtasks/registry errors as the only UX for worldwide users.
+	osHookErr := applyDaemonForAutostart(on, chrome)
 	if !on {
 		// Best-effort stop of a running proxy so "uncheck" actually stops auto-trim path.
 		if err := stopCmd.RunE(stopCmd, nil); err == nil && chrome.StopOnDisableOk != "" {
-			fmt.Println(chrome.StopOnDisableOk)
+			cliout.Muted(chrome.StopOnDisableOk)
 		}
 	}
 	if on {
 		if chrome.AutostartEnabledOk != "" {
-			fmt.Println(chrome.AutostartEnabledOk)
+			cliout.Success(chrome.AutostartEnabledOk)
 		}
 	} else {
 		if chrome.AutostartDisabledOk != "" {
-			fmt.Println(chrome.AutostartDisabledOk)
+			cliout.Success(chrome.AutostartDisabledOk)
 		}
 	}
-	if chrome.AutostartDaemonHint != "" {
-		fmt.Println(chrome.AutostartDaemonHint)
+	if osHookErr != nil {
+		printAutostartOSHookGuidance(chrome, on, osHookErr)
+	} else if chrome.AutostartDaemonHint != "" {
+		cliout.Muted(chrome.AutostartDaemonHint)
 	}
 	return nil
+}
+
+func printAutostartOSHookGuidance(chrome cliChrome, enabling bool, err error) {
+	if err == nil {
+		return
+	}
+	raw := strings.TrimSpace(err.Error())
+	denied := strings.Contains(strings.ToLower(raw), "access is denied") ||
+		strings.Contains(strings.ToLower(raw), "access denied")
+
+	if title := strings.TrimSpace(chrome.AutostartOSHookFailedTitle); title != "" {
+		cliout.Warn(title)
+	}
+	if denied {
+		if body := strings.TrimSpace(chrome.AutostartOSHookAccessDeniedBody); body != "" {
+			cliout.Muted(body)
+		}
+	} else if body := strings.TrimSpace(chrome.AutostartOSHookFailedBody); body != "" {
+		cliout.Muted(body)
+	}
+	rows := make([]cliout.Row, 0, 3)
+	if enabling {
+		if lab := strings.TrimSpace(chrome.AutostartOSHookNextStartLabel); lab != "" {
+			rows = append(rows, cliout.Row{Label: lab, Value: "trim start", Kind: "accent"})
+		}
+		if lab := strings.TrimSpace(chrome.AutostartOSHookNextIDELabel); lab != "" {
+			v := strings.TrimSpace(chrome.AutostartOSHookNextIDEValue)
+			if v != "" {
+				rows = append(rows, cliout.Row{Label: lab, Value: v, Kind: "ok"})
+			}
+		}
+	}
+	if flagVerbose && raw != "" {
+		if lab := strings.TrimSpace(chrome.AutostartOSHookDetailLabel); lab != "" {
+			rows = append(rows, cliout.Row{Label: lab, Value: raw})
+		} else {
+			cliout.Muted(raw)
+		}
+	}
+	if len(rows) > 0 {
+		cliout.Table(rows)
+	}
 }
 
 // applyDaemonForAutostart installs OS login when on, uninstalls when off.

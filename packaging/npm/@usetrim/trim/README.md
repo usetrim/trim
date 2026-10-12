@@ -9,9 +9,13 @@ npm install -g @usetrim/trim
 trim version
 trim login
 trim start
+# everyday Always-on (preference + best-effort OS logon; no admin on normal Windows)
+trim autostart enable
 ```
 
 No environment variables required for Trim Cloud. Self-host overrides: see the Trim repo `cli/.env.example`.
+
+Always-on docs: [Always-on with IDE](https://use-trim.com/docs/concepts/always-on) · [`trim autostart`](https://use-trim.com/docs/cli/autostart).
 
 Or without a global install:
 
