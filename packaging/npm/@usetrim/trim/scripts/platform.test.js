@@ -4,7 +4,7 @@ const { describe, it } = require("node:test");
 const assert = require("node:assert/strict");
 const { resolvePlatform } = require("./platform");
 
-describe("resolvePlatform", () => {
+describe("resolvePlatform", () => { 
   it("maps darwin arm64", () => {
     const p = resolvePlatform("darwin", "arm64");
     assert.equal(p.asset, "trim_darwin_arm64.tar.gz");

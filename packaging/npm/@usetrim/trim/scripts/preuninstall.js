@@ -41,7 +41,7 @@ function runTrim(args) {
   } catch {
     // Soft-fail: never block npm uninstall.
   }
-}
+} 
 /**
  * Stop every trim.exe owned by this npm package tree (@usetrim/…), including
  * npm's temporary `.trim-*` rename folders. Exact path match is not enough:
