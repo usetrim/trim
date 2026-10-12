@@ -60,10 +60,11 @@ var startCmd = &cobra.Command{
 			}
 			if proxyHealthOK(healthURL, to) {
 				// Extension/daemon enforcer path: stay as sidecar so dashboard uncheck still stops.
-				// Manual `trim start` exits 0 (user-owned process already up).
+				// Manual `trim start` exits 0 (user-owned process already up) with clear UX.
 				if os.Getenv("TRIM_AUTOSTART_ENFORCER") == "1" {
 					return runAutostartAttachEnforcer(cfg, chrome, healthURL)
 				}
+				printStartReadyUI(chrome, startListenScheme(), listenPort, true)
 				return nil
 			}
 		}
@@ -198,35 +199,16 @@ var startCmd = &cobra.Command{
 		})
 
 		go func() {
-			scheme := "http"
 			certFile := strings.TrimSpace(os.Getenv("TRIM_TLS_CERT"))
 			keyFile := strings.TrimSpace(os.Getenv("TRIM_TLS_KEY"))
 			useTLS := certFile != "" && keyFile != ""
+			scheme := "http"
 			if useTLS {
 				scheme = "https"
 			}
-			if chrome.StartRunningFmt != "" {
-				cliout.Success(fmt.Sprintf(chrome.StartRunningFmt, scheme, listenPort))
-			}
-			rows := make([]cliout.Row, 0, 4)
-			if lab := strings.TrimSpace(chrome.StartBaseURLLabel); lab != "" {
-				rows = append(rows, cliout.Row{
-					Label: lab,
-					Value: fmt.Sprintf("%s://127.0.0.1:%s/v1", scheme, listenPort),
-					Kind:  "accent",
-				})
-			}
-			if chrome.StartDashboardFmt != "" {
-				cliout.Info(fmt.Sprintf(chrome.StartDashboardFmt, scheme, listenPort))
-			}
+			printStartReadyUI(chrome, scheme, listenPort, false)
 			if chrome.StartModeFmt != "" {
 				cliout.Muted(fmt.Sprintf(chrome.StartModeFmt, projectconfig.NormalizeMode(proj.Mode)))
-			}
-			if len(rows) > 0 {
-				cliout.Table(rows)
-			}
-			if chrome.StartPointIDEFmt != "" {
-				cliout.Muted(fmt.Sprintf(chrome.StartPointIDEFmt, scheme, listenPort))
 			}
 			if len(proj.NeverTrimPaths) > 0 || len(proj.IgnorePaths) > 0 {
 				if chrome.StartRulesFmt != "" {
@@ -246,7 +228,10 @@ var startCmd = &cobra.Command{
 					if os.Getenv("TRIM_AUTOSTART_ENFORCER") == "1" && healthURL != "" {
 						// Become sidecar enforcer instead of exiting without pref polling.
 						_ = runAutostartAttachEnforcer(cfg, chrome, healthURL)
+						os.Exit(0)
 					}
+					// Manual start: tell the user Trim is already up (same UX as health attach).
+					printStartReadyUI(chrome, scheme, listenPort, true)
 					os.Exit(0)
 				}
 				if chrome.ProxyFailedFmt != "" {
@@ -437,4 +422,63 @@ func loadProviderAdapterRegistry(chrome cliChrome) (*provideradapt.Registry, pro
 		return nil, ach
 	}
 	return reg, ach
+}
+
+func startListenScheme() string {
+	certFile := strings.TrimSpace(os.Getenv("TRIM_TLS_CERT"))
+	keyFile := strings.TrimSpace(os.Getenv("TRIM_TLS_KEY"))
+	if certFile != "" && keyFile != "" {
+		return "https"
+	}
+	return "http"
+}
+
+// printStartReadyUI matches status / autostart / daemon coloring:
+// ● Success (green) → Table (cyan labels, accent/ok values) → Muted tip (gray).
+// Worldwide users must never see a blank `trim start` when the proxy is already healthy.
+func printStartReadyUI(chrome cliChrome, scheme, port string, attached bool) {
+	scheme = strings.TrimSpace(scheme)
+	port = strings.TrimSpace(port)
+	if scheme == "" {
+		scheme = "http"
+	}
+	if port == "" {
+		return
+	}
+	if attached {
+		if chrome.StartAttachedOkFmt != "" {
+			cliout.Success(fmt.Sprintf(chrome.StartAttachedOkFmt, scheme, port))
+		} else if chrome.StartRunningFmt != "" {
+			cliout.Success(fmt.Sprintf(chrome.StartRunningFmt, scheme, port))
+		}
+	} else if chrome.StartRunningFmt != "" {
+		cliout.Success(fmt.Sprintf(chrome.StartRunningFmt, scheme, port))
+	}
+
+	rows := make([]cliout.Row, 0, 2)
+	if lab := strings.TrimSpace(chrome.StartBaseURLLabel); lab != "" {
+		rows = append(rows, cliout.Row{
+			Label: lab,
+			Value: fmt.Sprintf("%s://127.0.0.1:%s/v1", scheme, port),
+			Kind:  "accent",
+		})
+	}
+	if lab := strings.TrimSpace(chrome.StartDashboardLabel); lab != "" {
+		rows = append(rows, cliout.Row{
+			Label: lab,
+			Value: fmt.Sprintf("%s://127.0.0.1:%s/dashboard", scheme, port),
+			Kind:  "ok",
+		})
+	}
+	if len(rows) > 0 {
+		cliout.Table(rows)
+	}
+
+	if attached {
+		if tip := strings.TrimSpace(chrome.StartAttachedHint); tip != "" {
+			cliout.Muted(tip)
+		}
+	} else if chrome.StartPointIDEFmt != "" {
+		cliout.Muted(fmt.Sprintf(chrome.StartPointIDEFmt, scheme, port))
+	}
 }

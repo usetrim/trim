@@ -2108,13 +2108,19 @@ func builtinMessageForCode(code string) string {
 	case "CLI_SETUP_CONTINUE_NO_MODEL":
 		return "Continue config has no openai-compatible model with apiBase. Edit ~/.continue/config.yaml (see trim setup Continue block / docs/ide/continue), or set TRIM_SETUP_DEFAULT_MODEL and TRIM_SETUP_DEFAULT_MODEL_TITLE then re-run trim setup."
 	case "CLI_START_RUNNING_FMT":
-		return "Trim proxy running on %s://localhost:%s"
+		return "Trim proxy running on %s://127.0.0.1:%s"
+	case "CLI_START_ATTACHED_OK_FMT":
+		return "Trim is already running on %s://127.0.0.1:%s"
+	case "CLI_START_ATTACHED_HINT":
+		return "Attached to the existing local proxy - no second process started."
+	case "CLI_START_DASHBOARD_LABEL":
+		return "Dashboard"
 	case "CLI_START_DASHBOARD_FMT":
-		return "Local dashboard: %s://localhost:%s/dashboard"
+		return "Local dashboard: %s://127.0.0.1:%s/dashboard"
 	case "CLI_START_MODE_FMT":
 		return "Compression mode: %s"
 	case "CLI_START_POINT_IDE_FMT":
-		return "Point IDE Base URL at %s://localhost:%s/v1 (Cursor Override / Continue apiBase). VS Code Chat Custom Endpoint needs …/v1/chat/completions - see docs."
+		return "Point your IDE Base URL at %s://127.0.0.1:%s/v1 (Cursor Override / Continue apiBase). VS Code Chat Custom Endpoint needs …/v1/chat/completions - see docs."
 	case "CLI_START_RULES_FMT":
 		return "Loaded .tokenignore / .trimrc rules (%d never-trim, %d ignore)"
 	case "CLI_START_STOPPED":

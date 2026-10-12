@@ -26,6 +26,15 @@ func applyHumanChromeFallbacks(ch *cliChrome) {
 	set(&ch.StartBaseURLLabel, "IDE Base URL")
 	set(&ch.LoginURLLabel, "Sign-in URL")
 	set(&ch.StatusNotLoggedIn, "Not logged in. Run: trim login")
+	// Always refresh start banners so attach / cold-start never print a blank line worldwide.
+	// Same palette as status/autostart/daemon: Success ● · Table accent/ok · Muted tip.
+	ch.StartRunningFmt = "Trim proxy running on %s://127.0.0.1:%s"
+	ch.StartAttachedOkFmt = "Trim is already running on %s://127.0.0.1:%s"
+	ch.StartAttachedHint = "Attached to the existing local proxy - no second process started."
+	ch.StartDashboardLabel = "Dashboard"
+	ch.StartDashboardFmt = "Local dashboard: %s://127.0.0.1:%s/dashboard"
+	ch.StartPointIDEFmt = "Point your IDE Base URL at %s://127.0.0.1:%s/v1 (Cursor Override / Continue apiBase). VS Code Chat Custom Endpoint needs …/v1/chat/completions - see docs."
+	ch.StartBaseURLLabel = "IDE Base URL"
 
 	// Always refresh Windows / OS-hook copy: behavior moved from schtasks → HKCU Run.
 	// Ensures worldwide CLIs show correct guidance even before API site_messages catch up.

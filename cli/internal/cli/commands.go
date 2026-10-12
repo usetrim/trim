@@ -463,6 +463,9 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 			SetupProductJetbrains       string `json:"setup_product_jetbrains"`
 			SetupContinueNoModel        string `json:"setup_continue_no_model"`
 			StartRunningFmt             string `json:"start_running_fmt"`
+			StartAttachedOkFmt          string `json:"start_attached_ok_fmt"`
+			StartAttachedHint           string `json:"start_attached_hint"`
+			StartDashboardLabel         string `json:"start_dashboard_label"`
 			StartDashboardFmt           string `json:"start_dashboard_fmt"`
 			StartModeFmt                string `json:"start_mode_fmt"`
 			StartPointIDEFmt            string `json:"start_point_ide_fmt"`
@@ -790,6 +793,9 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 		SetupProductJetbrains:       body.CLI.SetupProductJetbrains,
 		SetupContinueNoModel:        body.CLI.SetupContinueNoModel,
 		StartRunningFmt:             body.CLI.StartRunningFmt,
+		StartAttachedOkFmt:          body.CLI.StartAttachedOkFmt,
+		StartAttachedHint:           body.CLI.StartAttachedHint,
+		StartDashboardLabel:         body.CLI.StartDashboardLabel,
 		StartDashboardFmt:           body.CLI.StartDashboardFmt,
 		StartModeFmt:                body.CLI.StartModeFmt,
 		StartPointIDEFmt:            body.CLI.StartPointIDEFmt,
@@ -1147,6 +1153,9 @@ type cliChrome struct {
 	SetupProductJetbrains       string
 	SetupContinueNoModel        string
 	StartRunningFmt             string
+	StartAttachedOkFmt          string
+	StartAttachedHint           string
+	StartDashboardLabel         string
 	StartDashboardFmt           string
 	StartModeFmt                string
 	StartPointIDEFmt            string

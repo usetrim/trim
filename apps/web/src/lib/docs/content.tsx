@@ -119,7 +119,7 @@ trim start`,
       {
         type: "callout",
         title: "Attach, do not double-bind",
-        text: "If a healthy proxy is already listening, another trim start or IDE opener attaches to it instead of fighting for the port. Prefer one proxy per machine.",
+        text: "If a healthy proxy is already listening, trim start prints a green confirmation (Trim is already running), the IDE Base URL table, and a muted attach note - then exits 0. It does not start a second process. Prefer one proxy per machine.",
       },
       {
         type: "callout",
@@ -717,13 +717,29 @@ trim config sync`,
         type: "p",
         text: "For everyday use, prefer Always-on with IDE (extension + trim autostart) so you do not need a manual trim start every morning. Use trim start for one-shot sessions or debugging.",
       },
+      { type: "h2", id: "what-you-see", text: "What you see" },
+      {
+        type: "ul",
+        items: [
+          "Fresh start: green ● Trim proxy running…, cyan/accent IDE Base URL + green Dashboard table rows, gray muted IDE tip (process stays in the foreground)",
+          "Already running (after autostart / another IDE): same Success + Table + Muted design as status/autostart, then exit 0 - never a blank prompt",
+        ],
+      },
+      {
+        type: "code",
+        language: "text",
+        code: `● Trim is already running on http://127.0.0.1:8888
+  IDE Base URL  http://127.0.0.1:8888/v1
+  Dashboard     http://127.0.0.1:8888/dashboard
+  Attached to the existing local proxy - no second process started.`,
+      },
       { type: "h2", id: "behavior", text: "Behavior" },
       {
         type: "ul",
         items: [
           "Fast Mode on live chat completions",
           "Deep Mode on live chat when Preferences Deep is on",
-          "If a healthy Trim proxy is already up, trim start attaches and exits instead of double-binding the port",
+          "If a healthy Trim proxy is already up, trim start attaches with a clear success banner instead of double-binding the port",
           "Optional cloud metering when authenticated",
           "Upstream forward to your configured provider after compress",
           "Active-file and stack protection so task-relevant code stays intact",
