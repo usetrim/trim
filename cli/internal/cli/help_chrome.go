@@ -104,7 +104,7 @@ func applyHelpGroups(ch cliChrome) {
 
 func clearHelpGroupIDs() {
 	for _, c := range []*cobra.Command{
-		startCmd, stopCmd, statusCmd, upgradeCmd, autostartCmd, loginCmd, logoutCmd, uninstallCmd, setupCmd, versionCmd,
+		startCmd, stopCmd, statusCmd, upgradeCmd, autostartCmd, cursorLinkCmd, loginCmd, logoutCmd, uninstallCmd, setupCmd, versionCmd,
 		statsCmd, tuiCmd, compressCmd, daemonCmd, telemetryCmd, configCmd,
 	} {
 		c.GroupID = ""
@@ -114,7 +114,7 @@ func clearHelpGroupIDs() {
 func assignHelpGroupIDs() {
 	// Everyday: daily IDE path + local meter (stats) next to cloud status.
 	for _, c := range []*cobra.Command{
-		startCmd, stopCmd, statusCmd, statsCmd, upgradeCmd, autostartCmd, loginCmd, logoutCmd, uninstallCmd, setupCmd, versionCmd,
+		startCmd, stopCmd, statusCmd, statsCmd, upgradeCmd, autostartCmd, cursorLinkCmd, loginCmd, logoutCmd, uninstallCmd, setupCmd, versionCmd,
 	} {
 		c.GroupID = helpGroupEverydayID
 	}

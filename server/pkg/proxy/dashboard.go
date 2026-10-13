@@ -127,6 +127,8 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 	if strings.TrimSpace(ch.HtmlLang) != "" {
 		langAttr = ` lang="` + html.EscapeString(strings.TrimSpace(ch.HtmlLang)) + `"`
 	}
+	// Fprintf treats % as verbs; escape any % inside injected Cursor Link HTML.
+	cursorLinkSection := strings.ReplaceAll(loadCursorLinkDashboardHTML(), "%", "%%")
 	_, _ = fmt.Fprintf(w, `<!DOCTYPE html>
 <html%s>
 <head>
@@ -219,6 +221,7 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
     <div class="card"><div class="label">%s</div><div class="value">%s</div></div>
     <div class="card"><div class="label">%s</div><div class="value">%.1f%%</div></div>
   </div>
+  %s
   <div class="detail-toggle">
     <button type="button" id="savingsDetailBtn">%s</button>
   </div>
@@ -402,6 +405,7 @@ var CHROME = %s;
 		html.EscapeString(ch.LabelDeepStatus), deepStatusEsc, deepStatusEsc,
 		html.EscapeString(ch.LabelDeepStage), deepStageHTML,
 		html.EscapeString(ch.LabelDeepStageSaved), st.LastDeepStageSavedPct,
+		cursorLinkSection,
 		html.EscapeString(ch.SavingsDetailShow),
 		html.EscapeString(ch.SavingsDetailTitle),
 		html.EscapeString(ch.SavingsDetailLead),

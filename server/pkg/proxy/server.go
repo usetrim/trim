@@ -98,8 +98,8 @@ type Options struct {
 	OpenAIOrganization string
 	OpenAIProject      string
 	// DoorOpenAI / DoorAnthropic are site_messages labels for native doors (fail-closed empty → omit header).
-	DoorOpenAI     string
-	DoorAnthropic  string
+	DoorOpenAI    string
+	DoorAnthropic string
 	// Adapter chrome formats from site_messages (empty = generic errors).
 	AdapterTranslateFmt string
 	AdapterAuthFmt      string
@@ -123,6 +123,9 @@ type Options struct {
 	ModelsUpstreamNotFoundFmt     string
 	ModelsUpstreamAuthRequired    string
 	ModelsUpstreamUnsupportedFmt  string
+	// CursorLinkToken protects the public Trim Cursor Link path (/cl/<token>/v1/...).
+	// Empty = no Cursor Link gate. Local /v1 stays open for on-device clients.
+	CursorLinkToken string
 }
 
 type Stats struct {
@@ -140,10 +143,10 @@ type Stats struct {
 	LastDoor          string  `json:"last_door,omitempty"`
 	AdapterRequests   int64   `json:"adapter_requests"`
 	// LastDeep* explains live Deep for worldwide users when whole-body Saved % looks like 0.
-	LastDeepStatus           string  `json:"last_deep_status,omitempty"`
-	LastDeepStageBefore      int     `json:"last_deep_stage_before_tokens"`
-	LastDeepStageAfter       int     `json:"last_deep_stage_after_tokens"`
-	LastDeepStageSavedPct    float64 `json:"last_deep_stage_saved_percent"`
+	LastDeepStatus        string  `json:"last_deep_status,omitempty"`
+	LastDeepStageBefore   int     `json:"last_deep_stage_before_tokens"`
+	LastDeepStageAfter    int     `json:"last_deep_stage_after_tokens"`
+	LastDeepStageSavedPct float64 `json:"last_deep_stage_saved_percent"`
 }
 
 type Server struct {
@@ -205,7 +208,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/v1/messages/count_tokens", s.handleAnthropicCountTokens)
 	mux.HandleFunc("/v1/models", s.handleModels)
 	mux.HandleFunc("/", s.handlePassthrough)
-	return mux
+	return withCursorLinkGate(mux, strings.TrimSpace(s.opts.CursorLinkToken))
 }
 
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
@@ -252,24 +255,24 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	st := s.Stats()
 	_ = json.NewEncoder(w).Encode(map[string]any{
-		"requests":                       st.Requests,
-		"tokens_before":                  st.TokensBefore,
-		"tokens_after":                   st.TokensAfter,
-		"saved_usd_est":                  st.SavedUSD,
-		"last_latency_ms":                st.LastLatency,
-		"uncompressed_fallbacks":         st.Fallbacks,
-		"upstream_failovers":             st.UpstreamFailovers,
-		"last_before_tokens":             st.LastBeforeTokens,
-		"last_after_tokens":              st.LastAfterTokens,
-		"last_before_preview":            st.LastBeforePreview,
-		"last_after_preview":             st.LastAfterPreview,
-		"last_door":                      st.LastDoor,
-		"adapter_requests":               st.AdapterRequests,
-		"last_deep_status":               st.LastDeepStatus,
-		"last_deep_stage_before_tokens":  st.LastDeepStageBefore,
-		"last_deep_stage_after_tokens":   st.LastDeepStageAfter,
-		"last_deep_stage_saved_percent":  st.LastDeepStageSavedPct,
-		"chrome":                         s.opts.Chrome,
+		"requests":                      st.Requests,
+		"tokens_before":                 st.TokensBefore,
+		"tokens_after":                  st.TokensAfter,
+		"saved_usd_est":                 st.SavedUSD,
+		"last_latency_ms":               st.LastLatency,
+		"uncompressed_fallbacks":        st.Fallbacks,
+		"upstream_failovers":            st.UpstreamFailovers,
+		"last_before_tokens":            st.LastBeforeTokens,
+		"last_after_tokens":             st.LastAfterTokens,
+		"last_before_preview":           st.LastBeforePreview,
+		"last_after_preview":            st.LastAfterPreview,
+		"last_door":                     st.LastDoor,
+		"adapter_requests":              st.AdapterRequests,
+		"last_deep_status":              st.LastDeepStatus,
+		"last_deep_stage_before_tokens": st.LastDeepStageBefore,
+		"last_deep_stage_after_tokens":  st.LastDeepStageAfter,
+		"last_deep_stage_saved_percent": st.LastDeepStageSavedPct,
+		"chrome":                        s.opts.Chrome,
 	})
 }
 
@@ -819,27 +822,27 @@ func (s *Server) interceptAndForward(w http.ResponseWriter, r *http.Request, ups
 
 	// Adapter stream: translate Anthropic SSE → OpenAI chunks.
 	if adapterUsed && provideradapt.NeedsResponseTranslate(adapterCfg) && wantsStream(optimized) && resp.StatusCode < 400 {
-	for k, vals := range resp.Header {
+		for k, vals := range resp.Header {
 			lk := strings.ToLower(k)
 			if lk == "content-length" || lk == "content-encoding" || lk == "transfer-encoding" {
 				continue
 			}
-		for _, v := range vals {
-			w.Header().Add(k, v)
+			for _, v := range vals {
+				w.Header().Add(k, v)
+			}
 		}
-	}
 		w.Header().Set("Content-Type", "text/event-stream")
 		w.Header().Del("Content-Length")
 		w.Header().Del("Content-Encoding")
-	w.Header().Set("X-Trim-Tokens-Before", fmt.Sprintf("%d", before))
-	w.Header().Set("X-Trim-Tokens-After", fmt.Sprintf("%d", after))
-	w.Header().Set("X-Trim-Latency-Ms", fmt.Sprintf("%.2f", elapsed))
+		w.Header().Set("X-Trim-Tokens-Before", fmt.Sprintf("%d", before))
+		w.Header().Set("X-Trim-Tokens-After", fmt.Sprintf("%d", after))
+		w.Header().Set("X-Trim-Latency-Ms", fmt.Sprintf("%.2f", elapsed))
 		if doorLabel != "" {
 			w.Header().Set("X-Trim-Door", doorLabel)
 		}
-	w.WriteHeader(resp.StatusCode)
+		w.WriteHeader(resp.StatusCode)
 		_ = provideradapt.PipeAnthropicSSEToOpenAI(w, resp.Body, model)
-	_ = resp.Body.Close()
+		_ = resp.Body.Close()
 		if s.opts.OnEvent != nil && eventMode != "" {
 			s.opts.OnEvent(r, model, before, after, elapsed, "success", eventMode, "")
 		}
