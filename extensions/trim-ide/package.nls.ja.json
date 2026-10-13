@@ -25,5 +25,5 @@
   "trim.walkthrough.apiKey.title": "Trim API キーを保存",
   "trim.walkthrough.apiKey.description": "Dashboard → Settings → API keys で **Trim** キーを作成（OpenAI/Anthropic/Google ではない）。次に **Trim: Set API Key**（Secret Storage）。\n\n[API キーを設定](command:trim.setApiKey)\n\nプライバシー: [https://use-trim.com/privacy](https://use-trim.com/privacy)",
   "trim.walkthrough.baseUrl.title": "チャットをローカルプロキシへ",
-  "trim.walkthrough.baseUrl.description": "この拡張機能はコンプレッサーではありません。Cursor / Continue / VS Code Chat を Trim ``…/v1`` に向けてください。\n\n[Connect any IDE](https://use-trim.com/docs/ide/connect)"
+  "trim.walkthrough.baseUrl.description": "この拡張機能はコンプレッサーではありません。\n\n**Cursor Agent:** ``trim cursor-link url``（HTTPS ``…/v1``。``127.0.0.1`` は不可）。\n\n**Continue / VS Code:** ローカル Trim ``…/v1``。\n\n[Trim Cursor Link](https://use-trim.com/docs/cli/cursor-link) · [Connect any IDE](https://use-trim.com/docs/ide/connect)"
 }

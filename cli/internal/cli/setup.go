@@ -102,11 +102,18 @@ var setupCmd = &cobra.Command{
 		var wrote []string
 		wroteFmt := chrome.SetupWroteFmt
 
-		if p, err := ideUserSettingsPath("Cursor"); err == nil {
-			if err := mergeOpenAIBaseURL(p, baseURL, cursorKeys()); err == nil {
-				wrote = append(wrote, formatSetupWrote(wroteFmt, chrome.SetupProductCursor, p))
-			}
+		// Do not write 127.0.0.1 into Cursor Override Base URL. Cursor Agent runs in
+		// Cursor's cloud and rejects private IPs. Point Agent users at Trim Cursor Link.
+		if chrome.SetupCursorSkipped != "" {
+			fmt.Println(chrome.SetupCursorSkipped)
 		}
+		if chrome.SetupCursorAgentHeader != "" {
+			fmt.Println(chrome.SetupCursorAgentHeader)
+		}
+		if chrome.SetupCursorAgentBlock != "" {
+			fmt.Println(chrome.SetupCursorAgentBlock)
+		}
+		fmt.Println()
 		if p, err := ideUserSettingsPath("Code"); err == nil {
 			if err := mergeOpenAIBaseURL(p, baseURL, vscodeContinueKeys(baseURL)); err == nil {
 				wrote = append(wrote, formatSetupWrote(wroteFmt, chrome.SetupProductVSCode, p))
@@ -183,6 +190,9 @@ var setupCmd = &cobra.Command{
 		}
 		if chrome.SetupStepStart != "" {
 			fmt.Println(chrome.SetupStepStart)
+		}
+		if chrome.SetupStepCursorLink != "" {
+			fmt.Println(chrome.SetupStepCursorLink)
 		}
 		if chrome.SetupStepRestart != "" {
 			fmt.Println(chrome.SetupStepRestart)

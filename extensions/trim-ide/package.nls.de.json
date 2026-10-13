@@ -25,5 +25,5 @@
   "trim.walkthrough.apiKey.title": "Trim-API-Schlüssel speichern",
   "trim.walkthrough.apiKey.description": "**Trim**-Schlüssel unter Dashboard → Settings → API keys erzeugen (nicht OpenAI/Anthropic/Google). Dann **Trim: Set API Key** (Secret Storage).\n\n[API-Schlüssel setzen](command:trim.setApiKey)\n\nDatenschutz: [https://use-trim.com/privacy](https://use-trim.com/privacy)",
   "trim.walkthrough.baseUrl.title": "Chat auf lokalen Proxy zeigen",
-  "trim.walkthrough.baseUrl.description": "Diese Erweiterung ist nicht der Kompressor. Cursor / Continue / VS Code Chat auf Trim ``…/v1`` zeigen.\n\n[Connect any IDE](https://use-trim.com/docs/ide/connect)"
+  "trim.walkthrough.baseUrl.description": "Diese Erweiterung ist nicht der Kompressor.\n\n**Cursor Agent:** ``trim cursor-link url`` (HTTPS ``…/v1``, nicht ``127.0.0.1``).\n\n**Continue / VS Code:** lokales Trim ``…/v1``.\n\n[Trim Cursor Link](https://use-trim.com/docs/cli/cursor-link) · [Connect any IDE](https://use-trim.com/docs/ide/connect)"
 }

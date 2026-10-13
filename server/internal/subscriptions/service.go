@@ -1100,7 +1100,7 @@ func builtinMessageForCode(code string) string {
 	case "LANDING_USE_2_TITLE":
 		return "Set Override Base URL"
 	case "LANDING_USE_2_BODY":
-		return "Cursor → Models → OpenAI Compatible → URL from trim start (example http://127.0.0.1:8888/v1)"
+		return "Cursor Agent: Override OpenAI Base URL = trim cursor-link url (HTTPS …/v1, not 127.0.0.1). Continue / VS Code: local URL from trim start (example http://127.0.0.1:8888/v1)."
 	case "LANDING_USE_3_TITLE":
 		return "Code as usual - check the dashboard"
 	case "LANDING_USE_3_BODY":
@@ -2028,7 +2028,7 @@ func builtinMessageForCode(code string) string {
 	case "CLI_STATUS_HTTP_ERROR_FMT":
 		return "Could not reach Trim Cloud (%s). Check your network and try again."
 	case "CLI_START_BASE_URL_LABEL":
-		return "IDE Base URL"
+		return "Local Base URL"
 	case "CLI_LOGIN_URL_LABEL":
 		return "Sign-in URL"
 	case "CLI_LOGIN_PHRASE_OR":
@@ -2072,13 +2072,13 @@ func builtinMessageForCode(code string) string {
 	case "CLI_SETUP_TLS_KEY_PATH_FMT":
 		return "  key:  %s"
 	case "CLI_SETUP_SHELL_OPENAI_FMT":
-		return "  export OPENAI_BASE_URL=%q   # Cursor / OpenAI-compat clients (Gemini, GPT, Claude-via-adapter)"
+		return "  export OPENAI_BASE_URL=%q   # Continue / OpenAI-compat on-device clients (Gemini, GPT, Claude-via-adapter). Cursor Agent: use trim cursor-link url instead."
 	case "CLI_SETUP_SHELL_ANTHROPIC_FMT":
 		return "  export ANTHROPIC_BASE_URL=%q   # Claude Code: Trim listen ORIGIN only (no /v1; Claude Code appends /v1/messages)"
 	case "CLI_SETUP_TLS_START":
 		return "  trim start"
 	case "CLI_SETUP_TLS_POINT_IDE":
-		return "  Point IDE base URL to https://localhost:<port>/v1"
+		return "  On-device: Continue / VS Code Chat at https://localhost:<port>/v1 (or …/v1/chat/completions). Cursor Agent: trim cursor-link url (HTTPS public …/v1)."
 	case "CLI_SETUP_TLS_ENV_REQUIRED":
 		return "TRIM_TLS_ORG and TRIM_TLS_VALIDITY_DAYS are required for trim setup --tls"
 	case "CLI_SETUP_TLS_DAYS_INVALID":
@@ -2120,7 +2120,25 @@ func builtinMessageForCode(code string) string {
 	case "CLI_START_MODE_FMT":
 		return "Compression mode: %s"
 	case "CLI_START_POINT_IDE_FMT":
-		return "Point your IDE Base URL at %s://127.0.0.1:%s/v1 (Cursor Override / Continue apiBase). VS Code Chat Custom Endpoint needs …/v1/chat/completions - see docs."
+		return "On-device clients: Continue apiBase / VS Code Chat Custom Endpoint / Claude Code origin use %s://127.0.0.1:%s (Continue and most SDKs need …/v1; VS Code Chat needs …/v1/chat/completions; Claude Code needs origin only, no /v1)."
+	case "CLI_START_CURSOR_AGENT_LABEL":
+		return "Cursor Agent Base URL"
+	case "CLI_START_CURSOR_AGENT_HINT_OFF":
+		return "Cursor Agent: do not paste 127.0.0.1 (private networks forbidden). Run: trim cursor-link enable → trim cursor-link url → paste HTTPS …/v1 into Cursor Override OpenAI Base URL. Docs: https://use-trim.com/docs/cli/cursor-link"
+	case "CLI_START_CURSOR_AGENT_TIP_ON":
+		return "Cursor Agent: paste Cursor Agent Base URL into Override OpenAI Base URL (HTTPS …/v1, not 127.0.0.1)."
+	case "CLI_START_CURSOR_AGENT_LOCAL_TIP":
+		return "Local tools / Claude Code: keep using http://127.0.0.1:%s as documented."
+	case "CLI_START_CURSOR_AGENT_CLOUDFLARED_TIP":
+		return "Trim auto-downloads cloudflared to ~/.trim/bin when missing (all OS). Optional: brew/winget only if installed. Or set TRIM_CLOUDFLARED, then: trim cursor-link status"
+	case "CLI_SETUP_CURSOR_AGENT_HEADER":
+		return "Cursor Agent (cloud) - use Trim Cursor Link, not localhost:"
+	case "CLI_SETUP_CURSOR_AGENT_BLOCK":
+		return "  trim cursor-link enable\n  trim start\n  trim cursor-link url\n  # paste HTTPS …/cl/<token>/v1 into Cursor → Settings → Models → Override OpenAI Base URL\n  # do not paste http://127.0.0.1:…/v1 for Cursor Agent\n  Docs: https://use-trim.com/docs/cli/cursor-link"
+	case "CLI_SETUP_STEP_CURSOR_LINK":
+		return "Cursor Agent: trim cursor-link enable && trim start && trim cursor-link url (paste HTTPS …/v1; not 127.0.0.1)"
+	case "CLI_SETUP_CURSOR_SKIPPED":
+		return "Cursor settings.json: skipped writing localhost Base URL (Cursor Agent needs Trim Cursor Link). Continue / VS Code / Windsurf / Zed still use local …/v1 when present."
 	case "CLI_START_RULES_FMT":
 		return "Loaded .tokenignore / .trimrc rules (%d never-trim, %d ignore)"
 	case "CLI_START_STOPPED":
@@ -2437,7 +2455,7 @@ func builtinMessageForCode(code string) string {
 	case "CLI_HELP_START_SHORT":
 		return "Start the local Trim Fast Mode proxy"
 	case "CLI_HELP_START_LONG":
-		return "Starts the local proxy for IDE traffic, then returns your shell (proxy keeps running in the background). Stop with: trim stop. Use --foreground to keep this terminal attached (Ctrl+C stops).\n\nFast Mode always runs. When account preferences set Deep Mode on, each request also runs Deep (LLMLingua) after Fast before forwarding upstream.\n\nAfter traffic flows, check savings with:\n  trim stats\n  http://127.0.0.1:<port>/dashboard → Show savings detail"
+		return "Starts the local proxy for IDE traffic, then returns your shell (proxy keeps running in the background). Stop with: trim stop. Use --foreground to keep this terminal attached (Ctrl+C stops).\n\nFast Mode always runs. When account preferences set Deep Mode on, each request also runs Deep (LLMLingua) after Fast before forwarding upstream.\n\nLocal Base URL (127.0.0.1) is for on-device clients (Continue, VS Code Chat, Claude Code). Cursor Agent needs Trim Cursor Link: trim cursor-link enable → trim cursor-link url (HTTPS …/v1; not 127.0.0.1).\n\nAfter traffic flows, check savings with:\n  trim stats\n  http://127.0.0.1:<port>/dashboard → Show savings detail"
 	case "CLI_HELP_START_FLAG_PORT":
 		return "Override TRIM_PORT for this process"
 	case "CLI_HELP_LOGIN_SHORT":
@@ -2535,7 +2553,7 @@ func builtinMessageForCode(code string) string {
 	case "CLI_HELP_SETUP_SHORT":
 		return "Point Cursor, Continue, VS Code Chat, Claude Code, and shell env at Trim"
 	case "CLI_HELP_SETUP_LONG":
-		return "Writes OpenAI-compatible Base URL overrides for installed IDEs (Cursor, VS Code settings, Windsurf, Zed, Continue ~/.continue/config.yaml when present) and prints copy/paste blocks for:\n  - Claude Code (ANTHROPIC_BASE_URL = Trim origin, no /v1)\n  - Continue (config.yaml apiBase = Trim …/v1)\n  - VS Code Chat Custom Endpoint (full …/v1/chat/completions + wizard secret)\nUse --tls for local self-signed certs. Docs: /docs/ide/connect /docs/ide/continue /docs/ide/vscode"
+		return "Writes OpenAI-compatible Base URL overrides for on-device IDEs when present (VS Code, Windsurf, Zed, Continue ~/.continue/config.yaml). Does not write localhost into Cursor (Cursor Agent needs Trim Cursor Link).\n\nPrints copy/paste blocks for:\n  - Cursor Agent (trim cursor-link enable → trim cursor-link url)\n  - Claude Code (ANTHROPIC_BASE_URL = Trim origin, no /v1)\n  - Continue (config.yaml apiBase = Trim …/v1)\n  - VS Code Chat Custom Endpoint (full …/v1/chat/completions + wizard secret)\nUse --tls for local self-signed certs. Docs: /docs/cli/cursor-link /docs/ide/connect /docs/ide/continue /docs/ide/vscode"
 	case "CLI_HELP_SETUP_FLAG_TLS":
 		return "Generate local self-signed TLS cert and key under ~/.config/trim/tls"
 	case "CLI_HELP_VERSION_SHORT":

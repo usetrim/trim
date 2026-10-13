@@ -25,5 +25,5 @@
   "trim.walkthrough.apiKey.title": "Enregistrer la clé API Trim",
   "trim.walkthrough.apiKey.description": "Créez une clé **Trim** (Dashboard → Settings → API keys), pas OpenAI/Anthropic/Google. Puis **Trim: Set API Key** (Secret Storage).\n\n[Définir la clé](command:trim.setApiKey)\n\nConfidentialité: [https://use-trim.com/privacy](https://use-trim.com/privacy)",
   "trim.walkthrough.baseUrl.title": "Pointer le chat vers le proxy local",
-  "trim.walkthrough.baseUrl.description": "Cette extension n’est pas le compresseur. Pointez Cursor / Continue / VS Code Chat vers Trim ``…/v1``.\n\n[Connect any IDE](https://use-trim.com/docs/ide/connect)"
+  "trim.walkthrough.baseUrl.description": "Cette extension n’est pas le compresseur.\n\n**Cursor Agent:** ``trim cursor-link url`` (HTTPS ``…/v1``, pas ``127.0.0.1``).\n\n**Continue / VS Code:** Trim local ``…/v1``.\n\n[Trim Cursor Link](https://use-trim.com/docs/cli/cursor-link) · [Connect any IDE](https://use-trim.com/docs/ide/connect)"
 }

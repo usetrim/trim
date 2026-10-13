@@ -39,7 +39,7 @@ var cursorLinkEnableCmd = &cobra.Command{
 		}
 		cliout.Success("Cursor Link enabled")
 		cliout.Muted("Next: trim start  →  then trim cursor-link url  →  paste into Cursor Override OpenAI Base URL (…/v1)")
-		cliout.Muted("Requires cloudflared on PATH (or TRIM_CLOUDFLARED). Local Trim still does the work.")
+		cliout.Muted("cloudflared: Trim auto-downloads to ~/.trim/bin on enable/start when missing (all OS). Optional brew/winget only if installed. Or set TRIM_CLOUDFLARED. Local Trim still does the work.")
 		cfg, err := config.LoadLocal()
 		if err == nil {
 			port := cursorLinkLocalPortFallback(cfg.Port)
@@ -49,7 +49,7 @@ var cursorLinkEnableCmd = &cobra.Command{
 					cliout.Table([]cliout.Row{{Label: "Cursor Agent Base URL", Value: url, Kind: "accent"}})
 				} else if err != nil {
 					cliout.Warn(fmt.Sprintf("Trim is up but tunnel not ready yet: %v", err))
-					cliout.Muted("Run trim start again, or trim cursor-link status after cloudflared is installed.")
+					cliout.Muted("Run trim start again (Trim auto-downloads cloudflared when needed), or: trim cursor-link status")
 				}
 			}
 		}
@@ -183,7 +183,7 @@ func maybeStartCursorLinkAfterProxy(listenPort string) {
 	url, err := ensureCursorLink(listenPort)
 	if err != nil {
 		cliout.Warn(fmt.Sprintf("Cursor Link: %v", err))
-		cliout.Muted("Install cloudflared or set TRIM_CLOUDFLARED, then: trim cursor-link status")
+		cliout.Muted("Trim auto-downloads cloudflared to ~/.trim/bin when missing (all OS). Optional brew/winget only if installed. Or set TRIM_CLOUDFLARED, then: trim cursor-link status")
 		return
 	}
 	if strings.TrimSpace(url) == "" {

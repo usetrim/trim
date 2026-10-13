@@ -647,7 +647,7 @@ npm uninstall -g @usetrim/trim`,
       {
         type: "ol",
         items: [
-          "IDE or agent POSTs to the Trim Base URL from trim start (example http://127.0.0.1:8888/v1/chat/completions or /v1/messages)",
+          "On-device IDE or Claude Code POSTs to the local Trim URL from trim start (example http://127.0.0.1:8888/v1/chat/completions or /v1/messages). Cursor Agent POSTs to trim cursor-link url (HTTPS …/cl/<token>/v1)",
           "Trim captures workspace context and classifies vendor vs product signal",
           "Fast Mode drops vendor dumps, lockfiles, and log spam; keeps active files and stacks",
           "If the OpenAI-door model matches an enabled provider_adapters prefix, Trim applies that dialect (anthropic_messages translate, or openai_compat host route via upstream_base_url), then calls that upstream",
@@ -692,7 +692,7 @@ npm uninstall -g @usetrim/trim`,
           [
             "Cursor / VS Code",
             "Trim IDE extension and/or trim autostart start the proxy when the editor opens",
-            "IDE Base URL + model (see Quickstart path 4A/4C/4D)",
+            "Correct Base URL for your tool + model (Cursor Agent: Cursor Link; others: Quickstart 4A/4C/4D)",
           ],
           [
             "Claude Code only",
@@ -742,7 +742,7 @@ npm uninstall -g @usetrim/trim`,
         items: [
           "Install the CLI (and optionally the Trim IDE extension)",
           "Sign in when you need quotas and the dashboard",
-          "Point the IDE Base URL at the URL trim start printed (example http://127.0.0.1:8888/v1)",
+          "Point on-device IDEs at the Local Base URL trim start printed (example http://127.0.0.1:8888/v1). Cursor Agent: trim cursor-link url (HTTPS …/v1; not 127.0.0.1)",
           "Leave Start Trim with your IDE checked (or run trim autostart enable)",
           "Open the IDE - Trim should already be trimming (Fast; Deep if Preferences Deep is on)",
           "Optional: trim compress / Deep when you want file or batch compression",
@@ -1797,7 +1797,7 @@ trim stop`,
       {
         type: "ul",
         items: [
-          "Fresh start: green ● Trim proxy running…, cyan/accent IDE Base URL + green Dashboard table rows, gray muted IDE tip (process stays in the foreground)",
+          "Fresh start: green ● Trim proxy running…, cyan/accent Local Base URL + green Dashboard table rows, gray muted on-device tip + Cursor Agent Cursor Link tip (process stays in the foreground)",
           "Already running (after autostart / another IDE): same Success + Table + Muted design as status/autostart, then exit 0 - never a blank prompt",
         ],
       },
@@ -1805,9 +1805,11 @@ trim stop`,
         type: "code",
         language: "text",
         code: `● Trim is already running on http://127.0.0.1:8888
-  IDE Base URL  http://127.0.0.1:8888/v1
-  Dashboard     http://127.0.0.1:8888/dashboard
-  Attached to the existing local proxy - no second process started.`,
+  Local Base URL  http://127.0.0.1:8888/v1
+  Dashboard       http://127.0.0.1:8888/dashboard
+Attached to the existing local proxy - no second process started.
+On-device: Continue / VS Code Chat / Claude Code use 127.0.0.1 as documented.
+Cursor Agent: trim cursor-link enable → trim cursor-link url (HTTPS …/v1; not 127.0.0.1).`,
       },
       { type: "h2", id: "behavior", text: "Behavior" },
       {
@@ -1911,33 +1913,63 @@ trim cursor-link disable`,
       {
         type: "h2",
         id: "cloudflared",
-        text: "cloudflared requirement",
+        text: "cloudflared helper",
       },
       {
         type: "p",
-        text: "Where: your PATH, TRIM_CLOUDFLARED, or ~/.trim/bin. What: Cloudflare’s cloudflared binary. How: Trim launches it for you. On Windows/Linux Trim can auto-download into ~/.trim/bin on first enable/start; on macOS prefer brew install cloudflared. Why: users should never DIY Cloudflare ingress for everyday Cursor Agent use.",
+        text: "Where: PATH, TRIM_CLOUDFLARED, or ~/.trim/bin. What: Cloudflare’s cloudflared binary. How: Trim launches it for you. Preferred: run trim cursor-link enable && trim start and let Trim auto-download into ~/.trim/bin (Windows, macOS, Linux). winget is optional and often missing on Windows. Why: users should never DIY Cloudflare ingress for everyday Cursor Agent use.",
       },
       {
         type: "code",
         language: "powershell",
-        code: `# Windows - Copy this
-winget install --id Cloudflare.cloudflared
-cloudflared --version`,
+        code: `# Windows - recommended (no winget required) - Copy this
+trim cursor-link enable
+trim start
+# Trim downloads cloudflared into %USERPROFILE%\\.trim\\bin when missing
+
+# Manual fallback (amd64, no winget) - Copy this
+$dir = Join-Path $HOME ".trim\\bin"
+New-Item -ItemType Directory -Force -Path $dir | Out-Null
+$dest = Join-Path $dir "cloudflared.exe"
+Invoke-WebRequest -Uri "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe" -OutFile $dest
+& $dest --version
+# Optional: $env:TRIM_CLOUDFLARED = $dest
+# Windows on ARM: same amd64 .exe (runs under emulation; Cloudflare has no native arm64 Windows build)
+# Only if winget exists: winget install --id Cloudflare.cloudflared`,
       },
       {
         type: "code",
         language: "bash",
-        code: `# macOS - Copy this
-brew install cloudflared
-cloudflared --version`,
+        code: `# macOS - recommended (no Homebrew required) - Copy this
+trim cursor-link enable && trim start
+# Trim downloads cloudflared into ~/.trim/bin when missing
+
+# Manual fallback without brew (Apple Silicon) - Copy this
+mkdir -p ~/.trim/bin
+curl -fsSL -o /tmp/cloudflared.tgz \\
+  https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-darwin-arm64.tgz
+tar -xzf /tmp/cloudflared.tgz -C ~/.trim/bin
+chmod +x ~/.trim/bin/cloudflared
+~/.trim/bin/cloudflared --version
+# Intel Mac: use cloudflared-darwin-amd64.tgz
+# Only if Homebrew exists: brew install cloudflared
+# Or: export TRIM_CLOUDFLARED=/opt/homebrew/bin/cloudflared`,
       },
       {
         type: "code",
         language: "bash",
-        code: `# Linux - install per Cloudflare docs, then:
-cloudflared --version
-# Optional override:
-# export TRIM_CLOUDFLARED=/usr/local/bin/cloudflared`,
+        code: `# Linux - recommended (auto-download) - Copy this
+trim cursor-link enable && trim start
+# Trim downloads cloudflared into ~/.trim/bin when missing
+
+# Manual fallback (amd64) - Copy this
+mkdir -p ~/.trim/bin
+curl -fsSL -o ~/.trim/bin/cloudflared \\
+  https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
+chmod +x ~/.trim/bin/cloudflared
+~/.trim/bin/cloudflared --version
+# arm64: use cloudflared-linux-arm64
+# Or: export TRIM_CLOUDFLARED=/usr/local/bin/cloudflared`,
       },
       {
         type: "h2",
@@ -2456,9 +2488,14 @@ export TRIM_HISTORY_KEEP_TURNS=8
             "Terminal env - full guide: Claude Code (CLI only)",
           ],
           [
-            "Cursor / Continue / Windsurf / Zed / JetBrains",
+            "Cursor Agent",
+            "trim cursor-link url (https://…/cl/<token>/v1)",
+            "Settings → Models → Override OpenAI Base URL (not 127.0.0.1)",
+          ],
+          [
+            "Continue / Windsurf / Zed / JetBrains / Aider",
             "http://127.0.0.1:8888/v1",
-            "That product’s OpenAI Base URL setting",
+            "That product’s OpenAI Base URL / apiBase setting",
           ],
           [
             "VS Code Chat Custom Endpoint",
@@ -2478,7 +2515,7 @@ export TRIM_HISTORY_KEEP_TURNS=8
           "Install and sign in: trim version → trim login (see Quickstart / Installation)",
           "Keep Trim ready: Dashboard → Preferences → Start Trim with your IDE, then trim autostart enable (or trim start)",
           "Sync adapters + aliases: trim config sync",
-          "Copy the Base URL and a model id from the blocks below",
+          "Pick the correct address: Cursor Agent = trim cursor-link url; on-device IDEs = local …/v1 from the blocks below",
           "Open your editor’s exact settings place (table below) and paste Base URL + model + matching provider key",
           "Send a short chat and confirm http://127.0.0.1:8888/dashboard Requests increase",
           "Plans / prices anytime: https://use-trim.com/dashboard → Billing",
@@ -2492,7 +2529,10 @@ export TRIM_HISTORY_KEEP_TURNS=8
       {
         type: "code",
         language: "text",
-        code: `OpenAI door (Cursor, Continue, Windsurf, Zed, JetBrains, Aider, most SDKs)
+        code: `Cursor Agent (REQUIRED) - run: trim cursor-link url
+https://….trycloudflare.com/cl/<token>/v1
+
+OpenAI door on-device (Continue, Windsurf, Zed, JetBrains, Aider)
 http://127.0.0.1:8888/v1
 
 VS Code Chat Custom Endpoint (full path)
@@ -3066,32 +3106,60 @@ Reply → local Trim → tunnel → Cursor`,
       {
         type: "h3",
         id: "step0-cloudflared",
-        text: "Step 0 - Install cloudflared once (required helper)",
+        text: "Step 0 - cloudflared helper (usually automatic)",
       },
       {
         type: "p",
-        text: "Where: Terminal (optional). What: Cloudflare’s cloudflared helper. Why: Trim Cursor Link uses it under the hood. How: On Windows/Linux Trim can auto-download cloudflared into ~/.trim/bin on first enable/start. On macOS prefer Homebrew. You can also install yourself or set TRIM_CLOUDFLARED.",
+        text: "Where: Terminal (usually skip). What: Cloudflare’s cloudflared helper. Why: Trim Cursor Link uses it under the hood. How: Preferred path is skip this step and go to Step 1; Trim auto-downloads cloudflared into ~/.trim/bin on first enable/start (Windows, macOS, Linux). winget is not required and is often missing on Windows. Optional manual installs below if auto-download is blocked.",
       },
       {
         type: "code",
         language: "powershell",
-        code: `# Windows (optional manual) - Copy this
-winget install --id Cloudflare.cloudflared
-cloudflared --version
-# Or let Trim auto-download on: trim cursor-link enable && trim start`,
+        code: `# Windows - preferred (no winget) - Copy this
+# Skip to Step 1: trim cursor-link enable && trim start
+# Trim downloads into %USERPROFILE%\\.trim\\bin when missing
+
+# Manual fallback if auto-download is blocked (amd64) - Copy this
+$dir = Join-Path $HOME ".trim\\bin"
+New-Item -ItemType Directory -Force -Path $dir | Out-Null
+$dest = Join-Path $dir "cloudflared.exe"
+Invoke-WebRequest -Uri "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe" -OutFile $dest
+& $dest --version
+# Optional: $env:TRIM_CLOUDFLARED = $dest
+# Windows on ARM: same amd64 .exe (emulation; no native arm64 Windows build from Cloudflare)
+# Only if winget exists: winget install --id Cloudflare.cloudflared`,
       },
       {
         type: "code",
         language: "bash",
-        code: `# macOS (recommended) - Copy this
-brew install cloudflared
-cloudflared --version`,
+        code: `# macOS - preferred (no Homebrew required) - Copy this
+# Skip to Step 1: trim cursor-link enable && trim start
+# Trim downloads into ~/.trim/bin when missing
+
+# Manual fallback without brew (Apple Silicon) - Copy this
+mkdir -p ~/.trim/bin
+curl -fsSL -o /tmp/cloudflared.tgz \\
+  https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-darwin-arm64.tgz
+tar -xzf /tmp/cloudflared.tgz -C ~/.trim/bin
+chmod +x ~/.trim/bin/cloudflared
+~/.trim/bin/cloudflared --version
+# Intel Mac: cloudflared-darwin-amd64.tgz
+# Only if Homebrew exists: brew install cloudflared`,
       },
       {
         type: "code",
         language: "bash",
-        code: `# Linux - optional manual; Trim can auto-download on enable/start
-cloudflared --version
+        code: `# Linux - preferred - Copy this
+# Skip to Step 1: trim cursor-link enable && trim start
+# Trim downloads into ~/.trim/bin when missing
+
+# Manual fallback (amd64) - Copy this
+mkdir -p ~/.trim/bin
+curl -fsSL -o ~/.trim/bin/cloudflared \\
+  https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
+chmod +x ~/.trim/bin/cloudflared
+~/.trim/bin/cloudflared --version
+# arm64: cloudflared-linux-arm64
 # Or: export TRIM_CLOUDFLARED=/usr/local/bin/cloudflared`,
       },
       {
@@ -3254,7 +3322,7 @@ trim stop`,
           [
             "No public URL",
             "cloudflared missing or Trim down",
-            "Install cloudflared; trim start; trim cursor-link status",
+            "trim start (auto-downloads cloudflared); or set TRIM_CLOUDFLARED; then trim cursor-link status",
           ],
           [
             "URL changed after restart",
@@ -3935,7 +4003,7 @@ gpt-4o-mini`,
       {
         type: "callout",
         title: "Two paths users must not confuse",
-        text: "Chat → local :8888 proxy (Cursor Override / Continue apiBase / VS Code Custom Endpoint / Claude Code ANTHROPIC_BASE_URL) = compression + routing + token savings. Extension → Trim Cloud API (apiUrl + Trim API key) = keep proxy ready + acceptance / LOC charts. Install the extension but never override Base URL → auto-start + metrics only, not full product savings.",
+        text: "Chat → Trim (Continue apiBase / VS Code Custom Endpoint / Claude Code ANTHROPIC_BASE_URL on local :8888, or Cursor Agent via trim cursor-link url HTTPS) = compression + routing + token savings. Extension → Trim Cloud API (apiUrl + Trim API key) = keep proxy ready + acceptance / LOC charts. Install the extension but never point chat at Trim → auto-start + metrics only, not full product savings.",
       },
       {
         type: "note",
@@ -5739,7 +5807,7 @@ Optional build features: follow README flags for native parsers`,
         items: [
           "This is Cursor blocking 127.0.0.1 from its cloud Agent path - not a Trim crash",
           "Enable Cursor Link: trim cursor-link enable",
-          "Install cloudflared once if needed (see Cursor setup / Trim Cursor Link)",
+          "cloudflared: Trim auto-downloads on enable/start; see Cursor setup / Trim Cursor Link if blocked",
           "trim start → trim cursor-link url → paste https://…/v1 into Override OpenAI Base URL",
           "Keep using localhost only for Claude Code CLI and other on-device clients",
         ],
@@ -5885,7 +5953,7 @@ Optional build features: follow README flags for native parsers`,
       },
       {
         type: "p",
-        text: "Cursor Agent’s cloud cannot call http://127.0.0.1:8888/v1. Enable Trim Cursor Link: install cloudflared once → trim cursor-link enable → trim start → paste trim cursor-link url (https://…/cl/<token>/v1) into Cursor Override OpenAI Base URL. Compression still runs on your PC. Full guides: Cursor setup and Trim Cursor Link. Do not keep localhost in Override for Agent.",
+        text: "Cursor Agent’s cloud cannot call http://127.0.0.1:8888/v1. Enable Trim Cursor Link: trim cursor-link enable → trim start (Trim auto-downloads cloudflared when missing) → paste trim cursor-link url (https://…/cl/<token>/v1) into Cursor Override OpenAI Base URL. Compression still runs on your PC. Full guides: Cursor setup and Trim Cursor Link. Do not keep localhost in Override for Agent.",
       },
       {
         type: "h2",

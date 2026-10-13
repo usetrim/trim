@@ -64,11 +64,12 @@ export default function HomePage() {
 
         <section id="install" className="px-5 py-16 sm:px-8 xl:px-12">
           <h2 className="font-display text-xl font-semibold tracking-tight text-[var(--trim-fg)] sm:text-2xl">
-            Install once. Wire Cursor or VS Code. Keep coding.
+            Install once. Wire your tool. Keep coding.
           </h2>
           <p className="mt-2 max-w-xl text-sm text-[var(--trim-muted)]">
-            Live CLI and IDE setup. Install → local proxy → Base URL in Cursor or VS Code → savings
-            meter. Optional Trim IDE extension for telemetry in both editors.
+            Live CLI and IDE setup. Install → local proxy → Cursor Agent uses Trim Cursor Link
+            (HTTPS); Continue / VS Code use local …/v1 → savings meter. Optional Trim IDE extension
+            for telemetry in both editors.
           </p>
           <div className="mt-8 grid gap-4 xl:grid-cols-2">
             <div>

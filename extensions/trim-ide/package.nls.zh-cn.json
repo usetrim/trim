@@ -25,5 +25,5 @@
   "trim.walkthrough.apiKey.title": "保存 Trim API 密钥",
   "trim.walkthrough.apiKey.description": "在 Dashboard → Settings → API keys 创建 **Trim** 密钥（不是 OpenAI/Anthropic/Google）。然后 **Trim: Set API Key**（Secret Storage）。\n\n[设置 API 密钥](command:trim.setApiKey)\n\n隐私：[https://use-trim.com/privacy](https://use-trim.com/privacy)",
   "trim.walkthrough.baseUrl.title": "将聊天指向本地代理",
-  "trim.walkthrough.baseUrl.description": "本扩展不是压缩器。请将 Cursor / Continue / VS Code Chat 指向 Trim ``…/v1``。\n\n[Connect any IDE](https://use-trim.com/docs/ide/connect)"
+  "trim.walkthrough.baseUrl.description": "本扩展不是压缩器。\n\n**Cursor Agent：** ``trim cursor-link url``（HTTPS ``…/v1``，不要用 ``127.0.0.1``）。\n\n**Continue / VS Code：** 本地 Trim ``…/v1``。\n\n[Trim Cursor Link](https://use-trim.com/docs/cli/cursor-link) · [Connect any IDE](https://use-trim.com/docs/ide/connect)"
 }

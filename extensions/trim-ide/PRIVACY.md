@@ -26,7 +26,7 @@ Only when **both** are set:
 | Optional AI LOC estimates (lines added/deleted) | Dashboard LOC charts when you enable document-edit tracking |
 | Preference / quota reads | Honor Always-on preference; show upgrade when quota is exhausted |
 
-**Not uploaded by this extension:** your source files, repo contents, chat prompts, or Composer transcripts. Prompt compression happens on the **local** proxy when you point the IDE Base URL at Trim; that path is separate from this extension’s telemetry flush.
+**Not uploaded by this extension:** your source files, repo contents, chat prompts, or Composer transcripts. Prompt compression happens on your machine when chat is pointed at Trim (local proxy for on-device clients, or Trim Cursor Link for Cursor Agent); that path is separate from this extension’s telemetry flush.
 
 ## Local-only data
 

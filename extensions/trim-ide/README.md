@@ -4,7 +4,7 @@
 
 **Trim IDE** helps your editor work with [Trim](https://use-trim.com): it can keep the local **Fast Mode** proxy ready when Always-on is enabled, and it sends tab acceptance / optional AI LOC metrics to Trim Cloud so your dashboard charts stay accurate.
 
-This extension is **not** the compressor. Token savings happen when Cursor, Continue, VS Code Chat, or Claude Code send traffic to the **local Trim proxy** (typically `http://127.0.0.1:8888/v1`). That path is separate from this extension’s cloud metrics.
+This extension is **not** the compressor. Token savings happen when your chat tool sends traffic through Trim. **Continue / VS Code Chat / Claude Code** use the **local** proxy (typically `http://127.0.0.1:8888/v1`, or Claude Code origin without `/v1`). **Cursor Agent** must use **Trim Cursor Link** (`trim cursor-link url` → HTTPS `…/cl/<token>/v1`), not `127.0.0.1` (Cursor cloud blocks private networks). That chat path is separate from this extension’s cloud metrics.
 
 | | |
 | --- | --- |
@@ -54,7 +54,7 @@ Also install the **`trim` CLI** on the machine and keep it on `PATH` ([installat
 | 4 | Same key → Register device | Paste the ID → agent **IDE** (not a CLI / `trim login` fingerprint) |
 | 5 | Editor | **Trim: Set API Key** → paste the Trim key |
 | 6 | Editor settings | `trim.apiUrl` = `https://api.use-trim.com` |
-| 7 | Cursor / Continue / etc. | Point Base URL at `http://127.0.0.1:8888/v1` (or the listen URL printed by `trim start`) and pick a Trim model id such as `trim-claude-sonnet` |
+| 7 | Chat Base URL | **Cursor Agent:** `trim cursor-link enable` → `trim start` → paste `trim cursor-link url` (HTTPS `…/v1`, not `127.0.0.1`). **Continue / VS Code / etc.:** local `http://127.0.0.1:8888/v1` from `trim start`. Pick a Trim model id such as `trim-claude-sonnet`. |
 
 **Quick model:** Always-on = auto-start preference · Trim API key = Trim Cloud login · Hardware ID = this editor install may use that key.
 
@@ -117,7 +117,7 @@ Example when enabling LOC estimates:
 
 - Cursor does not expose every ghost-text show/accept event; counts use explicit commands plus optional edit heuristics
 - VS Code Chat Agent + Custom Endpoint is not a guaranteed Trim path; prefer Continue for agent-style edits
-- Full chat token savings require pointing the IDE Base URL at the local Trim proxy
+- Full chat token savings require pointing chat at Trim (Cursor Agent: Cursor Link HTTPS; Continue / VS Code / Claude Code: local proxy as documented)
 - You need the `trim` CLI on `PATH` for Always-on proxy auto-start
 
 ## Uninstall

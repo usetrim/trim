@@ -32,23 +32,45 @@ func findCloudflared() (string, error) {
 		return p, nil
 	}
 	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", fmt.Errorf("cloudflared not found on PATH (install Cloudflare cloudflared, or set TRIM_CLOUDFLARED)")
-	}
 	name := "cloudflared"
 	if runtime.GOOS == "windows" {
 		name = "cloudflared.exe"
 	}
-	candidates := []string{
-		filepath.Join(home, ".trim", "bin", name),
-		filepath.Join(home, ".trim", name),
+	var candidates []string
+	if err == nil {
+		candidates = append(candidates,
+			filepath.Join(home, ".trim", "bin", name),
+			filepath.Join(home, ".trim", name),
+		)
+	}
+	// Official Windows installer paths (often not on PATH for the same shell).
+	if runtime.GOOS == "windows" {
+		if pf86 := strings.TrimSpace(os.Getenv("ProgramFiles(x86)")); pf86 != "" {
+			candidates = append(candidates, filepath.Join(pf86, "cloudflared", "cloudflared.exe"))
+		}
+		if pf := strings.TrimSpace(os.Getenv("ProgramFiles")); pf != "" {
+			candidates = append(candidates, filepath.Join(pf, "cloudflared", "cloudflared.exe"))
+		}
+		if local := strings.TrimSpace(os.Getenv("LOCALAPPDATA")); local != "" {
+			candidates = append(candidates, filepath.Join(local, "cloudflared", "cloudflared.exe"))
+		}
+	}
+	// Homebrew defaults when PATH is minimal (CI / non-interactive shells).
+	if runtime.GOOS == "darwin" {
+		candidates = append(candidates,
+			"/opt/homebrew/bin/cloudflared",
+			"/usr/local/bin/cloudflared",
+		)
 	}
 	for _, c := range candidates {
+		if strings.TrimSpace(c) == "" {
+			continue
+		}
 		if st, err := os.Stat(c); err == nil && !st.IsDir() {
 			return c, nil
 		}
 	}
-	return "", fmt.Errorf("cloudflared not found on PATH (install from https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/ or set TRIM_CLOUDFLARED)")
+	return "", fmt.Errorf("cloudflared not found (Trim can auto-download on Windows/macOS/Linux, or install from %s, or set TRIM_CLOUDFLARED)", cloudflaredDownloadsDocs)
 }
 
 func parseTryCloudflareURL(line string) string {
