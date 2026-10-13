@@ -38,8 +38,14 @@ func TestCloudflaredDownloadURLSupported(t *testing.T) {
 			t.Fatalf("darwin asset should be .tgz: %s", url)
 		}
 	case "linux":
-		if strings.Contains(url, ".") {
+		// Linux release assets are extensionless binaries (…/cloudflared-linux-amd64).
+		// Do not scan the full URL for "." - github.com always contains dots.
+		base := filepath.Base(url)
+		if !strings.HasPrefix(base, "cloudflared-linux-") {
 			t.Fatalf("linux asset unexpected: %s", url)
+		}
+		if strings.Contains(base, ".") {
+			t.Fatalf("linux asset should have no file extension: %s", url)
 		}
 	}
 }
