@@ -423,6 +423,15 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 			StatusChecking                     string `json:"status_checking"`
 			StatusHTTPErrorFmt                 string `json:"status_http_error_fmt"`
 			StartBaseURLLabel                  string `json:"start_base_url_label"`
+			StartCursorAgentLabel              string `json:"start_cursor_agent_label"`
+			StartCursorAgentHintOff            string `json:"start_cursor_agent_hint_off"`
+			StartCursorAgentTipOn              string `json:"start_cursor_agent_tip_on"`
+			StartCursorAgentLocalTip           string `json:"start_cursor_agent_local_tip"`
+			StartCursorAgentCloudflaredTip     string `json:"start_cursor_agent_cloudflared_tip"`
+			SetupCursorAgentHeader             string `json:"setup_cursor_agent_header"`
+			SetupCursorAgentBlock              string `json:"setup_cursor_agent_block"`
+			SetupStepCursorLink                string `json:"setup_step_cursor_link"`
+			SetupCursorSkipped                 string `json:"setup_cursor_skipped"`
 			LoginURLLabel                      string `json:"login_url_label"`
 			LoginPhraseOr                      string `json:"login_phrase_or"`
 			LoginPhraseComma                   string `json:"login_phrase_comma"`
@@ -762,6 +771,15 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 		StatusChecking:                     body.CLI.StatusChecking,
 		StatusHTTPErrorFmt:                 body.CLI.StatusHTTPErrorFmt,
 		StartBaseURLLabel:                  body.CLI.StartBaseURLLabel,
+		StartCursorAgentLabel:              body.CLI.StartCursorAgentLabel,
+		StartCursorAgentHintOff:            body.CLI.StartCursorAgentHintOff,
+		StartCursorAgentTipOn:              body.CLI.StartCursorAgentTipOn,
+		StartCursorAgentLocalTip:           body.CLI.StartCursorAgentLocalTip,
+		StartCursorAgentCloudflaredTip:     body.CLI.StartCursorAgentCloudflaredTip,
+		SetupCursorAgentHeader:             body.CLI.SetupCursorAgentHeader,
+		SetupCursorAgentBlock:              body.CLI.SetupCursorAgentBlock,
+		SetupStepCursorLink:                body.CLI.SetupStepCursorLink,
+		SetupCursorSkipped:                 body.CLI.SetupCursorSkipped,
 		LoginURLLabel:                      body.CLI.LoginURLLabel,
 		LoginPhraseOr:                      body.CLI.LoginPhraseOr,
 		LoginPhraseComma:                   body.CLI.LoginPhraseComma,
@@ -1136,6 +1154,15 @@ type cliChrome struct {
 	StatusChecking                     string
 	StatusHTTPErrorFmt                 string
 	StartBaseURLLabel                  string
+	StartCursorAgentLabel              string
+	StartCursorAgentHintOff            string
+	StartCursorAgentTipOn              string
+	StartCursorAgentLocalTip           string
+	StartCursorAgentCloudflaredTip     string
+	SetupCursorAgentHeader             string
+	SetupCursorAgentBlock              string
+	SetupStepCursorLink                string
+	SetupCursorSkipped                 string
 	LoginURLLabel                      string
 	LoginPhraseOr                      string
 	LoginPhraseComma                   string

@@ -15,21 +15,22 @@ const STEPS: Step[] = [
   {
     id: "settings",
     label: "Settings",
-    eyebrow: "Cursor / VS Code → Models",
+    eyebrow: "Cursor Agent → Models",
     body: (
       <div className="space-y-3 font-mono text-[12px] leading-relaxed">
-        <p className="text-[var(--trim-subtle)]">Open Cursor or VS Code settings</p>
+        <p className="text-[var(--trim-subtle)]">Open Cursor Settings → Models</p>
         <ul className="space-y-1.5 text-[var(--trim-muted)]">
           <li className="text-[var(--trim-subtle)]">├─ General</li>
           <li className="text-[var(--trim-fg)]">
-            ├─ Models / provider <span className="text-[var(--trim-subtle)]">← open this</span>
+            ├─ Models / Override OpenAI{" "}
+            <span className="text-[var(--trim-subtle)]">← open this</span>
           </li>
           <li className="text-[var(--trim-subtle)]">├─ Features</li>
           <li className="text-[var(--trim-subtle)]">└─ …</li>
         </ul>
         <p className="pt-2 text-[11px] text-[var(--trim-subtle)]">
-          Trim is an OpenAI-compatible endpoint. Cursor and VS Code talk to it like any other base
-          URL.
+          Cursor Agent runs in Cursor cloud. Paste Trim Cursor Link (HTTPS), not 127.0.0.1. Continue
+          / VS Code still use local …/v1 from trim start.
         </p>
       </div>
     ),
@@ -37,7 +38,7 @@ const STEPS: Step[] = [
   {
     id: "override",
     label: "Base URL",
-    eyebrow: "Override Base URL",
+    eyebrow: "Cursor Agent Override",
     body: (
       <div className="space-y-4 font-mono text-[12px]">
         <div className="rounded-md border border-[var(--trim-border)] bg-[var(--trim-panel-2)] px-3 py-2.5">
@@ -48,12 +49,15 @@ const STEPS: Step[] = [
         </div>
         <div className="rounded-md border border-[var(--trim-border)] bg-[var(--trim-panel-2)] px-3 py-2.5">
           <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--trim-subtle)]">
-            Override Base URL
+            Override OpenAI Base URL
           </p>
-          <p className="mt-1 text-[var(--trim-fg)]">http://127.0.0.1:8888/v1</p>
+          <p className="mt-1 break-all text-[var(--trim-fg)]">
+            https://….trycloudflare.com/cl/&lt;token&gt;/v1
+          </p>
         </div>
         <p className="text-[11px] leading-relaxed text-[var(--trim-subtle)]">
-          Compress on your machine. Slim prompt → your model provider.
+          From: trim cursor-link enable → trim start → trim cursor-link url. Compression stays on
+          your PC.
         </p>
       </div>
     ),
@@ -61,7 +65,7 @@ const STEPS: Step[] = [
   {
     id: "chat",
     label: "Chat",
-    eyebrow: "Composer through Trim",
+    eyebrow: "Agent through Trim",
     body: (
       <div className="space-y-3 font-mono text-[12px] leading-relaxed">
         <div className="rounded-md border border-[var(--trim-border)] bg-[var(--trim-panel-2)] px-3 py-2.5">
@@ -70,12 +74,12 @@ const STEPS: Step[] = [
         </div>
         <ul className="space-y-1.5 text-[var(--trim-subtle)]">
           <li>
-            <span className="text-[var(--trim-subtle)]">1.</span> Composer →{" "}
-            <span className="text-[var(--trim-muted)]">127.0.0.1:8888</span>
+            <span className="text-[var(--trim-subtle)]">1.</span> Cursor Agent →{" "}
+            <span className="text-[var(--trim-muted)]">Cursor Link HTTPS …/v1</span>
           </li>
           <li>
-            <span className="text-[var(--trim-subtle)]">2.</span> Trim scans context · drops vendor
-            / logs
+            <span className="text-[var(--trim-subtle)]">2.</span> Trim on your PC scans context ·
+            drops vendor / logs
           </li>
           <li>
             <span className="text-[var(--trim-subtle)]">3.</span> Slim prompt → model · reply
@@ -169,7 +173,7 @@ export function LandingIdeDemo({ compact = false }: { compact?: boolean }) {
         </div>
         <div className="flex min-w-0 flex-1 justify-center">
           <span className="truncate font-mono text-[11px] text-[var(--trim-subtle)]">
-            Cursor / VS Code · wire Trim
+            Cursor Agent · Trim Cursor Link
           </span>
         </div>
         <span className="font-mono text-[10px] text-[var(--trim-subtle)]">
@@ -230,10 +234,10 @@ export function LandingIdeDemo({ compact = false }: { compact?: boolean }) {
     <section id="ide-demo" className="w-full px-5 py-16 sm:px-8 xl:px-12">
       <div className="max-w-2xl">
         <h2 className="font-display text-xl font-semibold tracking-tight text-[var(--trim-fg)] sm:text-2xl">
-          Point Cursor or VS Code at Trim in four clicks
+          Cursor Agent: paste Trim Cursor Link, not localhost
         </h2>
         <p className="mt-3 text-sm text-[var(--trim-muted)] sm:text-base">
-          Models → base URL → chat through the proxy → see tokens and USD drop.
+          Models → HTTPS Cursor Link URL → Agent through local Trim → see tokens and USD drop.
         </p>
       </div>
       <div className="mt-8 max-w-3xl">{panel}</div>

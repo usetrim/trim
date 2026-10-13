@@ -70,7 +70,6 @@ var startCmd = &cobra.Command{
 					return runAutostartAttachEnforcer(cfg, chrome, healthURL)
 				}
 				printStartReadyUI(chrome, startListenScheme(), listenPort, true)
-				maybeStartCursorLinkAfterProxy(listenPort)
 				return nil
 			}
 		}
@@ -219,26 +218,15 @@ var startCmd = &cobra.Command{
 		stop := make(chan os.Signal, 1)
 		signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 
+		certFile := strings.TrimSpace(os.Getenv("TRIM_TLS_CERT"))
+		keyFile := strings.TrimSpace(os.Getenv("TRIM_TLS_KEY"))
+		useTLS := certFile != "" && keyFile != ""
+		scheme := "http"
+		if useTLS {
+			scheme = "https"
+		}
+
 		go func() {
-			certFile := strings.TrimSpace(os.Getenv("TRIM_TLS_CERT"))
-			keyFile := strings.TrimSpace(os.Getenv("TRIM_TLS_KEY"))
-			useTLS := certFile != "" && keyFile != ""
-			scheme := "http"
-			if useTLS {
-				scheme = "https"
-			}
-			printStartReadyUI(chrome, scheme, listenPort, false)
-			if chrome.StartModeFmt != "" {
-				cliout.Muted(fmt.Sprintf(chrome.StartModeFmt, projectconfig.NormalizeMode(proj.Mode)))
-			}
-			if len(proj.NeverTrimPaths) > 0 || len(proj.IgnorePaths) > 0 {
-				if chrome.StartRulesFmt != "" {
-					cliout.Muted(fmt.Sprintf(chrome.StartRulesFmt,
-						len(proj.NeverTrimPaths), len(proj.IgnorePaths)))
-				}
-			}
-			// Cursor Link: public HTTPS door to this local proxy (if enabled).
-			go maybeStartCursorLinkAfterProxy(listenPort)
 			var listenErr error
 			if useTLS {
 				listenErr = httpServer.ListenAndServeTLS(certFile, keyFile)
@@ -269,6 +257,42 @@ var startCmd = &cobra.Command{
 			default:
 			}
 		}()
+
+		// Wait until /health is OK so banners (and Cursor Link) print after listen is real.
+		// Parent detached start also waits on health; sync Cursor Link before the shell returns.
+		if healthURL != "" {
+			to, err := requireChromeTimeout(chrome.ProxyHealthTimeoutMs, "CLI_PROXY_HEALTH_TIMEOUT_MS", chrome)
+			if err == nil && to > 0 {
+				waitFor := to * 6
+				if waitFor < 15*time.Second {
+					waitFor = 15 * time.Second
+				}
+				if waitFor > 30*time.Second {
+					waitFor = 30 * time.Second
+				}
+				deadline := time.Now().Add(waitFor)
+				probe := 400 * time.Millisecond
+				if to < probe {
+					probe = to
+				}
+				for time.Now().Before(deadline) {
+					if proxyHealthOK(healthURL, probe) {
+						break
+					}
+					time.Sleep(probe)
+				}
+			}
+		}
+		printStartReadyUI(chrome, scheme, listenPort, false)
+		if chrome.StartModeFmt != "" {
+			cliout.Muted(fmt.Sprintf(chrome.StartModeFmt, projectconfig.NormalizeMode(proj.Mode)))
+		}
+		if len(proj.NeverTrimPaths) > 0 || len(proj.IgnorePaths) > 0 {
+			if chrome.StartRulesFmt != "" {
+				cliout.Muted(fmt.Sprintf(chrome.StartRulesFmt,
+					len(proj.NeverTrimPaths), len(proj.IgnorePaths)))
+			}
+		}
 
 		// Daemon-run only: re-check pref while proxy is up (dashboard uncheck → stop).
 		// Manual `trim start` does not set TRIM_AUTOSTART_ENFORCER.
@@ -566,8 +590,9 @@ func startListenScheme() string {
 }
 
 // printStartReadyUI matches status / autostart / daemon coloring:
-// ● Success (green) → Table (cyan labels, accent/ok values) → Muted tip (gray).
+// ● Success (green) → Table (cyan labels, accent/ok values) → Muted tips (gray).
 // Worldwide users must never see a blank `trim start` when the proxy is already healthy.
+// Local Base URL is for on-device clients. Cursor Agent needs Trim Cursor Link (HTTPS), not 127.0.0.1.
 func printStartReadyUI(chrome cliChrome, scheme, port string, attached bool) {
 	scheme = strings.TrimSpace(scheme)
 	port = strings.TrimSpace(port)
@@ -587,7 +612,7 @@ func printStartReadyUI(chrome cliChrome, scheme, port string, attached bool) {
 		cliout.Success(fmt.Sprintf(chrome.StartRunningFmt, scheme, port))
 	}
 
-	rows := make([]cliout.Row, 0, 2)
+	rows := make([]cliout.Row, 0, 3)
 	if lab := strings.TrimSpace(chrome.StartBaseURLLabel); lab != "" {
 		rows = append(rows, cliout.Row{
 			Label: lab,
@@ -602,6 +627,26 @@ func printStartReadyUI(chrome cliChrome, scheme, port string, attached bool) {
 			Kind:  "ok",
 		})
 	}
+
+	cursorURL := ""
+	if st, err := loadCursorLinkState(); err == nil && st.Enabled {
+		url, err := ensureCursorLink(port)
+		if err != nil {
+			cliout.Warn(fmt.Sprintf("Cursor Link: %v", err))
+			if tip := strings.TrimSpace(chrome.StartCursorAgentCloudflaredTip); tip != "" {
+				cliout.Muted(tip)
+			}
+		} else {
+			cursorURL = strings.TrimSpace(url)
+		}
+	}
+	if cursorURL != "" {
+		lab := strings.TrimSpace(chrome.StartCursorAgentLabel)
+		if lab == "" {
+			lab = "Cursor Agent Base URL"
+		}
+		rows = append(rows, cliout.Row{Label: lab, Value: cursorURL, Kind: "accent"})
+	}
 	if len(rows) > 0 {
 		cliout.Table(rows)
 	}
@@ -610,7 +655,18 @@ func printStartReadyUI(chrome cliChrome, scheme, port string, attached bool) {
 		if tip := strings.TrimSpace(chrome.StartAttachedHint); tip != "" {
 			cliout.Muted(tip)
 		}
-	} else if chrome.StartPointIDEFmt != "" {
+	}
+	if chrome.StartPointIDEFmt != "" {
 		cliout.Muted(fmt.Sprintf(chrome.StartPointIDEFmt, scheme, port))
+	}
+	if cursorURL != "" {
+		if tip := strings.TrimSpace(chrome.StartCursorAgentTipOn); tip != "" {
+			cliout.Muted(tip)
+		}
+		if tip := strings.TrimSpace(chrome.StartCursorAgentLocalTip); tip != "" {
+			cliout.Muted(fmt.Sprintf(tip, port))
+		}
+	} else if tip := strings.TrimSpace(chrome.StartCursorAgentHintOff); tip != "" {
+		cliout.Muted(tip)
 	}
 }

@@ -23,7 +23,7 @@ export const CLI_SCRIPT_UNIX: CliScriptLine[] = [
   { kind: "blank" },
   { kind: "in", text: "trim start", delay: 420 },
   { kind: "out", text: "starting local OpenAI-compatible proxy", tone: "label" },
-  { kind: "out", text: "  listen     http://127.0.0.1:8888/v1", tone: "ok" },
+  { kind: "out", text: "  local      http://127.0.0.1:8888/v1", tone: "ok" },
   { kind: "out", text: "  mode       Fast Mode (skeleton + drop noise)", tone: "dim" },
   { kind: "out", text: "  deep       off (toggle: trim mode deep)", tone: "dim" },
   {
@@ -34,7 +34,7 @@ export const CLI_SCRIPT_UNIX: CliScriptLine[] = [
   { kind: "out", text: "  upstream   provider after compress", tone: "dim" },
   {
     kind: "out",
-    text: "✓ proxy live - set Cursor or VS Code Base URL to the listen URL",
+    text: "✓ proxy live - Continue / VS Code: local …/v1 · Cursor Agent: trim cursor-link url",
     tone: "ok",
   },
   { kind: "blank" },
@@ -75,7 +75,7 @@ export const CLI_SCRIPT_POWERSHELL: CliScriptLine[] = [
   { kind: "blank" },
   { kind: "in", text: "trim start", delay: 420 },
   { kind: "out", text: "starting local OpenAI-compatible proxy", tone: "label" },
-  { kind: "out", text: "  listen     http://127.0.0.1:8888/v1", tone: "ok" },
+  { kind: "out", text: "  local      http://127.0.0.1:8888/v1", tone: "ok" },
   { kind: "out", text: "  mode       Fast Mode (skeleton + drop noise)", tone: "dim" },
   { kind: "out", text: "  deep       off (toggle: trim mode deep)", tone: "dim" },
   {
@@ -86,7 +86,7 @@ export const CLI_SCRIPT_POWERSHELL: CliScriptLine[] = [
   { kind: "out", text: "  upstream   provider after compress", tone: "dim" },
   {
     kind: "out",
-    text: "✓ proxy live - set Cursor or VS Code Base URL to the listen URL",
+    text: "✓ proxy live - Continue / VS Code: local …/v1 · Cursor Agent: trim cursor-link url",
     tone: "ok",
   },
   { kind: "blank" },

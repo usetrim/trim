@@ -22,11 +22,13 @@ func TestPrintStartReadyUI_Attached(t *testing.T) {
 	for _, want := range []string{
 		"already running",
 		"127.0.0.1:8888",
-		"IDE Base URL",
+		"Local Base URL",
 		"/v1",
 		"Dashboard",
 		"/dashboard",
 		"Attached to the existing local proxy",
+		"Cursor Agent",
+		"cursor-link",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("missing %q in:\n%s", want, out)
@@ -51,9 +53,11 @@ func TestPrintStartReadyUI_FreshStart(t *testing.T) {
 	out := buf.String()
 	for _, want := range []string{
 		"Trim proxy running",
-		"IDE Base URL",
+		"Local Base URL",
 		"127.0.0.1:8888/v1",
-		"Point your IDE",
+		"On-device clients",
+		"Cursor Agent",
+		"cursor-link",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("missing %q in:\n%s", want, out)

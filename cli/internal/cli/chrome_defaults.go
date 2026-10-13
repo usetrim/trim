@@ -23,7 +23,6 @@ func applyHumanChromeFallbacks(ch *cliChrome) {
 	set(&ch.StatusRemainingFmt, "%d / %d")
 	set(&ch.StatusChecking, "Checking account…")
 	set(&ch.StatusHTTPErrorFmt, "Could not reach Trim Cloud (%s). Check your network and try again.")
-	set(&ch.StartBaseURLLabel, "IDE Base URL")
 	set(&ch.LoginURLLabel, "Sign-in URL")
 	set(&ch.StatusNotLoggedIn, "Not logged in. Run: trim login")
 	// Always refresh start banners so attach / cold-start never print a blank line worldwide.
@@ -33,9 +32,18 @@ func applyHumanChromeFallbacks(ch *cliChrome) {
 	ch.StartAttachedHint = "Attached to the existing local proxy - no second process started."
 	ch.StartDashboardLabel = "Dashboard"
 	ch.StartDashboardFmt = "Local dashboard: %s://127.0.0.1:%s/dashboard"
-	ch.StartPointIDEFmt = "Point your IDE Base URL at %s://127.0.0.1:%s/v1 (Cursor Override / Continue apiBase). VS Code Chat Custom Endpoint needs …/v1/chat/completions - see docs."
-	ch.StartBaseURLLabel = "IDE Base URL"
-	ch.HelpStartLong = "Starts the local proxy for IDE traffic, then returns your shell (proxy keeps running in the background). Stop with: trim stop. Use --foreground to keep this terminal attached (Ctrl+C stops).\n\nFast Mode always runs. When account preferences set Deep Mode on, each request also runs Deep (LLMLingua) after Fast before forwarding upstream.\n\nAfter traffic flows, check savings with:\n  trim stats\n  http://127.0.0.1:<port>/dashboard → Show savings detail"
+	ch.StartBaseURLLabel = "Local Base URL"
+	ch.StartPointIDEFmt = "On-device clients: Continue apiBase / VS Code Chat Custom Endpoint / Claude Code origin use %s://127.0.0.1:%s (Continue and most SDKs need …/v1; VS Code Chat needs …/v1/chat/completions; Claude Code needs origin only, no /v1)."
+	ch.StartCursorAgentLabel = "Cursor Agent Base URL"
+	ch.StartCursorAgentHintOff = "Cursor Agent: do not paste 127.0.0.1 (private networks forbidden). Run: trim cursor-link enable → trim cursor-link url → paste HTTPS …/v1 into Cursor Override OpenAI Base URL. Docs: https://use-trim.com/docs/cli/cursor-link"
+	ch.StartCursorAgentTipOn = "Cursor Agent: paste Cursor Agent Base URL into Override OpenAI Base URL (HTTPS …/v1, not 127.0.0.1)."
+	ch.StartCursorAgentLocalTip = "Local tools / Claude Code: keep using http://127.0.0.1:%s as documented."
+	ch.StartCursorAgentCloudflaredTip = "Trim auto-downloads cloudflared to ~/.trim/bin when missing (all OS). Optional: brew/winget only if installed. Or set TRIM_CLOUDFLARED, then: trim cursor-link status"
+	ch.SetupCursorAgentHeader = "Cursor Agent (cloud) - use Trim Cursor Link, not localhost:"
+	ch.SetupCursorAgentBlock = "  trim cursor-link enable\n  trim start\n  trim cursor-link url\n  # paste HTTPS …/cl/<token>/v1 into Cursor → Settings → Models → Override OpenAI Base URL\n  # do not paste http://127.0.0.1:…/v1 for Cursor Agent\n  Docs: https://use-trim.com/docs/cli/cursor-link"
+	ch.SetupStepCursorLink = "Cursor Agent: trim cursor-link enable && trim start && trim cursor-link url (paste HTTPS …/v1; not 127.0.0.1)"
+	ch.SetupCursorSkipped = "Cursor settings.json: skipped writing localhost Base URL (Cursor Agent needs Trim Cursor Link). Continue / VS Code / Windsurf / Zed still use local …/v1 when present."
+	ch.HelpStartLong = "Starts the local proxy for IDE traffic, then returns your shell (proxy keeps running in the background). Stop with: trim stop. Use --foreground to keep this terminal attached (Ctrl+C stops).\n\nFast Mode always runs. When account preferences set Deep Mode on, each request also runs Deep (LLMLingua) after Fast before forwarding upstream.\n\nLocal Base URL (127.0.0.1) is for on-device clients (Continue, VS Code Chat, Claude Code). Cursor Agent needs Trim Cursor Link: trim cursor-link enable → trim cursor-link url (HTTPS …/v1; not 127.0.0.1).\n\nAfter traffic flows, check savings with:\n  trim stats\n  http://127.0.0.1:<port>/dashboard → Show savings detail"
 
 	// Always refresh Windows / OS-hook copy: HKCU Run → stable LocalAppData binary
 	// (never node_modules). Ensures worldwide CLIs show correct guidance before API catch-up.
