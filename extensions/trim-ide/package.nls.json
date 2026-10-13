@@ -2,6 +2,7 @@
   "trim.command.setApiKey.title": "Trim: Set API Key",
   "trim.command.clearApiKey.title": "Trim: Clear API Key",
   "trim.command.copyHardwareId.title": "Trim: Copy Hardware ID",
+  "trim.command.copyCursorAgentBaseUrl.title": "Trim: Copy Cursor Agent Base URL",
   "trim.command.markTabShown.title": "Trim: Mark Tab Suggestion Shown",
   "trim.command.markTabAccepted.title": "Trim: Mark Tab Suggestion Accepted",
   "trim.command.flushTelemetry.title": "Trim: Flush Telemetry Now",
@@ -15,7 +16,7 @@
   "trim.config.autoStartWithIde": "Local override for starting Trim proxy when this IDE opens: follow (cloud preference), on, or off. Does not start Deep/compress.",
   "trim.config.workspaceId": "Optional Trim workspace UUID. When set, cloud API calls send X-Workspace-Id so shared workspace credits apply (leave empty for personal quota).",
   "trim.walkthrough.title": "Get started with Trim IDE",
-  "trim.walkthrough.description": "Connect this editor to Trim Cloud, register this IDE device, and keep the local Fast Mode proxy ready.",
+  "trim.walkthrough.description": "Connect this editor to Trim Cloud, register this IDE device, keep the local Fast Mode proxy ready, and point Cursor Agent or local chat clients at Trim.",
   "trim.walkthrough.installCli.title": "Install the Trim CLI",
   "trim.walkthrough.installCli.description": "The extension starts ``trim start`` on your PATH when Always-on is enabled.\n\nmacOS/Linux: ``curl -fsSL https://use-trim.com/install.sh | sh``\n\nWindows: ``irm https://use-trim.com/install.ps1 | iex``\n\nDocs: [Installation](https://use-trim.com/docs/installation)",
   "trim.walkthrough.apiUrl.title": "Set Trim API URL",
@@ -24,6 +25,6 @@
   "trim.walkthrough.hardware.description": "IDE device IDs differ from the CLI fingerprint - do not paste a ``trim login`` id here.\n\n1. Run **Trim: Copy Hardware ID** (clipboard).\n2. Dashboard → Settings → API keys → **Register device** → paste → agent **IDE**.\n\n[Copy Hardware ID](command:trim.copyHardwareId)\n\nDocs: [Device binding](https://use-trim.com/docs/security/device-binding)",
   "trim.walkthrough.apiKey.title": "Store your Trim API key",
   "trim.walkthrough.apiKey.description": "Create a **Trim** key under Dashboard → Settings → API keys (not your OpenAI/Anthropic/Google provider key).\n\nThen run **Trim: Set API Key**. Stored in editor Secret Storage - never in ``settings.json``.\n\n[Set API Key](command:trim.setApiKey)\n\nPrivacy: [https://use-trim.com/privacy](https://use-trim.com/privacy)",
-  "trim.walkthrough.baseUrl.title": "Point chat at the local proxy",
-  "trim.walkthrough.baseUrl.description": "This extension is not the compressor. Telemetry alone does not save tokens.\n\n**Cursor Agent:** ``trim cursor-link enable`` → ``trim start`` → paste ``trim cursor-link url`` (HTTPS ``…/v1``) into Override OpenAI Base URL. Do **not** paste ``127.0.0.1`` (private networks forbidden).\n\n**Continue** ``apiBase`` / **VS Code** Custom Endpoint: local Trim ``…/v1`` (or full ``…/v1/chat/completions``). Claude Code: ``ANTHROPIC_BASE_URL`` = listen origin only (no ``/v1``).\n\n[Trim Cursor Link](https://use-trim.com/docs/cli/cursor-link) · [Connect any IDE](https://use-trim.com/docs/ide/connect) · [Continue](https://use-trim.com/docs/ide/continue) · [VS Code](https://use-trim.com/docs/ide/vscode)"
+  "trim.walkthrough.baseUrl.title": "Point chat at Trim (local or Cursor Link)",
+  "trim.walkthrough.baseUrl.description": "This extension is not the compressor. Telemetry alone does not save tokens.\n\n**Cursor Agent:** ``trim cursor-link enable`` → ``trim start`` → paste ``trim cursor-link url`` (HTTPS ``…/v1``) into Override OpenAI Base URL. Do **not** paste ``127.0.0.1`` (private networks forbidden).\n\n**Continue** ``apiBase`` / **VS Code** Custom Endpoint: local Trim ``…/v1`` (or full ``…/v1/chat/completions``). Claude Code: ``ANTHROPIC_BASE_URL`` = listen origin only (no ``/v1``).\n\n[Copy Cursor Agent Base URL](command:trim.copyCursorAgentBaseUrl) · [Trim Cursor Link](https://use-trim.com/docs/cli/cursor-link) · [Connect any IDE](https://use-trim.com/docs/ide/connect) · [Continue](https://use-trim.com/docs/ide/continue) · [VS Code](https://use-trim.com/docs/ide/vscode)"
 }

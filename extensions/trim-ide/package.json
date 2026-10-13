@@ -1,8 +1,8 @@
 {
   "name": "trim-ide",
   "displayName": "Trim IDE",
-  "description": "Starts the local Trim Fast Mode proxy with your IDE and posts tab acceptance / AI LOC metrics to Trim cloud.",
-  "version": "1.0.2",
+  "description": "Starts Trim with your IDE, posts tab/LOC metrics to Trim Cloud, and guides Cursor Agent (Cursor Link HTTPS) plus local Continue/VS Code chat Base URLs.",
+  "version": "1.0.3",
   "publisher": "usetrim",
   "license": "MIT",
   "repository": {
@@ -33,6 +33,7 @@
     "ai",
     "loc",
     "proxy",
+    "cursor-link",
     "openai",
     "claude",
     "cost"
@@ -53,6 +54,10 @@
       {
         "command": "trim.copyHardwareId",
         "title": "%trim.command.copyHardwareId.title%"
+      },
+      {
+        "command": "trim.copyCursorAgentBaseUrl",
+        "title": "%trim.command.copyCursorAgentBaseUrl.title%"
       },
       {
         "command": "trim.markTabShown",
@@ -183,8 +188,9 @@
             "description": "%trim.walkthrough.baseUrl.description%",
             "media": {
               "image": "media/banner-light.png",
-              "altText": "Point IDE at Trim proxy"
-            }
+              "altText": "Point chat at Trim (local or Cursor Link)"
+            },
+            "completionEvents": ["onCommand:trim.copyCursorAgentBaseUrl"]
           }
         ]
       }

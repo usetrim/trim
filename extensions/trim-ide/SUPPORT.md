@@ -24,7 +24,7 @@
 4. **Trim: Copy Hardware ID** → Dashboard → API keys → **Register device** → agent **IDE**.
 5. **Trim: Set API Key** with a **Trim** Cloud key (not a provider key).
 6. Leave **Trim: Auto Start With Ide** on `follow` unless you need a local override.
-7. Point chat at Trim for compression savings (the extension alone is not the compressor): Cursor Agent uses ``trim cursor-link url`` (HTTPS, not 127.0.0.1); Continue / VS Code Chat use the local proxy ``…/v1``.
+7. Point chat at Trim for compression savings (the extension alone is not the compressor): Cursor Agent → **Trim: Copy Cursor Agent Base URL** (or ``trim cursor-link url``, HTTPS, not 127.0.0.1); Continue / VS Code Chat use the local proxy ``…/v1``. Cursor Link stays opt-in via the CLI (the extension never auto-enables it).
 
 ## Maintainers
 
