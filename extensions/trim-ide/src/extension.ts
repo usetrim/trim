@@ -527,6 +527,62 @@ function spawnTrimStart(): Promise<void> {
   });
 }
 
+/** Run `trim cursor-link url` and return the public HTTPS …/v1 URL (stdout). Does not enable Cursor Link. */
+function runTrimCursorLinkUrl(timeoutMs = 15000): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const child = spawn("trim", ["cursor-link", "url"], {
+      shell: process.platform === "win32",
+      windowsHide: true,
+      env: process.env,
+    });
+    let stdout = "";
+    let stderr = "";
+    const timer = setTimeout(() => {
+      try {
+        child.kill();
+      } catch {
+        /* ignore */
+      }
+      reject(new Error("trim cursor-link url timed out"));
+    }, timeoutMs);
+    child.stdout?.on("data", (chunk: Buffer | string) => {
+      stdout += String(chunk);
+    });
+    child.stderr?.on("data", (chunk: Buffer | string) => {
+      stderr += String(chunk);
+    });
+    child.on("error", (err) => {
+      clearTimeout(timer);
+      reject(err);
+    });
+    child.on("close", (code) => {
+      clearTimeout(timer);
+      const out = stdout.trim();
+      if (code !== 0) {
+        const detail = (stderr.trim() || out || `exit ${code}`).slice(0, 400);
+        reject(new Error(detail));
+        return;
+      }
+      if (!out) {
+        reject(new Error("empty URL from trim cursor-link url"));
+        return;
+      }
+      resolve(out);
+    });
+  });
+}
+
+function looksLikeCursorAgentBaseUrl(url: string): boolean {
+  const u = url.trim();
+  if (!/^https:\/\//i.test(u)) {
+    return false;
+  }
+  if (/127\.0\.0\.1|localhost/i.test(u)) {
+    return false;
+  }
+  return /\/v1\/?$/i.test(u) || /\/cl\//i.test(u);
+}
+
 function markProxyStatus(status: vscode.StatusBarItem | undefined, ok: boolean): void {
   if (!status) return;
   if (ok && chrome.IDE_AUTOSTART_STATUS_OK) {
@@ -994,6 +1050,39 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         void vscode.window.showInformationMessage(chrome.IDE_HARDWARE_ID_COPIED);
       }
       log(`hardware id copied (${hw.slice(0, 12)}…)`);
+    }),
+    vscode.commands.registerCommand("trim.copyCursorAgentBaseUrl", async () => {
+      // Opt-in helper only: copies live Cursor Link URL. Never enables the tunnel.
+      try {
+        const url = await runTrimCursorLinkUrl();
+        if (!looksLikeCursorAgentBaseUrl(url)) {
+          void vscode.window.showWarningMessage(
+            "Trim Cursor Link returned an unexpected URL. Run: trim cursor-link enable && trim start && trim cursor-link url",
+          );
+          log(`cursor-link url unexpected: ${url.slice(0, 80)}`);
+          return;
+        }
+        await vscode.env.clipboard.writeText(url);
+        void vscode.window.showInformationMessage(
+          "Cursor Agent Base URL copied. Paste into Cursor → Settings → Models → Override OpenAI Base URL (HTTPS …/v1, not 127.0.0.1).",
+        );
+        log(`cursor-link url copied (${url.slice(0, 48)}…)`);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (/ENOENT|not found|spawn/i.test(msg)) {
+          void vscode.window.showWarningMessage(
+            "Trim CLI not found on PATH. Install the CLI, then: trim cursor-link enable && trim start",
+          );
+        } else {
+          void vscode.window.showWarningMessage(
+            `No Cursor Agent URL yet. Enable and start Trim first: trim cursor-link enable && trim start. (${msg.slice(
+              0,
+              180,
+            )})`,
+          );
+        }
+        log(`cursor-link url failed: ${msg}`);
+      }
     }),
     vscode.commands.registerCommand("trim.markTabShown", () => {
       counters.tabShown += 1;

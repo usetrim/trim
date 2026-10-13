@@ -2,6 +2,17 @@
 
 All notable changes to the Trim IDE extension are documented in this file.
 
+## [1.0.3] - 2026-10-13
+
+### Added
+- Command **Trim: Copy Cursor Agent Base URL** (`trim cursor-link url` → clipboard). Does not enable Cursor Link.
+
+### Changed
+- Walkthrough title: Point chat at Trim (local or Cursor Link)
+- Marketplace description mentions Cursor Agent / Cursor Link and local Continue/VS Code clients
+- Locales (de, es, fr, ja, zh-cn, pt-br) aligned with EN Cursor Agent warnings and copy-URL command
+- README / SUPPORT clarify Cursor Agent vs local Base URL paths
+
 ## [1.0.2] - 2026-10-09
 
 ### Changed

@@ -2,7 +2,7 @@
 
 ![Trim](https://raw.githubusercontent.com/usetrim/trim/main/extensions/trim-ide/media/banner-dark.png)
 
-**Trim IDE** helps your editor work with [Trim](https://use-trim.com): it can keep the local **Fast Mode** proxy ready when Always-on is enabled, and it sends tab acceptance / optional AI LOC metrics to Trim Cloud so your dashboard charts stay accurate.
+**Trim IDE** helps your editor work with [Trim](https://use-trim.com): it can keep the local **Fast Mode** proxy ready when Always-on is enabled, posts tab acceptance / optional AI LOC metrics to Trim Cloud, and helps you point **Cursor Agent** (Cursor Link HTTPS) or local chat clients at Trim.
 
 This extension is **not** the compressor. Token savings happen when your chat tool sends traffic through Trim. **Continue / VS Code Chat / Claude Code** use the **local** proxy (typically `http://127.0.0.1:8888/v1`, or Claude Code origin without `/v1`). **Cursor Agent** must use **Trim Cursor Link** (`trim cursor-link url` → HTTPS `…/cl/<token>/v1`), not `127.0.0.1` (Cursor cloud blocks private networks). That chat path is separate from this extension’s cloud metrics.
 
@@ -20,7 +20,8 @@ This extension is **not** the compressor. Token savings happen when your chat to
 
 | Path | Who | Purpose |
 | --- | --- | --- |
-| Chat → local proxy (`:8888`) | Cursor / Continue / VS Code Chat / Claude Code | Compression, routing, token savings |
+| Chat → Cursor Link (HTTPS `…/cl/<token>/v1`) | **Cursor Agent** | Compression via public door (not `127.0.0.1`) |
+| Chat → local proxy (`:8888`) | Continue / VS Code Chat / Claude Code | Compression on-device |
 | Extension → Trim Cloud | This extension (`trim.apiUrl` + Trim API key) | Keep proxy ready + acceptance / LOC charts |
 
 If you install the extension but never point your chat Base URL at Trim, you still get auto-start + metrics - **not** full compression savings.
@@ -54,7 +55,7 @@ Also install the **`trim` CLI** on the machine and keep it on `PATH` ([installat
 | 4 | Same key → Register device | Paste the ID → agent **IDE** (not a CLI / `trim login` fingerprint) |
 | 5 | Editor | **Trim: Set API Key** → paste the Trim key |
 | 6 | Editor settings | `trim.apiUrl` = `https://api.use-trim.com` |
-| 7 | Chat Base URL | **Cursor Agent:** `trim cursor-link enable` → `trim start` → paste `trim cursor-link url` (HTTPS `…/v1`, not `127.0.0.1`). **Continue / VS Code / etc.:** local `http://127.0.0.1:8888/v1` from `trim start`. Pick a Trim model id such as `trim-claude-sonnet`. |
+| 7 | Chat Base URL | **Cursor Agent:** `trim cursor-link enable` → `trim start` → **Trim: Copy Cursor Agent Base URL** (or `trim cursor-link url`) → paste HTTPS `…/v1` into Override OpenAI Base URL (not `127.0.0.1`). **Continue / VS Code / etc.:** local `http://127.0.0.1:8888/v1` from `trim start`. Pick a Trim model id such as `trim-claude-sonnet`. |
 
 **Quick model:** Always-on = auto-start preference · Trim API key = Trim Cloud login · Hardware ID = this editor install may use that key.
 
@@ -66,7 +67,8 @@ Also install the **`trim` CLI** on the machine and keep it on `PATH` ([installat
 2. Command Palette → **Trim: Copy Hardware ID** → Dashboard → register as agent **IDE**
 3. Command Palette → **Trim: Set API Key**
 4. Leave **Trim: Auto Start With Ide** on `follow` (uses the cloud preference), or set `on` / `off` locally
-5. Optional: auto-flush interval, document LOC tracking, workspace UUID, HTTP timeout
+5. Cursor Agent: enable Cursor Link in the CLI, then **Trim: Copy Cursor Agent Base URL** and paste into Override OpenAI Base URL (never auto-enables the tunnel)
+6. Optional: auto-flush interval, document LOC tracking, workspace UUID, HTTP timeout
 
 If the API URL is empty or Trim Cloud cannot be reached on first run, the extension stays inactive and logs to **Output → Trim**. After a successful sync, a cache keeps labels working offline.
 
