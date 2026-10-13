@@ -77,10 +77,45 @@ func applyCLIHelpChrome(ch cliChrome) {
 	setFlagUsage(compressCmd, "bootstrap", ch.HelpCompressFlagBootstrap)
 	setFlagUsage(compressCmd, "out", ch.HelpCompressFlagOut)
 
-	configCmd.Short = ch.HelpConfigShort
-	configGetCmd.Short = ch.HelpConfigGetShort
-	configSetCmd.Short = ch.HelpConfigSetShort
-	configSyncCmd.Short = ch.HelpConfigSyncShort
+	// Config Short defaults are empty in the binary (fail-closed); apply when present.
+	if s := strings.TrimSpace(ch.HelpConfigShort); s != "" {
+		configCmd.Short = s
+	}
+	if s := strings.TrimSpace(ch.HelpConfigLong); s != "" {
+		configCmd.Long = s
+	}
+	if s := strings.TrimSpace(ch.HelpConfigGetShort); s != "" {
+		configGetCmd.Short = s
+	}
+	if s := strings.TrimSpace(ch.HelpConfigSetShort); s != "" {
+		configSetCmd.Short = s
+	}
+	if s := strings.TrimSpace(ch.HelpConfigSyncShort); s != "" {
+		configSyncCmd.Short = s
+	}
+
+	// Cursor Link keeps binary defaults when chrome has not synced these keys yet.
+	if s := strings.TrimSpace(ch.HelpCursorLinkShort); s != "" {
+		cursorLinkCmd.Short = s
+	}
+	if s := strings.TrimSpace(ch.HelpCursorLinkLong); s != "" {
+		cursorLinkCmd.Long = s
+	}
+	if s := strings.TrimSpace(ch.HelpCursorLinkEnableShort); s != "" {
+		cursorLinkEnableCmd.Short = s
+	}
+	if s := strings.TrimSpace(ch.HelpCursorLinkDisableShort); s != "" {
+		cursorLinkDisableCmd.Short = s
+	}
+	if s := strings.TrimSpace(ch.HelpCursorLinkStatusShort); s != "" {
+		cursorLinkStatusCmd.Short = s
+	}
+	if s := strings.TrimSpace(ch.HelpCursorLinkURLShort); s != "" {
+		cursorLinkURLCmd.Short = s
+	}
+	if s := strings.TrimSpace(ch.HelpCursorLinkRotateShort); s != "" {
+		cursorLinkRotateCmd.Short = s
+	}
 }
 
 func applyHelpGroups(ch cliChrome) {

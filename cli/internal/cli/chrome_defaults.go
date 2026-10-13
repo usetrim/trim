@@ -63,4 +63,24 @@ func applyHumanChromeFallbacks(ch *cliChrome) {
 	ch.HelpAutostartLong = "Synced Always-on preference (Start Trim with your IDE).\n\n  trim autostart status\n  trim autostart enable\n  trim autostart disable\n\nenable turns the preference on and best-effort registers OS logon:\n  macOS launchd · Linux systemd --user · Windows Startup Run → %LOCALAPPDATA%\\Trim\\bin (no Administrator on a normal PC)\n\nIf OS registration fails, your preference stays on. The CLI prints a yellow warning, muted guidance, and next steps (trim start / IDE). Use -v for raw OS detail.\n\nPrefer this over trim daemon for everyday use.\nDocs: https://use-trim.com/docs/cli/autostart"
 	ch.HelpAutostartEnableShort = "Enable auto-start and best-effort OS logon (Windows Startup Run → LocalAppData, no admin)"
 	ch.HelpAutostartDisableShort = "Disable auto-start and uninstall OS logon when supported"
+
+	// Always refresh root / config / uninstall / Cursor Link help so a CLI newer than
+	// the deployed site_messages catalog still lists cursor-link, config sync, and
+	// package-manager uninstall (npm -g) correctly worldwide.
+	ch.HelpRootLong = "Trim keeps a local Fast Mode proxy on your machine so IDE traffic uses less noisy context.\n\nEveryday: start, stop, status, stats, upgrade, autostart, cursor-link, login, logout, uninstall, setup, version\nAdvanced: tui, compress, daemon, telemetry, config (get | set | sync)\n\nCursor Agent: trim cursor-link enable → trim start → trim cursor-link url (paste HTTPS …/v1; not 127.0.0.1).\n\nSimple savings check after trim start:\n  trim stats\n  open http://127.0.0.1:<port>/dashboard → Show savings detail\n\ntrim status = cloud quota. trim stats = local Deep status / savings meter.\n\nFull remove: trim uninstall (then brew/scoop/winget/npm uninstall if you installed that way).\n\nRun \"trim help <command>\" for details. Prefer trim start / autostart for daily use; compress and Deep Mode are file/batch tools, not the everyday IDE path."
+	ch.HelpConfigShort = "Local Fast/Deep preferences (get | set | sync)"
+	ch.HelpConfigLong = "Manage local Fast/Deep preferences under ~/.config/trim/.\n\n  trim config get\n  trim config get default-tier\n  trim config set default-tier deep\n  trim config sync\n\nget - show local preferences\nset - write a local preference key\nsync - pull Fast/Deep preferences and provider adapters from your Trim cloud profile (requires trim login)"
+	ch.HelpConfigGetShort = "Show preferences (default-tier, deep-engine, target-token)"
+	ch.HelpConfigSetShort = "Set a preference (example: trim config set default-tier deep)"
+	ch.HelpConfigSyncShort = "Pull Fast/Deep preferences and provider adapters from your Trim cloud profile into ~/.config/trim/"
+	ch.HelpUninstallShort = "Fully remove Trim from this machine (proxy, daemon, data, Deep caches, binary)"
+	ch.HelpUninstallLong = "Fully removes Trim from this machine:\n  - stops the local proxy and Cursor Link tunnel\n  - removes the OS login daemon\n  - clears CLI credentials\n  - reverts IDE Base URL overrides from trim setup\n  - deletes ~/.trim and ~/.config/trim, Deep caches, sidecars, and the CLI binary/PATH when possible\n\nUse --keep-data to skip deleting local data directories, Deep caches, and the binary.\n\nIf you installed via a package manager, also uninstall that package after trim uninstall:\n  brew uninstall trim\n  scoop uninstall trim\n  winget uninstall Trim.CLI\n  npm uninstall -g @usetrim/trim"
+	ch.UninstallNextPkgNpm = "If installed via npm: npm uninstall -g @usetrim/trim"
+	ch.HelpCursorLinkShort = "Public HTTPS URL to local Trim for Cursor Agent (managed tunnel)"
+	ch.HelpCursorLinkLong = "Trim Cursor Link exposes your local Trim proxy through an automatic Cloudflare quick tunnel so Cursor Agent (cloud) can reach it without 127.0.0.1.\n\nCompression, meters, and adapters still run on this PC. The public hostname is only a door. Lifecycle matches trim start / trim stop when enabled.\n\nTypical flow:\n  trim cursor-link enable\n  trim start\n  trim cursor-link url\n  # paste …/cl/<token>/v1 into Cursor Override OpenAI Base URL\n  trim stop\n\nSubcommands: enable, disable, status, url, rotate"
+	ch.HelpCursorLinkEnableShort = "Enable Cursor Link (auto tunnel while trim start is running)"
+	ch.HelpCursorLinkDisableShort = "Disable Cursor Link and stop any running tunnel"
+	ch.HelpCursorLinkStatusShort = "Show Cursor Link preference and live public URL"
+	ch.HelpCursorLinkURLShort = "Print the live Cursor Agent Base URL (…/v1) for copy/paste"
+	ch.HelpCursorLinkRotateShort = "Rotate the Cursor Link access token (revokes the previous public URL path)"
 }

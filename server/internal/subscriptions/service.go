@@ -2429,7 +2429,7 @@ func builtinMessageForCode(code string) string {
 	case "CLI_HELP_ROOT_SHORT":
 		return "Local Fast Mode proxy for AI coding tools"
 	case "CLI_HELP_ROOT_LONG":
-		return "Trim keeps a local Fast Mode proxy on your machine so IDE traffic uses less noisy context.\n\nEveryday: start, stop, status, stats, autostart, login, setup\nAdvanced: tui, compress, daemon, telemetry, config\n\nSimple savings check after trim start:\n  trim stats\n  open http://127.0.0.1:<port>/dashboard → Show savings detail\n\ntrim status = cloud quota. trim stats = local Deep status / savings meter.\n\nRun \"trim help <command>\" for details. Prefer trim start / autostart for daily use; compress and Deep Mode are file/batch tools, not the everyday IDE path."
+		return "Trim keeps a local Fast Mode proxy on your machine so IDE traffic uses less noisy context.\n\nEveryday: start, stop, status, stats, upgrade, autostart, cursor-link, login, logout, uninstall, setup, version\nAdvanced: tui, compress, daemon, telemetry, config (get | set | sync)\n\nCursor Agent: trim cursor-link enable → trim start → trim cursor-link url (paste HTTPS …/v1; not 127.0.0.1).\n\nSimple savings check after trim start:\n  trim stats\n  open http://127.0.0.1:<port>/dashboard → Show savings detail\n\ntrim status = cloud quota. trim stats = local Deep status / savings meter.\n\nFull remove: trim uninstall (then brew/scoop/winget/npm uninstall if you installed that way).\n\nRun \"trim help <command>\" for details. Prefer trim start / autostart for daily use; compress and Deep Mode are file/batch tools, not the everyday IDE path."
 	case "CLI_HELP_GROUP_EVERYDAY":
 		return "Everyday Commands:"
 	case "CLI_HELP_GROUP_ADVANCED":
@@ -2447,7 +2447,7 @@ func builtinMessageForCode(code string) string {
 	case "CLI_HELP_UNINSTALL_SHORT":
 		return "Fully remove Trim from this machine (proxy, daemon, data, Deep caches, binary)"
 	case "CLI_HELP_UNINSTALL_LONG":
-		return "Stops the proxy, removes the OS login daemon, clears credentials, reverts IDE Base URL overrides from trim setup, deletes ~/.trim and ~/.config/trim, cleans Deep Mode caches from site_messages lists, removes sidecars, and deletes the CLI binary/PATH when possible. Use --keep-data to skip deleting local data directories and Deep caches."
+		return "Fully removes Trim from this machine:\n  - stops the local proxy and Cursor Link tunnel\n  - removes the OS login daemon\n  - clears CLI credentials\n  - reverts IDE Base URL overrides from trim setup\n  - deletes ~/.trim and ~/.config/trim, Deep caches, sidecars, and the CLI binary/PATH when possible\n\nUse --keep-data to skip deleting local data directories, Deep caches, and the binary.\n\nIf you installed via a package manager, also uninstall that package after trim uninstall:\n  brew uninstall trim\n  scoop uninstall trim\n  winget uninstall Trim.CLI\n  npm uninstall -g @usetrim/trim"
 	case "CLI_HELP_UNINSTALL_FLAG_KEEP_DATA":
 		return "Keep ~/.trim, ~/.config/trim, Deep Mode caches, and the CLI binary (only stop/daemon/logout/setup revert)"
 	case "CLI_HELP_UNINSTALL_FLAG_PURGE":
@@ -2490,6 +2490,8 @@ func builtinMessageForCode(code string) string {
 		return "If installed via Scoop: scoop uninstall trim"
 	case "CLI_UNINSTALL_NEXT_PKG_WINGET":
 		return "If installed via winget: winget uninstall Trim.CLI"
+	case "CLI_UNINSTALL_NEXT_PKG_NPM":
+		return "If installed via npm: npm uninstall -g @usetrim/trim"
 	case "CLI_UNINSTALL_HF_HUB_DIRS":
 		return "models--microsoft--llmlingua-2-bert-base-multilingual-cased-meetingbank"
 	case "CLI_UNINSTALL_HF_CACHE_REL":
@@ -2583,13 +2585,29 @@ func builtinMessageForCode(code string) string {
 	case "CLI_HELP_COMPRESS_FLAG_OUT":
 		return "write result to file instead of stdout"
 	case "CLI_HELP_CONFIG_SHORT":
-		return "Local Fast/Deep preferences"
+		return "Local Fast/Deep preferences (get | set | sync)"
+	case "CLI_HELP_CONFIG_LONG":
+		return "Manage local Fast/Deep preferences under ~/.config/trim/.\n\n  trim config get\n  trim config get default-tier\n  trim config set default-tier deep\n  trim config sync\n\nget - show local preferences\nset - write a local preference key\nsync - pull Fast/Deep preferences and provider adapters from your Trim cloud profile (requires trim login)"
 	case "CLI_HELP_CONFIG_GET_SHORT":
 		return "Show preferences (default-tier, deep-engine, target-token)"
 	case "CLI_HELP_CONFIG_SET_SHORT":
 		return "Set a preference (example: trim config set default-tier deep)"
 	case "CLI_HELP_CONFIG_SYNC_SHORT":
 		return "Pull Fast/Deep preferences and provider adapters from your Trim cloud profile into ~/.config/trim/"
+	case "CLI_HELP_CURSOR_LINK_SHORT":
+		return "Public HTTPS URL to local Trim for Cursor Agent (managed tunnel)"
+	case "CLI_HELP_CURSOR_LINK_LONG":
+		return "Trim Cursor Link exposes your local Trim proxy through an automatic Cloudflare quick tunnel so Cursor Agent (cloud) can reach it without 127.0.0.1.\n\nCompression, meters, and adapters still run on this PC. The public hostname is only a door. Lifecycle matches trim start / trim stop when enabled.\n\nTypical flow:\n  trim cursor-link enable\n  trim start\n  trim cursor-link url\n  # paste …/cl/<token>/v1 into Cursor Override OpenAI Base URL\n  trim stop\n\nSubcommands: enable, disable, status, url, rotate"
+	case "CLI_HELP_CURSOR_LINK_ENABLE_SHORT":
+		return "Enable Cursor Link (auto tunnel while trim start is running)"
+	case "CLI_HELP_CURSOR_LINK_DISABLE_SHORT":
+		return "Disable Cursor Link and stop any running tunnel"
+	case "CLI_HELP_CURSOR_LINK_STATUS_SHORT":
+		return "Show Cursor Link preference and live public URL"
+	case "CLI_HELP_CURSOR_LINK_URL_SHORT":
+		return "Print the live Cursor Agent Base URL (…/v1) for copy/paste"
+	case "CLI_HELP_CURSOR_LINK_ROTATE_SHORT":
+		return "Rotate the Cursor Link access token (revokes the previous public URL path)"
 	case "DECIDE_TOPUP_CHECKOUT":
 		return "One-time credit pack checkout."
 	case "DECIDE_NOT_SELF_SERVE":
