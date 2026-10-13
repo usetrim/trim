@@ -590,11 +590,12 @@ irm https://use-trim.com/uninstall.ps1 | iex`,
         code: `trim uninstall
 brew uninstall trim
 scoop uninstall trim
-winget uninstall Trim.CLI`,
+winget uninstall Trim.CLI
+npm uninstall -g @usetrim/trim`,
       },
       {
         type: "p",
-        text: "Run trim uninstall first so local data and Deep caches are cleared, then remove the package-manager formula if you installed via brew, scoop, or winget.",
+        text: "Run trim uninstall first so local data and Deep caches are cleared, then remove the package-manager formula if you installed via brew, scoop, winget, or npm (-g).",
       },
       { type: "h2", id: "extension", text: "IDE extension" },
       {
@@ -929,8 +930,11 @@ trim compress --bootstrap`,
           ["Finish first-time setup", "Quickstart"],
           ["Use Claude Code only (no Cursor / VS Code)", "Claude Code (CLI only)"],
           ["Start / stop the local helper", "trim start"],
+          ["Cursor Agent public HTTPS link", "Trim Cursor Link"],
           ["Survive reboot", "trim autostart"],
+          ["Sync cloud Fast/Deep prefs", "trim config sync"],
           ["Sign in again", "trim login"],
+          ["Fully remove Trim", "Uninstall"],
         ],
       },
       {
@@ -942,10 +946,16 @@ trim login
 trim start
 trim setup
 trim autostart enable
+trim cursor-link enable
+trim cursor-link url
 trim status
 trim stats
+trim config sync
 trim stop
-trim uninstall`,
+trim uninstall
+# if installed via package manager, also:
+# npm uninstall -g @usetrim/trim
+# brew uninstall trim | scoop uninstall trim | winget uninstall Trim.CLI`,
       },
       {
         type: "callout",
@@ -2282,6 +2292,19 @@ active_file_protection=true
       {
         type: "p",
         text: "Optional history_keep_turns stubs very old eligible chat turns to save tokens on huge sessions. Default is off. See history_keep_turns for when to enable it, what stays protected, and configuration examples.",
+      },
+      { type: "h2", id: "commands", text: "trim config" },
+      {
+        type: "code",
+        language: "bash",
+        code: `trim config get
+trim config get default-tier
+trim config set default-tier deep
+trim config sync`,
+      },
+      {
+        type: "p",
+        text: "get shows local preferences under ~/.config/trim/. set writes one key locally. sync pulls Fast/Deep preferences and provider adapters from your Trim cloud profile (requires trim login).",
       },
       { type: "h2", id: "sync", text: "Config sync" },
       {

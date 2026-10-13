@@ -99,6 +99,7 @@ func printUninstallNextSteps(chrome cliChrome) {
 		chrome.UninstallNextPkgBrew,
 		chrome.UninstallNextPkgScoop,
 		chrome.UninstallNextPkgWinget,
+		chrome.UninstallNextPkgNpm,
 	} {
 		if strings.TrimSpace(line) != "" {
 			fmt.Println(line)
