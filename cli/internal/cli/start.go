@@ -73,10 +73,11 @@ var startCmd = &cobra.Command{
 				return nil
 			}
 		}
-		// Manual start: print ready UI in a background worker, then return the shell.
+		// Manual start: background worker owns the proxy; parent prints ready UI then
+		// returns the shell (so the prompt never appears in the middle of banners).
 		// daemon run / --foreground stay attached in this terminal.
 		if startShouldDetach() {
-			return startDetachedAndWaitHealthy(cmd, chrome, healthURL)
+			return startDetachedAndWaitHealthy(cmd, chrome, healthURL, listenPort)
 		}
 		if len(proj.CustomQueries) > 0 && !trimmer.TreeSitterAvailable() {
 			if chrome.TreesitterRequired != "" {
@@ -283,14 +284,23 @@ var startCmd = &cobra.Command{
 				}
 			}
 		}
-		printStartReadyUI(chrome, scheme, listenPort, false)
-		if chrome.StartModeFmt != "" {
-			cliout.Muted(fmt.Sprintf(chrome.StartModeFmt, projectconfig.NormalizeMode(proj.Mode)))
-		}
-		if len(proj.NeverTrimPaths) > 0 || len(proj.IgnorePaths) > 0 {
-			if chrome.StartRulesFmt != "" {
-				cliout.Muted(fmt.Sprintf(chrome.StartRulesFmt,
-					len(proj.NeverTrimPaths), len(proj.IgnorePaths)))
+		isStartWorker := strings.TrimSpace(os.Getenv(trimStartWorkerEnv)) == "1"
+		if isStartWorker {
+			// Long-lived worker: bring Cursor Link up here (survives parent exit). Parent
+			// prints the ready banners only after /health (and link, when enabled).
+			if st, err := loadCursorLinkState(); err == nil && st.Enabled {
+				_, _ = ensureCursorLink(listenPort)
+			}
+		} else {
+			printStartReadyUI(chrome, scheme, listenPort, false)
+			if chrome.StartModeFmt != "" {
+				cliout.Muted(fmt.Sprintf(chrome.StartModeFmt, projectconfig.NormalizeMode(proj.Mode)))
+			}
+			if len(proj.NeverTrimPaths) > 0 || len(proj.IgnorePaths) > 0 {
+				if chrome.StartRulesFmt != "" {
+					cliout.Muted(fmt.Sprintf(chrome.StartRulesFmt,
+						len(proj.NeverTrimPaths), len(proj.IgnorePaths)))
+				}
 			}
 		}
 
@@ -462,8 +472,9 @@ func startShouldDetach() bool {
 }
 
 // startDetachedAndWaitHealthy spawns the same CLI as a background worker, waits
-// until /health is OK (so banners already printed), then exits so the shell returns.
-func startDetachedAndWaitHealthy(cmd *cobra.Command, chrome cliChrome, healthURL string) error {
+// until /health is OK (and Cursor Link when enabled), prints ready UI in the parent,
+// then exits so the shell returns with banners already complete.
+func startDetachedAndWaitHealthy(cmd *cobra.Command, chrome cliChrome, healthURL, listenPort string) error {
 	exe, err := os.Executable()
 	if err != nil {
 		return err
@@ -511,6 +522,7 @@ func startDetachedAndWaitHealthy(cmd *cobra.Command, chrome cliChrome, healthURL
 	if to < probe {
 		probe = to
 	}
+	healthy := false
 	for time.Now().Before(deadline) {
 		select {
 		case err := <-waitErr:
@@ -521,15 +533,58 @@ func startDetachedAndWaitHealthy(cmd *cobra.Command, chrome cliChrome, healthURL
 		default:
 		}
 		if healthURL != "" && proxyHealthOK(healthURL, probe) {
-			return nil
+			healthy = true
+			break
 		}
 		time.Sleep(150 * time.Millisecond)
 	}
-	_ = child.Process.Kill()
-	if chrome.ProxyFailedFmt != "" {
-		return fmt.Errorf(chrome.ProxyFailedFmt, "proxy did not become healthy in time")
+	if !healthy {
+		_ = child.Process.Kill()
+		if chrome.ProxyFailedFmt != "" {
+			return fmt.Errorf(chrome.ProxyFailedFmt, "proxy did not become healthy in time")
+		}
+		return fmt.Errorf("proxy did not become healthy in time")
 	}
-	return fmt.Errorf("proxy did not become healthy in time")
+
+	// Worker starts Cursor Link after health; wait so ready UI can include the URL when enabled.
+	waitCursorLinkReadyAfterHealth(45 * time.Second)
+
+	scheme := startListenScheme()
+	printStartReadyUI(chrome, scheme, listenPort, false)
+	if chrome.StartModeFmt != "" {
+		mode := ""
+		if proj, err := projectconfig.Load(""); err == nil {
+			mode = projectconfig.NormalizeMode(proj.Mode)
+		}
+		cliout.Muted(fmt.Sprintf(chrome.StartModeFmt, mode))
+	}
+	return nil
+}
+
+// waitCursorLinkReadyAfterHealth returns when Cursor Link is off, already has a
+// public URL, or timeout elapses (worker may still be bringing cloudflared up).
+func waitCursorLinkReadyAfterHealth(timeout time.Duration) {
+	if timeout <= 0 {
+		return
+	}
+	st, err := loadCursorLinkState()
+	if err != nil || !st.Enabled {
+		return
+	}
+	if strings.TrimSpace(st.PublicBaseURL) != "" || strings.TrimSpace(st.PublicOrigin) != "" {
+		return
+	}
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		st, err := loadCursorLinkState()
+		if err != nil || !st.Enabled {
+			return
+		}
+		if strings.TrimSpace(st.PublicBaseURL) != "" || strings.TrimSpace(st.PublicOrigin) != "" {
+			return
+		}
+		time.Sleep(200 * time.Millisecond)
+	}
 }
 
 func healthURLForListenPort(chrome cliChrome, listenPort string) string {
