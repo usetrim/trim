@@ -19,7 +19,7 @@ Product documentation is served by the web app at [use-trim.com/docs](https://us
 2. [Quickstart](https://use-trim.com/docs/quickstart) - shared install + one Step 4 path
 3. Your tool guide only:
    - [Claude Code (CLI only)](https://use-trim.com/docs/cli/claude-code) - no Cursor / no VS Code; Windows / macOS / Linux copy blocks
-   - [Cursor](https://use-trim.com/docs/ide/cursor)
+   - [Cursor](https://use-trim.com/docs/ide/cursor) + [Trim Cursor Link](https://use-trim.com/docs/cli/cursor-link) (Agent; not localhost)
    - [Continue](https://use-trim.com/docs/ide/continue)
    - [VS Code Chat](https://use-trim.com/docs/ide/vscode)
 4. Optional: [Custom models](https://use-trim.com/docs/ide/custom-models), [Always-on](https://use-trim.com/docs/concepts/always-on)
@@ -32,6 +32,8 @@ Product documentation is served by the web app at [use-trim.com/docs](https://us
 | Quickstart | `/docs/quickstart` |
 | Installation | `/docs/installation` |
 | Claude Code CLI only | `/docs/cli/claude-code` |
+| Trim Cursor Link (Cursor Agent) | `/docs/cli/cursor-link` |
+| Cursor setup | `/docs/ide/cursor` |
 | Custom models | `/docs/ide/custom-models` |
 | Always-on | `/docs/concepts/always-on` |
 | Cursor | `/docs/ide/cursor` |

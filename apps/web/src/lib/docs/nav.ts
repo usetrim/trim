@@ -52,6 +52,7 @@ export const DOC_NAV: DocNavSection[] = [
       { slug: "cli/overview", title: "CLI overview" },
       { slug: "cli/claude-code", title: "Claude Code (CLI only)" },
       { slug: "cli/start", title: "trim start" },
+      { slug: "cli/cursor-link", title: "Trim Cursor Link" },
       { slug: "cli/autostart", title: "trim autostart" },
       { slug: "cli/login", title: "trim login" },
       { slug: "cli/status", title: "trim status" },

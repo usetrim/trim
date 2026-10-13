@@ -45,6 +45,8 @@ var stopCmd = &cobra.Command{
 			}
 			return chrome.fail("")
 		}
+		// Belt-and-suspenders: tear down Cursor Link tunnel with the proxy.
+		_ = stopCursorLink()
 		if chrome.StopOk != "" {
 			fmt.Println(chrome.StopOk)
 		}

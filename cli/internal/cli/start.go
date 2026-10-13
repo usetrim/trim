@@ -25,8 +25,8 @@ import (
 	"github.com/usetrim/trim/cli/internal/projectconfig"
 	"github.com/usetrim/trim/cli/internal/storage"
 	"github.com/usetrim/trim/cli/internal/telemetry"
-	"github.com/usetrim/trim/server/pkg/proxy"
 	"github.com/usetrim/trim/server/pkg/provideradapt"
+	"github.com/usetrim/trim/server/pkg/proxy"
 	"github.com/usetrim/trim/server/pkg/trimmer"
 )
 
@@ -70,6 +70,7 @@ var startCmd = &cobra.Command{
 					return runAutostartAttachEnforcer(cfg, chrome, healthURL)
 				}
 				printStartReadyUI(chrome, startListenScheme(), listenPort, true)
+				maybeStartCursorLinkAfterProxy(listenPort)
 				return nil
 			}
 		}
@@ -127,52 +128,59 @@ var startCmd = &cobra.Command{
 			Addr:              ":" + listenPort,
 			ReadHeaderTimeout: time.Duration(cfg.HTTPReadHeaderTimeoutSec) * time.Second,
 		}
+		cursorLinkTok := ""
+		if st, err := loadCursorLinkState(); err == nil && st.Enabled {
+			_ = ensureCursorLinkAccessToken(&st)
+			_ = saveCursorLinkState(st)
+			cursorLinkTok = strings.TrimSpace(st.AccessToken)
+		}
 		srv := proxy.NewServer(proxy.Options{
-			UpstreamOpenAI:            cfg.UpstreamOpenAI,
-			UpstreamAnthropic:         cfg.UpstreamAnthropic,
-			UpstreamOpenAIFailover:    cfg.UpstreamOpenAIFailover,
-			UpstreamAnthropicFailover: cfg.UpstreamAnthropicFailover,
-			NeverTrim:                 proj.MustNeverTrim,
-			MaxLogBytes:               proj.MaxLogBytes,
-			LogCompactMinBytes:        proj.LogCompactMinBytes,
-			LogCompactMaxLines:        proj.LogCompactMaxLines,
-			LogNoiseSubstrings:        proj.LogNoiseSubstrings,
-			ActiveFileProtection:      activeFile,
-			CompressionMode:           mode,
-			MinLines:                  resolved.MinLinesForMode(),
-			DisableSkeletonize:        !resolved.SkeletonizeEnabled(),
-			AlwaysCompactLogs:         resolved.AlwaysCompactLogs(),
-			CustomQueries:             proj.CustomQueries,
-			FallbackUncompressed:      chromeProxyFallbackUncompressed(chrome),
-			CheapModel:                cfg.CheapModel,
-			RouteMaxTokens:            cfg.RouteMaxTokens,
-			SavingsUsdPerMTok:         cfg.SavingsUsdPerMTok,
-			HistoryKeepTurns:          historyKeep,
-			UpstreamHTTPTimeout:       time.Duration(cfg.ProxyHTTPTimeoutSec) * time.Second,
-			LiveModeLabel:             liveMode,
-			DeepOptimize:              deepOptimize,
-			ErrDeepFmt:                errDeepFmt,
-			ProviderAdapters:          adapterReg,
-			AnthropicWorkspaceID:      cfg.AnthropicWorkspaceID,
-			OpenAIOrganization:        cfg.OpenAIOrganization,
-			OpenAIProject:             cfg.OpenAIProject,
-			DoorOpenAI:                chrome.ProxyDoorOpenAI,
-			DoorAnthropic:             chrome.ProxyDoorAnthropic,
-			AdapterTranslateFmt:       chrome.ProxyAdapterTranslateFmt,
-			AdapterAuthFmt:            chrome.ProxyAdapterAuthFmt,
-			AdapterResponseFmt:        chrome.ProxyAdapterResponseFmt,
-			ModelsNotSynced:           chrome.ProxyModelsNotSynced,
-			ModelsMethod:              chrome.ProxyModelsMethod,
-			BaseURLDoubleV1:           chrome.ProxyErrBaseURLDoubleV1,
-			ModelNotFoundFmt:          chrome.ProxyErrModelNotFoundFmt,
-			UnknownModelFmt:           chrome.ProxyErrUnknownModelFmt,
-			UpstreamAuthFmt:           chrome.ProxyErrUpstreamAuthFmt,
-			UpstreamQuotaFmt:          chrome.ProxyErrUpstreamQuotaFmt,
-			UpstreamUnavailableFmt:    chrome.ProxyErrUpstreamUnavailableFmt,
+			UpstreamOpenAI:                cfg.UpstreamOpenAI,
+			UpstreamAnthropic:             cfg.UpstreamAnthropic,
+			UpstreamOpenAIFailover:        cfg.UpstreamOpenAIFailover,
+			UpstreamAnthropicFailover:     cfg.UpstreamAnthropicFailover,
+			NeverTrim:                     proj.MustNeverTrim,
+			MaxLogBytes:                   proj.MaxLogBytes,
+			LogCompactMinBytes:            proj.LogCompactMinBytes,
+			LogCompactMaxLines:            proj.LogCompactMaxLines,
+			LogNoiseSubstrings:            proj.LogNoiseSubstrings,
+			ActiveFileProtection:          activeFile,
+			CompressionMode:               mode,
+			MinLines:                      resolved.MinLinesForMode(),
+			DisableSkeletonize:            !resolved.SkeletonizeEnabled(),
+			AlwaysCompactLogs:             resolved.AlwaysCompactLogs(),
+			CustomQueries:                 proj.CustomQueries,
+			FallbackUncompressed:          chromeProxyFallbackUncompressed(chrome),
+			CheapModel:                    cfg.CheapModel,
+			RouteMaxTokens:                cfg.RouteMaxTokens,
+			SavingsUsdPerMTok:             cfg.SavingsUsdPerMTok,
+			HistoryKeepTurns:              historyKeep,
+			UpstreamHTTPTimeout:           time.Duration(cfg.ProxyHTTPTimeoutSec) * time.Second,
+			LiveModeLabel:                 liveMode,
+			DeepOptimize:                  deepOptimize,
+			ErrDeepFmt:                    errDeepFmt,
+			ProviderAdapters:              adapterReg,
+			AnthropicWorkspaceID:          cfg.AnthropicWorkspaceID,
+			OpenAIOrganization:            cfg.OpenAIOrganization,
+			OpenAIProject:                 cfg.OpenAIProject,
+			DoorOpenAI:                    chrome.ProxyDoorOpenAI,
+			DoorAnthropic:                 chrome.ProxyDoorAnthropic,
+			AdapterTranslateFmt:           chrome.ProxyAdapterTranslateFmt,
+			AdapterAuthFmt:                chrome.ProxyAdapterAuthFmt,
+			AdapterResponseFmt:            chrome.ProxyAdapterResponseFmt,
+			ModelsNotSynced:               chrome.ProxyModelsNotSynced,
+			ModelsMethod:                  chrome.ProxyModelsMethod,
+			BaseURLDoubleV1:               chrome.ProxyErrBaseURLDoubleV1,
+			ModelNotFoundFmt:              chrome.ProxyErrModelNotFoundFmt,
+			UnknownModelFmt:               chrome.ProxyErrUnknownModelFmt,
+			UpstreamAuthFmt:               chrome.ProxyErrUpstreamAuthFmt,
+			UpstreamQuotaFmt:              chrome.ProxyErrUpstreamQuotaFmt,
+			UpstreamUnavailableFmt:        chrome.ProxyErrUpstreamUnavailableFmt,
 			ModelsUpstreamAdapterRequired: chrome.ProxyModelsUpstreamAdapterRequired,
 			ModelsUpstreamNotFoundFmt:     chrome.ProxyModelsUpstreamNotFoundFmt,
 			ModelsUpstreamAuthRequired:    chrome.ProxyModelsUpstreamAuthRequired,
 			ModelsUpstreamUnsupportedFmt:  chrome.ProxyModelsUpstreamUnsupportedFmt,
+			CursorLinkToken:               cursorLinkTok,
 			OnEvent: func(_ *http.Request, model string, before, after int, latencyMs float64, status, mode, _ string) {
 				go func() {
 					if store, err := metrics.OpenDefault(); err == nil && store != nil {
@@ -229,6 +237,8 @@ var startCmd = &cobra.Command{
 						len(proj.NeverTrimPaths), len(proj.IgnorePaths)))
 				}
 			}
+			// Cursor Link: public HTTPS door to this local proxy (if enabled).
+			go maybeStartCursorLinkAfterProxy(listenPort)
 			var listenErr error
 			if useTLS {
 				listenErr = httpServer.ListenAndServeTLS(certFile, keyFile)
@@ -267,6 +277,7 @@ var startCmd = &cobra.Command{
 		}
 
 		<-stop
+		_ = stopCursorLink()
 		if chrome.StartStopped != "" {
 			fmt.Println("\n" + chrome.StartStopped)
 		}

@@ -53,7 +53,11 @@ export const DOC_PAGES: Record<string, DocPage> = {
             "Claude Code (CLI only)",
             "Terminal env vars (ANTHROPIC_BASE_URL) - not IDE Models",
           ],
-          ["Cursor", "Quickstart → Cursor setup", "Cursor → Settings → Models"],
+          [
+            "Cursor (Agent)",
+            "Cursor setup + Trim Cursor Link",
+            "Override Base URL = trim cursor-link url (https://…/v1), not 127.0.0.1",
+          ],
           [
             "Continue (VS Code / Cursor extension)",
             "Quickstart → Continue setup",
@@ -251,8 +255,8 @@ trim autostart status`,
         rows: [
           [
             "4A Cursor",
-            "Cursor chat / Composer",
-            "Settings → Models → Override OpenAI Base URL = http://127.0.0.1:8888/v1 + model + provider key",
+            "Cursor Agent / Composer (cloud)",
+            "trim cursor-link enable → trim start → paste trim cursor-link url (https://…/v1) into Override OpenAI Base URL - not 127.0.0.1",
             "Cursor setup",
           ],
           [
@@ -283,7 +287,10 @@ trim autostart status`,
       {
         type: "code",
         language: "text",
-        code: `Path 4A / 4C / most IDE OpenAI settings
+        code: `Path 4A - Cursor Agent (REQUIRED) - run: trim cursor-link url
+https://YOUR_SUBDOMAIN.trycloudflare.com/cl/YOUR_TOKEN/v1
+
+Path 4C / most on-device OpenAI IDE settings
 http://127.0.0.1:8888/v1
 
 Path 4D - VS Code Chat Custom Endpoint only
@@ -462,8 +469,8 @@ Test-Path \"$env:LOCALAPPDATA\\Trim\\bin\\trim.exe\"`,
             "Claude Code (CLI only)",
           ],
           [
-            "Cursor",
-            "Settings → Models → Override OpenAI Base URL = http://127.0.0.1:8888/v1",
+            "Cursor Agent",
+            "Override OpenAI Base URL = trim cursor-link url (https://…/v1), not 127.0.0.1",
             "Cursor setup",
           ],
           ["Continue", "~/.continue/config.yaml → apiBase", "Continue setup"],
@@ -474,7 +481,10 @@ Test-Path \"$env:LOCALAPPDATA\\Trim\\bin\\trim.exe\"`,
       {
         type: "code",
         language: "text",
-        code: `Cursor / Continue / most IDE OpenAI settings
+        code: `Cursor Agent - run: trim cursor-link url
+https://YOUR_SUBDOMAIN.trycloudflare.com/cl/YOUR_TOKEN/v1
+
+Continue / most on-device OpenAI IDE settings
 http://127.0.0.1:8888/v1
 
 VS Code Chat Custom Endpoint only
@@ -1767,11 +1777,11 @@ trim stop`,
       },
       {
         type: "p",
-        text: "Trim listens on TRIM_PORT (example http://127.0.0.1:8888/v1). Always use the Base URL printed by trim start. Point Cursor / Continue apiBase at …/v1; VS Code Chat Custom Endpoint at …/v1/chat/completions; Claude Code at the listen origin without /v1. The proxy reports mode, privacy posture, upstream routing, and last door in the terminal and /v1/stats.",
+        text: "Trim listens on TRIM_PORT (example http://127.0.0.1:8888/v1). Always use the Base URL printed by trim start for on-device clients. Point Continue apiBase at …/v1; VS Code Chat Custom Endpoint at …/v1/chat/completions; Claude Code at the listen origin without /v1. For Cursor Agent, do not use 127.0.0.1 - use Trim Cursor Link (trim cursor-link url) instead. The proxy reports mode, privacy posture, upstream routing, and last door in the terminal and /v1/stats.",
       },
       {
         type: "p",
-        text: "For everyday use, prefer Always-on with IDE (extension + trim autostart) so you do not need a manual trim start every morning. Use trim start for one-shot sessions or debugging.",
+        text: "For everyday use, prefer Always-on with IDE (extension + trim autostart) so you do not need a manual trim start every morning. Use trim start for one-shot sessions or debugging. If Cursor Link is enabled, trim start also brings up the public HTTPS door and trim stop tears it down with the proxy.",
       },
       { type: "h2", id: "what-you-see", text: "What you see" },
       {
@@ -1815,6 +1825,152 @@ trim stop`,
         type: "callout",
         title: "Local savings meter",
         text: "With trim start running, open http://127.0.0.1:8888/dashboard and use Show savings detail. Or run trim stats for the same Deep status / Deep stage lines in the terminal. Whole-body 0% Saved on Claude Code chrome is often normal.",
+      },
+      {
+        type: "note",
+        text: "Cursor Agent users: enable Trim Cursor Link so trim start prints a https://…/cl/<token>/v1 Base URL Cursor’s cloud can reach. Full guide: Trim Cursor Link + Cursor setup.",
+      },
+    ],
+  ),
+
+  "cli/cursor-link": page(
+    "Trim Cursor Link",
+    "Public HTTPS door to local Trim for Cursor Agent - lifecycle tied to trim start / trim stop. Where / what / how / why with copy buttons.",
+    [
+      {
+        type: "p",
+        text: "Trim Cursor Link productizes the Cloudflare Tunnel workflow inside Trim. You enable it once. While trim start is running, Trim keeps a public https://….trycloudflare.com/cl/<token>/v1 door pointed at your local proxy. Cursor Agent pastes that URL. Compression, adapters, and the local meter still run on your PC. trim stop stops Trim and the tunnel together.",
+      },
+      {
+        type: "callout",
+        title: "Why this exists",
+        text: "Cursor Agent often runs in Cursor’s cloud. That cloud blocks private IPs (127.0.0.1) with “Access to private networks is forbidden.” A public hostname fixes reachability without moving Trim’s brain to the cloud.",
+      },
+      {
+        type: "h2",
+        id: "flow",
+        text: "Flow (local E2E preserved)",
+      },
+      {
+        type: "code",
+        language: "text",
+        code: `trim cursor-link enable
+trim start
+   → local Trim listens on 127.0.0.1:8888
+   → Cursor Link tunnel starts automatically
+   → prints Cursor Agent Base URL (https://…/cl/<token>/v1)
+
+Cursor Override OpenAI Base URL = that https URL
+   → Cursor cloud → tunnel → YOUR local Trim → provider
+
+trim stop
+   → local Trim stops
+   → tunnel stops`,
+      },
+      {
+        type: "h2",
+        id: "commands",
+        text: "Commands (copy)",
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `# Enable (once per machine) - Copy this
+trim cursor-link enable
+
+# Start Trim + tunnel - Copy this
+trim start
+
+# Print Base URL for Cursor - Copy this
+trim cursor-link url
+
+# Status table - Copy this
+trim cursor-link status
+
+# Rotate access token (revoke old URL path immediately) - Copy this
+trim cursor-link rotate
+trim cursor-link url
+# Paste the new URL into Cursor Override OpenAI Base URL
+
+# Stop Trim + tunnel - Copy this
+trim stop
+
+# Disable preference (also stops tunnel + clears token) - Copy this
+trim cursor-link disable`,
+      },
+      {
+        type: "h2",
+        id: "cloudflared",
+        text: "cloudflared requirement",
+      },
+      {
+        type: "p",
+        text: "Where: your PATH, TRIM_CLOUDFLARED, or ~/.trim/bin. What: Cloudflare’s cloudflared binary. How: Trim launches it for you. On Windows/Linux Trim can auto-download into ~/.trim/bin on first enable/start; on macOS prefer brew install cloudflared. Why: users should never DIY Cloudflare ingress for everyday Cursor Agent use.",
+      },
+      {
+        type: "code",
+        language: "powershell",
+        code: `# Windows - Copy this
+winget install --id Cloudflare.cloudflared
+cloudflared --version`,
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `# macOS - Copy this
+brew install cloudflared
+cloudflared --version`,
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `# Linux - install per Cloudflare docs, then:
+cloudflared --version
+# Optional override:
+# export TRIM_CLOUDFLARED=/usr/local/bin/cloudflared`,
+      },
+      {
+        type: "h2",
+        id: "privacy",
+        text: "Privacy (honest)",
+      },
+      {
+        type: "ul",
+        items: [
+          "The hostname is public HTTPS so Cursor’s cloud can connect",
+          "Fast/Deep compression and metering still run on your machine",
+          "This is not “Trim cloud processes your prompts instead of local Trim”",
+          "Disable anytime: trim cursor-link disable (clears token)",
+          "Rotate token anytime: trim cursor-link rotate then update Cursor (revoke is live - no Trim restart required)",
+          "Public path is /cl/<token>/v1 - bare /v1 via Cloudflare edge is rejected",
+          "Quick-tunnel hostnames may rotate after restart - re-run trim cursor-link url and update Cursor",
+        ],
+      },
+      {
+        type: "h2",
+        id: "vs-localhost",
+        text: "When to use Cursor Link vs localhost",
+      },
+      {
+        type: "table",
+        headers: ["Client", "Base URL", "Guide"],
+        rows: [
+          [
+            "Cursor Agent / cloud-routed Cursor",
+            "trim cursor-link url (https://…/cl/<token>/v1)",
+            "Cursor setup",
+          ],
+          ["Claude Code CLI", "http://127.0.0.1:8888 (no /v1)", "Claude Code (CLI only)"],
+          [
+            "Continue / VS Code Chat / local SDKs",
+            "http://127.0.0.1:8888/v1 (or …/chat/completions)",
+            "Continue / VS Code setup",
+          ],
+        ],
+      },
+      {
+        type: "note",
+        text: "Related: Cursor setup, trim start, trim stop, Base URL troubleshooting, FAQ.",
       },
     ],
   ),
@@ -2371,9 +2527,9 @@ gpt-4o-mini`,
         headers: ["Client", "Exact place", "What to paste"],
         rows: [
           [
-            "Cursor",
+            "Cursor Agent",
             "Settings → Models → Override OpenAI Base URL",
-            "http://127.0.0.1:8888/v1 + model id (trim-claude-sonnet, …)",
+            "trim cursor-link url (https://…/cl/<token>/v1) + model id (trim-claude-sonnet, …)",
           ],
           [
             "Continue",
@@ -2495,10 +2651,18 @@ trim start`,
         type: "note",
         text: "Never paste https://api.anthropic.com into Cursor Override OpenAI Base URL. Keep Base URL = Trim so compression and the Messages adapter run. See Base URL troubleshooting and Provider adapters.",
       },
-      { type: "h2", id: "remote", text: "Remote / travel (tunnel)" },
+      { type: "h2", id: "remote", text: "Remote / Cursor Agent (Trim Cursor Link)" },
       {
         type: "p",
-        text: "When Cursor or another client is not on the same machine as trim start, expose the Trim listen URL with a tunnel you control (for example Cloudflare Tunnel, or another HTTPS tunnel). Point the IDE Base URL at https://YOUR_TUNNEL_HOST/v1. Doors, compression, and adapters are unchanged; only the hostname changes. Keep provider API keys in the IDE key fields as usual; Trim does not invent keys.",
+        text: "For Cursor Agent (and any client that cannot call 127.0.0.1), use Trim Cursor Link - an automatic Cloudflare-style tunnel managed by Trim while trim start is running. Point Override OpenAI Base URL at the printed https://…/cl/<token>/v1 URL. Doors, compression, and adapters stay on your PC; only the hostname is public. Do not DIY cloudflared ingress for everyday use. Full guide: Trim Cursor Link + Cursor setup.",
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `trim cursor-link enable
+trim start
+trim cursor-link url
+# Paste into Cursor → Settings → Models → Override OpenAI Base URL`,
       },
     ],
   ),
@@ -2811,46 +2975,171 @@ models:
 
   "ide/cursor": page(
     "Cursor setup",
-    "Step-by-step: Base URL, custom Trim models, provider keys, and verify - with copy buttons.",
+    "Cursor Agent needs Trim Cursor Link (public HTTPS to local Trim). Localhost alone is blocked by Cursor’s private-network policy. Copy buttons on every block.",
     [
       {
         type: "p",
-        text: "Cursor is a primary Trim path. Trim does not replace Composer; it sits under Override OpenAI Base URL so every turn can run Fast Mode locally (and Deep when Preferences Deep is on) before the upstream model. Use the Copy button on each value. For friendly trim-… names, also read Custom models.",
+        text: "Cursor routes many Agent requests through Cursor’s cloud. That cloud cannot call http://127.0.0.1:8888/v1 - you get “Access to private networks is forbidden.” Trim Cursor Link fixes this: an automatic Cloudflare-style tunnel door to Trim still running on your PC. Compression stays local. You never DIY cloudflared config for everyday use.",
+      },
+      {
+        type: "callout",
+        title: "Critical - do not paste localhost into Cursor Agent",
+        text: "Override OpenAI Base URL for Cursor Agent must be the Trim Cursor Link URL from trim cursor-link url (https://…/cl/<token>/v1), not http://127.0.0.1:8888/v1. Localhost remains correct for Claude Code CLI and other on-device clients. Product language “Connect Cursor (Agent)” = trim cursor-link enable (also shown on the local meter http://127.0.0.1:8888/dashboard with a Copy button).",
       },
       {
         type: "table",
-        headers: ["Setting", "Exact place in Cursor"],
+        headers: ["Setting", "Exact place", "What to use"],
         rows: [
-          ["Base URL", "Settings → Models → Override OpenAI Base URL"],
-          ["Model id", "Settings → Models → model list / add model"],
-          ["Provider API key", "Settings → Models → OpenAI API key field"],
-          ["Trim Always-on preference", "use-trim.com/dashboard → Preferences"],
-          ["Plans / prices", "use-trim.com/dashboard → Billing"],
+          [
+            "Cursor Agent Base URL",
+            "Settings → Models → Override OpenAI Base URL",
+            "trim cursor-link url  (https://…/v1)",
+          ],
+          [
+            "Model id",
+            "Settings → Models → model list / add model",
+            "trim-claude-sonnet (see Custom models)",
+          ],
+          ["Provider API key", "Settings → Models → OpenAI API key field", "Matching provider key"],
+          ["Local Trim", "Terminal: trim start", "Must be running for the link to work"],
+          [
+            "Cursor Link preference",
+            "Terminal: trim cursor-link enable",
+            "Stays on across restarts",
+          ],
+          ["Plans / prices", "use-trim.com/dashboard → Billing", "Cloud billing"],
         ],
       },
-      { type: "h2", id: "steps", text: "Setup steps (do in order)" },
+      {
+        type: "h2",
+        id: "how",
+        text: "What happens (plain English)",
+      },
+      {
+        type: "code",
+        language: "text",
+        code: `Cursor Agent (Cursor cloud)
+        │
+        │  Override Base URL = https://YOUR_LINK.trycloudflare.com/cl/YOUR_TOKEN/v1
+        ▼
+Trim Cursor Link (public HTTPS door)
+        │
+        ▼
+Local Trim on YOUR PC  (http://127.0.0.1:8888)
+  • Fast Mode (+ optional Deep) on this machine
+  • local meter: http://127.0.0.1:8888/dashboard
+        │
+        ▼
+Anthropic / OpenAI / Google
+        │
+        ▼
+Reply → local Trim → tunnel → Cursor`,
+      },
+      {
+        type: "h2",
+        id: "steps",
+        text: "Setup steps (do in order)",
+      },
+      {
+        type: "h3",
+        id: "step0-cloudflared",
+        text: "Step 0 - Install cloudflared once (required helper)",
+      },
+      {
+        type: "p",
+        text: "Where: Terminal (optional). What: Cloudflare’s cloudflared helper. Why: Trim Cursor Link uses it under the hood. How: On Windows/Linux Trim can auto-download cloudflared into ~/.trim/bin on first enable/start. On macOS prefer Homebrew. You can also install yourself or set TRIM_CLOUDFLARED.",
+      },
+      {
+        type: "code",
+        language: "powershell",
+        code: `# Windows (optional manual) - Copy this
+winget install --id Cloudflare.cloudflared
+cloudflared --version
+# Or let Trim auto-download on: trim cursor-link enable && trim start`,
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `# macOS (recommended) - Copy this
+brew install cloudflared
+cloudflared --version`,
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `# Linux - optional manual; Trim can auto-download on enable/start
+cloudflared --version
+# Or: export TRIM_CLOUDFLARED=/usr/local/bin/cloudflared`,
+      },
+      {
+        type: "h3",
+        id: "step1",
+        text: "Step 1 - Enable Trim Cursor Link",
+      },
+      {
+        type: "p",
+        text: "Where: Terminal. What: turn on the preference so every trim start brings the public door up. How:",
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `# Windows / macOS / Linux - Copy this
+trim cursor-link enable
+trim cursor-link status`,
+      },
+      {
+        type: "h3",
+        id: "step2",
+        text: "Step 2 - Start Trim (tunnel lifecycle starts with it)",
+      },
+      {
+        type: "p",
+        text: "Where: Terminal. What: start local Trim; when Cursor Link is enabled, Trim also starts the tunnel and prints Cursor Agent Base URL. Why: tunnel alone does nothing - local Trim must be listening. How:",
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `# Windows / macOS / Linux - Copy this
+trim start
+trim cursor-link url`,
+      },
+      {
+        type: "p",
+        text: "What you should see: a https://….trycloudflare.com/cl/<token>/v1 URL (secret path token included). That URL stays up while Trim is running; trim stop tears it down with the proxy.",
+      },
+      {
+        type: "h3",
+        id: "step3",
+        text: "Step 3 - Point Cursor at the Cursor Link URL",
+      },
       {
         type: "ol",
         items: [
-          "Terminal: trim start (or rely on Always-on) so the proxy is listening",
-          "Terminal: trim config sync while logged in (loads provider adapters + model aliases)",
           "Cursor → Settings → Models",
-          "Enable Override OpenAI Base URL only (do not mix Cursor Anthropic BYOK with this override)",
-          "Paste Base URL from the copy block below",
-          "Add or enable a model id such as trim-claude-sonnet (see Custom models for more names)",
-          "Paste the matching provider key into the OpenAI API key field",
-          "Use Chat / Composer as usual with that model selected",
+          "Turn on Override OpenAI Base URL",
+          "Paste the output of trim cursor-link url (must be https://…/v1 - not 127.0.0.1)",
+          "Add or pick a model such as trim-claude-haiku / trim-claude-sonnet",
+          "Paste the matching provider API key into the OpenAI API key field",
+          "Use Agent / Chat / Composer as usual",
         ],
       },
       {
         type: "h2",
         id: "copy-base-url",
-        text: "Copy: Base URL",
+        text: "Copy: Base URL shapes (know the difference)",
       },
       {
         type: "code",
         language: "text",
-        code: "http://127.0.0.1:8888/v1",
+        code: `# Cursor Agent (REQUIRED) - from: trim cursor-link url
+# Includes a secret path token (/cl/<token>/) - rotate with: trim cursor-link rotate
+https://YOUR_SUBDOMAIN.trycloudflare.com/cl/YOUR_TOKEN/v1
+
+# NOT for Cursor Agent (causes “private networks forbidden”)
+http://127.0.0.1:8888/v1
+
+# Still correct for Claude Code CLI / on-device tools (origin, often no /v1 for Anthropic door)
+http://127.0.0.1:8888`,
       },
       {
         type: "h2",
@@ -2890,29 +3179,90 @@ gpt-4o-mini`,
         title: "Anthropic key tip",
         text: "Prefer a workspace-scoped Anthropic key. Org-scoped keys need TRIM_ANTHROPIC_WORKSPACE_ID once as a user env var - see Connect any IDE → Anthropic key types.",
       },
+      {
+        type: "h2",
+        id: "everyday",
+        text: "Everyday loop",
+      },
+      {
+        type: "ol",
+        items: [
+          "If local dashboard is down: trim start (Cursor Link comes back if enabled)",
+          "Confirm URL: trim cursor-link url → still pasted in Cursor",
+          "Chat / Agent as usual",
+          "Check savings: http://127.0.0.1:8888/dashboard",
+          "Stop both Trim + tunnel: trim stop",
+        ],
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `# Everyday - Copy as needed
+trim start
+trim cursor-link url
+# … use Cursor …
+trim stop`,
+      },
       { type: "h2", id: "verify", text: "Verify it works" },
       {
         type: "ol",
         items: [
-          "Send a Composer request with a noisy workspace open (for example: Reply with exactly: ok)",
-          "Open http://127.0.0.1:8888/dashboard - Requests should increase",
-          "Terminal: trim status and trim stats",
-          "Cloud: https://use-trim.com/dashboard → Usage / Traces when signed in",
+          "trim cursor-link status shows enabled + a https://…/v1 URL",
+          "Cursor Override Base URL matches that URL (not 127.0.0.1)",
+          "Send Agent/Composer: Reply with exactly: ok",
+          "Open http://127.0.0.1:8888/dashboard - Requests increase (proves work is local)",
+          "If you still see “private networks forbidden”, the Base URL is still localhost - re-paste trim cursor-link url",
+        ],
+      },
+      {
+        type: "h2",
+        id: "troubleshoot",
+        text: "If something fails",
+      },
+      {
+        type: "table",
+        headers: ["Symptom", "Cause", "Fix"],
+        rows: [
+          [
+            "Access to private networks is forbidden",
+            "Cursor Base URL is still 127.0.0.1",
+            "Paste trim cursor-link url (https://…/v1)",
+          ],
+          [
+            "No public URL",
+            "cloudflared missing or Trim down",
+            "Install cloudflared; trim start; trim cursor-link status",
+          ],
+          [
+            "URL changed after restart",
+            "Quick tunnel hostname rotates",
+            "Run trim cursor-link url and update Cursor Base URL",
+          ],
+          [
+            "Requests not on local meter",
+            "Wrong Base URL or Trim stopped",
+            "trim start; confirm Override URL from cursor-link url",
+          ],
+          [
+            "Tunnel up but Cursor fails auth",
+            "Wrong provider key for model",
+            "Paste Anthropic/OpenAI/Google key matching the model id",
+          ],
         ],
       },
       {
         type: "callout",
         title: "After Cursor updates",
-        text: "Model settings sometimes reset. Re-check Base URL and your trim-… model entries if savings disappear suddenly.",
+        text: "Model settings sometimes reset. Re-check Override Base URL (must stay on Cursor Link) and your trim-… model entries.",
       },
       {
         type: "callout",
         title: "Cursor vs Continue in the same editor",
-        text: "Continue is a separate path (~/.continue/config.yaml + Continue sidebar). Cursor’s Override OpenAI Base URL does not configure Continue. Prefer one intentional path per chat panel.",
+        text: "Continue is a separate path (~/.continue/config.yaml). Cursor Override does not configure Continue. Prefer one intentional path per chat panel.",
       },
       {
         type: "note",
-        text: "Also see Custom models, Always-on with IDE, Connect any IDE, Continue setup, VS Code setup, and Trim IDE extension.",
+        text: "Full CLI reference: Trim Cursor Link. Also: Custom models, Always-on with IDE, Connect any IDE, Claude Code (CLI only), Base URL troubleshooting.",
       },
     ],
   ),
@@ -3692,7 +4042,7 @@ gpt-4o-mini`,
       {
         type: "ul",
         items: [
-          "Cursor: Settings → Models → Override OpenAI Base URL → http://127.0.0.1:8888/v1 + model id (trim-claude-sonnet, …) + provider key",
+          "Cursor Agent: Settings → Models → Override OpenAI Base URL → trim cursor-link url (https://…/cl/<token>/v1) + model id (trim-claude-sonnet, …) + provider key - never 127.0.0.1 for Agent",
           "Continue: ~/.continue/config.yaml → provider openai, apiBase …/v1, model trim-claude-sonnet - see Continue setup",
           "VS Code Chat: Custom Endpoint full …/v1/chat/completions + Add Models wizard secret - see VS Code setup",
           "Claude Code: ANTHROPIC_BASE_URL=http://127.0.0.1:8888 (origin only, no /v1)",
@@ -3998,7 +4348,10 @@ gpt-4o-mini`,
       {
         type: "code",
         language: "text",
-        code: `Cursor / Continue / most OpenAI clients
+        code: `Cursor Agent - run: trim cursor-link url
+https://YOUR_SUBDOMAIN.trycloudflare.com/cl/YOUR_TOKEN/v1
+
+Continue / most on-device OpenAI clients
 http://127.0.0.1:8888/v1
 
 VS Code Chat Custom Endpoint
@@ -4020,9 +4373,14 @@ gpt-4o-mini`,
         headers: ["Symptom", "Likely cause", "Fix"],
         rows: [
           [
+            "Access to private networks is forbidden",
+            "Cursor Agent Base URL is still 127.0.0.1",
+            "Paste trim cursor-link url (https://…/v1) - see Cursor setup",
+          ],
+          [
             "No savings / traffic missing",
             "Base URL points at vendor, not Trim",
-            "Paste http://127.0.0.1:8888/v1 in Settings → Models",
+            "Cursor: Cursor Link URL; other IDEs: http://127.0.0.1:8888/v1",
           ],
           [
             "Model not found",
@@ -5341,10 +5699,26 @@ Optional build features: follow README flags for native parsers`,
       {
         type: "ul",
         items: [
-          "Open Settings → Models and confirm OpenAI Compatible / Override Base URL points at Trim",
-          "Remove a trailing path mistake (use /v1 as Trim prints it)",
-          "Send a new Composer request after saving settings",
-          "Confirm the local proxy is healthy before debugging the IDE client",
+          "Open Settings → Models and confirm Override OpenAI Base URL points at Trim Cursor Link (https://…/cl/<token>/v1 from trim cursor-link url) - not api.openai.com and not 127.0.0.1 for Agent",
+          "If you see “Access to private networks is forbidden”, you still have localhost pasted - run trim cursor-link enable && trim start && trim cursor-link url and re-paste",
+          "Remove a trailing path mistake (Cursor Link URL must end with /v1)",
+          "Send a new Agent / Composer request after saving settings",
+          "Confirm local Trim is healthy (http://127.0.0.1:8888/dashboard) - the tunnel only forwards to a live proxy",
+        ],
+      },
+      {
+        type: "h2",
+        id: "private-networks-forbidden",
+        text: "Cursor: Access to private networks is forbidden",
+      },
+      {
+        type: "ol",
+        items: [
+          "This is Cursor blocking 127.0.0.1 from its cloud Agent path - not a Trim crash",
+          "Enable Cursor Link: trim cursor-link enable",
+          "Install cloudflared once if needed (see Cursor setup / Trim Cursor Link)",
+          "trim start → trim cursor-link url → paste https://…/v1 into Override OpenAI Base URL",
+          "Keep using localhost only for Claude Code CLI and other on-device clients",
         ],
       },
       {
@@ -5483,12 +5857,21 @@ Optional build features: follow README flags for native parsers`,
       },
       {
         type: "h2",
+        id: "private-networks-forbidden",
+        text: "Cursor says Access to private networks is forbidden - what now?",
+      },
+      {
+        type: "p",
+        text: "Cursor Agent’s cloud cannot call http://127.0.0.1:8888/v1. Enable Trim Cursor Link: install cloudflared once → trim cursor-link enable → trim start → paste trim cursor-link url (https://…/cl/<token>/v1) into Cursor Override OpenAI Base URL. Compression still runs on your PC. Full guides: Cursor setup and Trim Cursor Link. Do not keep localhost in Override for Agent.",
+      },
+      {
+        type: "h2",
         id: "claude-code-only",
         text: "I only use Claude Code - no Cursor. What do I do?",
       },
       {
         type: "p",
-        text: "Follow Claude Code (CLI only): install Trim → trim login → trim start → set ANTHROPIC_BASE_URL=http://127.0.0.1:8888 (no /v1) and ANTHROPIC_API_KEY → run claude. Do not open Cursor Settings → Models. That page has separate Windows / macOS / Linux copy blocks (Copy button on each), permanent profile steps, verify, and troubleshooting. Optional: trim setup prints the copy/paste block for your listen port.",
+        text: "Follow Claude Code (CLI only): install Trim → trim login → trim start → set ANTHROPIC_BASE_URL=http://127.0.0.1:8888 (no /v1) and ANTHROPIC_API_KEY → run claude. Do not open Cursor Settings → Models. That page has separate Windows / macOS / Linux copy blocks (Copy button on each), permanent profile steps, verify, and troubleshooting. Optional: trim setup prints the copy/paste block for your listen port. You do not need Cursor Link for Claude Code.",
       },
       {
         type: "h2",

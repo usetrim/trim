@@ -57,6 +57,7 @@ func init() {
 	rootCmd.AddCommand(statsCmd)
 	rootCmd.AddCommand(upgradeCmd)
 	rootCmd.AddCommand(autostartCmd)
+	rootCmd.AddCommand(cursorLinkCmd)
 	rootCmd.AddCommand(loginCmd)
 	rootCmd.AddCommand(logoutCmd)
 	rootCmd.AddCommand(uninstallCmd)

@@ -34,8 +34,9 @@ var uninstallCmd = &cobra.Command{
 			fmt.Println(chrome.UninstallStarting)
 		}
 
-		// 1) Stop local proxy (best-effort; may already be down).
+		// 1) Stop local proxy + Cursor Link tunnel (best-effort; may already be down).
 		_ = stopCmd.RunE(stopCmd, nil)
+		_ = setCursorLinkEnabled(false)
 		if chrome.UninstallStopped != "" {
 			fmt.Println(chrome.UninstallStopped)
 		}
