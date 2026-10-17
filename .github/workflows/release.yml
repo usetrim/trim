@@ -18,7 +18,7 @@ jobs:
   goreleaser:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -150,7 +150,7 @@ jobs:
             arch: amd64
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -192,7 +192,7 @@ jobs:
     needs: goreleaser
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -248,7 +248,7 @@ jobs:
     needs: goreleaser
     runs-on: ubuntu-24.04-arm
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -291,7 +291,7 @@ jobs:
     needs: goreleaser
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -334,7 +334,7 @@ jobs:
     needs: goreleaser
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -378,7 +378,7 @@ jobs:
     needs: goreleaser
     runs-on: ubuntu-24.04-arm
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -431,7 +431,7 @@ jobs:
             arch: amd64
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -474,7 +474,7 @@ jobs:
     needs: goreleaser
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
