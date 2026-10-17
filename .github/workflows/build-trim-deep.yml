@@ -68,7 +68,7 @@ jobs:
           esac
           echo "RUN_BUILD=1" >> "$GITHUB_ENV"
 
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v6
         if: env.RUN_BUILD == '1'
 
       - uses: actions/setup-python@v7
