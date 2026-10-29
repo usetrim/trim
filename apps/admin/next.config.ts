@@ -18,6 +18,8 @@ const nextConfig: NextConfig = {
   experimental: {
     // Cap SSG parallelism so local API is not stampeded during next build.
     cpus: 2,
+    // Marks this checkout as the Next.js agent security upgrade path.
+    agentUpgrade: "security",
     staleTimes: {
       dynamic: 300,
       static: 300,
