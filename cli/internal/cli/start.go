@@ -77,7 +77,7 @@ var startCmd = &cobra.Command{
 		// returns the shell (so the prompt never appears in the middle of banners).
 		// daemon run / --foreground stay attached in this terminal.
 		if startShouldDetach() {
-			return startDetachedAndWaitHealthy(cmd, chrome, healthURL, listenPort)
+			return startDetachedAndWaitHealthy(cmd, cfg, chrome, healthURL, listenPort)
 		}
 		if len(proj.CustomQueries) > 0 && !trimmer.TreeSitterAvailable() {
 			if chrome.TreesitterRequired != "" {
@@ -120,7 +120,9 @@ var startCmd = &cobra.Command{
 			return liveErr
 		}
 		adapterReg, _ := loadProviderAdapterRegistry(chrome)
-		if adapterReg != nil && chrome.ProxyAdapterEnabledFmt != "" {
+		// Detached worker: parent prints adapter/Deep banners after /health (keeps UI,
+		// returns the shell). Foreground / daemon keep printing here.
+		if adapterReg != nil && chrome.ProxyAdapterEnabledFmt != "" && !isTrimStartWorker() {
 			fmt.Printf(chrome.ProxyAdapterEnabledFmt+"\n", adapterReg.EnabledCount())
 		}
 
@@ -284,7 +286,7 @@ var startCmd = &cobra.Command{
 				}
 			}
 		}
-		isStartWorker := strings.TrimSpace(os.Getenv(trimStartWorkerEnv)) == "1"
+		isStartWorker := isTrimStartWorker()
 		if isStartWorker {
 			// Long-lived worker: bring Cursor Link up here (survives parent exit). Parent
 			// prints the ready banners only after /health (and link, when enabled).
@@ -461,11 +463,15 @@ func init() {
 
 const trimStartWorkerEnv = "TRIM_START_WORKER"
 
+func isTrimStartWorker() bool {
+	return strings.TrimSpace(os.Getenv(trimStartWorkerEnv)) == "1"
+}
+
 func startShouldDetach() bool {
 	if strings.TrimSpace(os.Getenv("TRIM_AUTOSTART_ENFORCER")) == "1" {
 		return false
 	}
-	if strings.TrimSpace(os.Getenv(trimStartWorkerEnv)) == "1" {
+	if isTrimStartWorker() {
 		return false
 	}
 	return !startForeground
@@ -474,7 +480,7 @@ func startShouldDetach() bool {
 // startDetachedAndWaitHealthy spawns the same CLI as a background worker, waits
 // until /health is OK (and Cursor Link when enabled), prints ready UI in the parent,
 // then exits so the shell returns with banners already complete.
-func startDetachedAndWaitHealthy(cmd *cobra.Command, chrome cliChrome, healthURL, listenPort string) error {
+func startDetachedAndWaitHealthy(cmd *cobra.Command, cfg config.Local, chrome cliChrome, healthURL, listenPort string) error {
 	exe, err := os.Executable()
 	if err != nil {
 		return err
@@ -491,8 +497,10 @@ func startDetachedAndWaitHealthy(cmd *cobra.Command, chrome cliChrome, healthURL
 	}
 	child := exec.Command(exe, args...)
 	child.Env = append(os.Environ(), trimStartWorkerEnv+"=1")
-	child.Stdout = os.Stdout
-	child.Stderr = os.Stderr
+	// Do not inherit the parent console. On Windows a console-attached worker keeps
+	// CMD/PowerShell looking "still running" after the parent exits. Parent prints UX.
+	child.Stdout = nil
+	child.Stderr = nil
 	child.Stdin = nil
 	configureDetachedStartProc(child)
 	if err := child.Start(); err != nil {
@@ -549,6 +557,8 @@ func startDetachedAndWaitHealthy(cmd *cobra.Command, chrome cliChrome, healthURL
 	// Worker starts Cursor Link after health; wait so ready UI can include the URL when enabled.
 	waitCursorLinkReadyAfterHealth(45 * time.Second)
 
+	// Same order as before (Deep → adapters → ready → compression mode); parent owns stdout.
+	printStartLiveStatusBanners(cfg, chrome)
 	scheme := startListenScheme()
 	printStartReadyUI(chrome, scheme, listenPort, false)
 	if chrome.StartModeFmt != "" {
@@ -559,6 +569,27 @@ func startDetachedAndWaitHealthy(cmd *cobra.Command, chrome cliChrome, healthURL
 		cliout.Muted(fmt.Sprintf(chrome.StartModeFmt, mode))
 	}
 	return nil
+}
+
+// printStartLiveStatusBanners mirrors the worker's Deep + adapter startup lines so
+// detached start keeps the same console UI without inheriting the worker's console.
+func printStartLiveStatusBanners(cfg config.Local, chrome cliChrome) {
+	prefs, err := deepopt.LoadPreferences()
+	if err == nil && prefs.DefaultTier == deepopt.TierDeep &&
+		chrome.ProxyLiveDeepEnabledFmt != "" &&
+		strings.TrimSpace(chrome.ProxyLiveDeepModeFmt) != "" &&
+		strings.TrimSpace(chrome.ProxyDeepCompactStub) != "" &&
+		strings.TrimSpace(cfg.DeepDeviceMap) != "" &&
+		deepopt.RequireCompressPrefs(prefs, prefsChromeFrom(chrome)) == nil &&
+		deepopt.RequireLiveDeepPolicy(prefs) {
+		fmt.Printf(chrome.ProxyLiveDeepEnabledFmt+"\n",
+			prefs.DeepEngine, prefs.TargetToken, prefs.LiveDeepMinInputTokens,
+			prefs.LiveDeepOOMPolicy, prefs.LiveDeepSkipOnStream)
+	}
+	adapterReg, _ := loadProviderAdapterRegistry(chrome)
+	if adapterReg != nil && chrome.ProxyAdapterEnabledFmt != "" {
+		fmt.Printf(chrome.ProxyAdapterEnabledFmt+"\n", adapterReg.EnabledCount())
+	}
 }
 
 // waitCursorLinkReadyAfterHealth returns when Cursor Link is off, already has a

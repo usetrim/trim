@@ -4,10 +4,28 @@ package cli
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"golang.org/x/sys/windows"
 )
+
+func TestConfigureDetachedStartProc_NoConsole(t *testing.T) {
+	cmd := exec.Command("trim")
+	configureDetachedStartProc(cmd)
+	if cmd.SysProcAttr == nil {
+		t.Fatal("expected SysProcAttr")
+	}
+	want := uint32(windows.CREATE_NEW_PROCESS_GROUP | windows.CREATE_NO_WINDOW)
+	if cmd.SysProcAttr.CreationFlags != want {
+		t.Fatalf("CreationFlags=%#x want %#x", cmd.SysProcAttr.CreationFlags, want)
+	}
+	if !cmd.SysProcAttr.HideWindow {
+		t.Fatal("HideWindow should be true so the worker does not hold the shell console")
+	}
+}
 
 func TestWindowsStableDaemonExe(t *testing.T) {
 	t.Setenv("LOCALAPPDATA", `C:\Users\test\AppData\Local`)

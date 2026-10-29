@@ -187,7 +187,8 @@ func prepareLiveDeep(cfg config.Local, chrome cliChrome) (liveModeLabel string, 
 		}, nil
 	}
 
-	if chrome.ProxyLiveDeepEnabledFmt != "" {
+	// Detached worker: parent prints this after /health so the shell can return cleanly.
+	if chrome.ProxyLiveDeepEnabledFmt != "" && !isTrimStartWorker() {
 		fmt.Printf(chrome.ProxyLiveDeepEnabledFmt+"\n", prefs.DeepEngine, prefs.TargetToken, prefs.LiveDeepMinInputTokens, prefs.LiveDeepOOMPolicy, prefs.LiveDeepSkipOnStream)
 	}
 
