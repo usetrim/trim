@@ -75,8 +75,11 @@ const (
 	pdfMarginL  = 32.0 // print:px-8
 	pdfMarginR  = 32.0
 	pdfPageW    = 612.0
+	pdfPageH    = 792.0 // US Letter
 	pdfContentR = pdfPageW - pdfMarginR
 	pdfContentW = pdfContentR - pdfMarginL
+	pdfStartY   = 760.0 // first text baseline region under top margin
+	pdfPageFloor = 40.0 // keep content above MediaBox bottom; break page instead of clipping
 
 	pdfPtBody     = 13 // text-[13px]
 	pdfPtTitle    = 24 // sm:text-[1.5rem]
@@ -91,6 +94,8 @@ const (
 
 	pdfMarkLG = 28.0 // TrimWordmark size lg
 	pdfMarkSM = 18.0 // TrimWordmark size sm
+	pdfGap1   = 4.0  // gap-1 between header mark / brand / via
+	pdfPadY7  = 28.0 // print:py-7
 )
 
 // BuildReceiptPDF renders a first-party invoice PDF matching the dashboard
@@ -205,15 +210,11 @@ func BuildReceiptPDF(d ReceiptDetail) ([]byte, error) {
 			headerLogo = lg
 		}
 	}
-	// header: print py-7 + title/meta or mark+brand+via (fit US Letter with body 13pt).
-	headerH := 96.0
-	if headerLogo != nil {
-		headerH = 104
-	}
-	// print:bg-zinc-100 / #f4f4f5
+	// header: print py-7; height is content-sized in the renderer (mark+brand+via
+	// must never overlap or spill out of the muted band into the parties section).
 	ops = append(ops, pdfOp{
 		kind:  "header_block",
-		h:     headerH,
+		h:     0, // renderer computes from logo/brand/via + title/meta
 		text:  title,
 		left:  strings.TrimSpace(d.StatusLabel),
 		right: headerMeta,
@@ -669,7 +670,8 @@ var tableColX = [5]float64{
 
 func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 	var content bytes.Buffer
-	y := 760.0
+	pageStreams := make([][]byte, 0, 2)
+	y := pdfStartY
 	curSize := 10
 	curBold := false
 
@@ -715,6 +717,26 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 		content.WriteString(fmt.Sprintf("%s %d Tf\n", name, size))
 		curSize = size
 		curBold = bold
+	}
+
+	// Never clip/drop invoice sections: start a new US Letter page instead.
+	flushPage := func() {
+		content.WriteString("ET\n")
+		pageStreams = append(pageStreams, append([]byte(nil), content.Bytes()...))
+		content.Reset()
+		content.WriteString("BT\n/F1 10 Tf\n")
+		curSize = 10
+		curBold = false
+		y = pdfStartY
+	}
+	ensureSpace := func(need float64) {
+		if need < 1 {
+			need = 1
+		}
+		if y-need >= pdfPageFloor {
+			return
+		}
+		flushPage()
 	}
 
 	writeTextAt := func(x, ty float64, size int, bold bool, s string, r, g, b float64) {
@@ -798,50 +820,6 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 	for _, op := range ops {
 		switch op.kind {
 		case "header_block":
-			h := op.h
-			if h < 90 {
-				h = 100
-			}
-			bottom := y - h
-			pageTop := 792.0
-			content.WriteString("ET\n")
-			content.WriteString(fmt.Sprintf(
-				"%.3f %.3f %.3f rg\n%.2f %.2f %.2f %.2f re\nf\n0 0 0 rg\n",
-				op.r, op.g, op.b,
-				0.0, bottom, pdfPageW, pageTop-bottom,
-			))
-			logoH := 0.0
-			if op.logo != nil {
-				imgName := registerImage(op.logo)
-				// TrimWordmark lg=28; company img sm:h-9 max-w-[140px]
-				maxW, maxH := pdfMarkLG, pdfMarkLG
-				if len(op.logo.JPEG) > 0 {
-					maxW, maxH = 140, 36
-				}
-				dw, dh := fitLogo(float64(op.logo.Width), float64(op.logo.Height), maxW, maxH)
-				logoH = dh
-				logoY := y - 28 - dh // py-7
-				content.WriteString(fmt.Sprintf("q\n%.2f 0 0 %.2f %.2f %.2f cm\n/%s Do\nQ\n", dw, dh, pdfContentR-dw, logoY, imgName))
-			}
-			content.WriteString("BT\n")
-			setFont(pdfPtBody, false)
-			ty := y - 28
-			writeTextAt(pdfMarginL, ty, pdfPtTitle, true, op.text, 0, 0, 0)
-			badge := strings.TrimSpace(op.left)
-			if badge != "" {
-				bw := approxTextWidthFont(strings.ToUpper(badge), pdfPtBadge, true) + 16 // px-2
-				bx := pdfMarginL + approxTextWidthFont(op.text, pdfPtTitle, true) + 10   // gap-2.5
-				content.WriteString("ET\n")
-				content.WriteString(fmt.Sprintf("0.153 0.651 0.267 rg\n%.2f %.2f %.2f 14.00 re\nf\n", bx, ty-3, bw))
-				content.WriteString("BT\n")
-				setFont(pdfPtBadge, true)
-				content.WriteString("1 1 1 rg\n")
-				content.WriteString(fmt.Sprintf("1 0 0 1 %.2f %.2f Tm\n", bx+8, ty))
-				content.WriteString("(")
-				content.WriteString(pdfEscape(strings.ToUpper(badge)))
-				content.WriteString(") Tj\n")
-				content.WriteString("0 0 0 rg\n")
-			}
 			paidAt, totalAmt, sep := "", "", " - "
 			brand, via := "", ""
 			if len(op.lines) > 0 {
@@ -859,7 +837,83 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 			if len(op.lines) > 4 && strings.TrimSpace(op.lines[4]) != "" {
 				sep = op.lines[4]
 			}
-			metaY := ty - 18 // space-y-1.5 under 24pt title
+			hasMeta := paidAt != "" || totalAmt != "" || strings.TrimSpace(op.right) != ""
+
+			// Right column = flex-col items-end gap-1: mark, brand, via.
+			// Reserve a full font-size line box under the mark so glyph ascent
+			// cannot paint through the logo (PDF baselines sit under the glyphs).
+			logoH := 0.0
+			var logoDW, logoDH float64
+			var logoName string
+			if op.logo != nil {
+				logoName = registerImage(op.logo)
+				maxW, maxH := pdfMarkLG, pdfMarkLG
+				if len(op.logo.JPEG) > 0 {
+					maxW, maxH = 140, 36 // sm:h-9 max-w-[140px]
+				}
+				logoDW, logoDH = fitLogo(float64(op.logo.Width), float64(op.logo.Height), maxW, maxH)
+				logoH = logoDH
+			}
+			rightDepth := pdfPadY7
+			if logoH > 0 {
+				rightDepth += logoH
+			}
+			if brand != "" {
+				if logoH > 0 {
+					rightDepth += pdfGap1
+				}
+				rightDepth += float64(pdfPtBrand)
+			}
+			if via != "" {
+				if brand != "" || logoH > 0 {
+					rightDepth += pdfGap1
+				}
+				rightDepth += float64(pdfPtVia)
+			}
+			leftDepth := pdfPadY7 + float64(pdfPtTitle)
+			if hasMeta {
+				leftDepth += 18 // space-y-1.5 under title
+			}
+			inner := rightDepth
+			if leftDepth > inner {
+				inner = leftDepth
+			}
+			h := inner + pdfPadY7
+			if h < 90 {
+				h = 90
+			}
+			bottom := y - h
+			content.WriteString("ET\n")
+			content.WriteString(fmt.Sprintf(
+				"%.3f %.3f %.3f rg\n%.2f %.2f %.2f %.2f re\nf\n0 0 0 rg\n",
+				op.r, op.g, op.b,
+				0.0, bottom, pdfPageW, pdfPageH-bottom,
+			))
+			stackY := y - pdfPadY7
+			if op.logo != nil && logoName != "" {
+				content.WriteString(fmt.Sprintf("q\n%.2f 0 0 %.2f %.2f %.2f cm\n/%s Do\nQ\n", logoDW, logoDH, pdfContentR-logoDW, stackY-logoDH, logoName))
+				stackY -= logoH
+			}
+			content.WriteString("BT\n")
+			setFont(pdfPtBody, false)
+			ty := y - pdfPadY7
+			writeTextAt(pdfMarginL, ty, pdfPtTitle, true, op.text, 0, 0, 0)
+			badge := strings.TrimSpace(op.left)
+			if badge != "" {
+				bw := approxTextWidthFont(strings.ToUpper(badge), pdfPtBadge, true) + 16 // px-2
+				bx := pdfMarginL + approxTextWidthFont(op.text, pdfPtTitle, true) + 10   // gap-2.5
+				content.WriteString("ET\n")
+				content.WriteString(fmt.Sprintf("0.153 0.651 0.267 rg\n%.2f %.2f %.2f 14.00 re\nf\n", bx, ty-3, bw))
+				content.WriteString("BT\n")
+				setFont(pdfPtBadge, true)
+				content.WriteString("1 1 1 rg\n")
+				content.WriteString(fmt.Sprintf("1 0 0 1 %.2f %.2f Tm\n", bx+8, ty))
+				content.WriteString("(")
+				content.WriteString(pdfEscape(strings.ToUpper(badge)))
+				content.WriteString(") Tj\n")
+				content.WriteString("0 0 0 rg\n")
+			}
+			metaY := ty - 18
 			if paidAt != "" || totalAmt != "" {
 				mx := pdfMarginL
 				if paidAt != "" {
@@ -876,21 +930,25 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 			} else if meta := strings.TrimSpace(op.right); meta != "" {
 				writeTextAt(pdfMarginL, metaY, pdfPtMeta, false, meta, 0.45, 0.45, 0.45)
 			}
-			brandY := ty
-			if op.logo != nil {
-				brandY = y - 28 - logoH - 4 // gap-1
-			}
 			if brand != "" {
-				writeTextRight(pdfContentR, brandY, pdfPtBrand, true, brand, 0, 0, 0)
+				if logoH > 0 {
+					stackY -= pdfGap1
+				}
+				stackY -= float64(pdfPtBrand)
+				writeTextRight(pdfContentR, stackY, pdfPtBrand, true, brand, 0, 0, 0)
 			}
 			if via != "" {
-				writeTextRight(pdfContentR, brandY-15, pdfPtVia, false, via, 0.45, 0.45, 0.45)
+				if brand != "" || logoH > 0 {
+					stackY -= pdfGap1
+				}
+				stackY -= float64(pdfPtVia)
+				writeTextRight(pdfContentR, stackY, pdfPtVia, false, via, 0.45, 0.45, 0.45)
 			}
 			y = bottom
 
 		case "footer_block":
-			// Content-sized band like detail footer (py-7 ≈ 16–20pt pad in PDF + gap-3),
-			// never force a tall min height / page-fill gray.
+			// Content-sized band like detail footer (py-7 + gap-3). If it does not
+			// fit the remaining page, break to a new page - never compress/clip.
 			footerParts := make([]string, 0, 8)
 			for _, line := range op.lines {
 				footerParts = append(footerParts, wrapWords(line, 78)...)
@@ -913,12 +971,8 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 			if need < 56 {
 				need = 56
 			}
-			pageFloor := 18.0
+			ensureSpace(need)
 			contentBottom := y - need
-			if contentBottom < pageFloor {
-				contentBottom = pageFloor
-				need = y - contentBottom
-			}
 			content.WriteString("ET\n")
 			content.WriteString(fmt.Sprintf(
 				"%.3f %.3f %.3f rg\n%.2f %.2f %.2f %.2f re\nf\n0 0 0 rg\n",
@@ -953,8 +1007,14 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 			if h < 1 {
 				h = 10
 			}
+			// Spacers must not shove later sections off the MediaBox; break instead.
+			if y-h < pdfPageFloor {
+				flushPage()
+				break
+			}
 			y -= h
 		case "rule":
+			ensureSpace(8)
 			content.WriteString("ET\n")
 			content.WriteString(fmt.Sprintf("0.5 w\n0.910 0.910 0.910 RG\n%.2f %.2f m\n%.2f %.2f l\nS\n0 0 0 RG\n", pdfMarginL, y, pdfContentR, y))
 			content.WriteString("BT\n")
@@ -1029,10 +1089,8 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 					continue
 				}
 				// space-y-0.5 + leading-relaxed at text-[13px]
+				ensureSpace(17)
 				y -= 17
-				if y < 36 {
-					continue
-				}
 				bodyR, bodyG, bodyB := 0.15, 0.15, 0.15 // print:text-zinc-800
 				if l != "" {
 					if lVal != "" {
@@ -1059,10 +1117,9 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 				size = pdfPtBody
 			}
 			// InlineDetail: leading-relaxed + space-y-1
-			y -= float64(size) + 6
-			if y < 36 {
-				continue
-			}
+			need := float64(size) + 6
+			ensureSpace(need)
+			y -= need
 			writeLabeled(pdfMarginL, y, size, op.left, op.right, 0, 0, 0)
 		case "right_pair":
 			size := op.size
@@ -1071,11 +1128,9 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 			}
 			// max-w-[240px] + py-2 + border-b (same hairline every row)
 			totalsL := pdfContentR - 240
+			ensureSpace(7 + float64(size) + 7 + 2)
 			y -= 7 // py-2 top
 			y -= float64(size)
-			if y < 36 {
-				continue
-			}
 			writeTextAt(totalsL, y, size, op.bold, op.left, op.r, op.g, op.b)
 			writeTextRight(pdfContentR, y, size, op.bold, op.right, op.r, op.g, op.b)
 			y -= 7 // py-2 bottom
@@ -1089,10 +1144,8 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 			if size < 1 {
 				size = pdfPtTableH
 			}
+			ensureSpace(float64(size) + 10 + 2)
 			y -= float64(size)
-			if y < 48 {
-				continue
-			}
 			for i, cell := range op.cells {
 				if strings.TrimSpace(cell) == "" {
 					continue
@@ -1121,6 +1174,13 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 			taxTotalL := op.cells[4]
 			taxTotalV := op.right
 			taxRight := pdfMarginL + 240
+			// Full tax breakdown (headers + row + total) must stay intact — never clip mid-table.
+			taxNeed := float64(th) + 8 + 8 + float64(body) + 8
+			if strings.TrimSpace(taxTotalL) != "" {
+				taxNeed += 10 + float64(body)
+			}
+			taxNeed += 4
+			ensureSpace(taxNeed)
 			y -= float64(th)
 			writeTextAt(pdfMarginL, y, th, true, taxPctH, 0, 0, 0)
 			writeTextRight(taxRight, y, th, true, taxAmtH, 0, 0, 0)
@@ -1154,14 +1214,17 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 			if len(stack) == 0 {
 				stack = []string{op.cells[0]}
 			}
-			// py-3.5; sublines text-[12px] mt-0.5
+			// py-3.5; sublines text-[12px] mt-0.5 — keep the whole row on one page.
+			rowNeed := 12 + float64(size)
+			if len(stack) > 1 {
+				rowNeed += float64(len(stack)-1) * (float64(pdfPtTableH) + 2)
+			}
+			rowNeed += 12 + 2
+			ensureSpace(rowNeed)
 			y -= 12
 			y -= float64(size)
 			topY := y
 			for i, line := range stack {
-				if y < 48 {
-					break
-				}
 				if i == 0 {
 					writeTextAt(tableColX[0], y, size, true, line, 0, 0, 0)
 				} else if i == 1 {
@@ -1197,10 +1260,9 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 			if size < 1 {
 				size = pdfPtBody
 			}
-			y -= float64(size + 4)
-			if y < 36 {
-				continue
-			}
+			need := float64(size + 4)
+			ensureSpace(need)
+			y -= need
 			x := op.x
 			if x < 1 {
 				x = pdfMarginL
@@ -1210,23 +1272,24 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 	}
 	_ = drawImage
 	content.WriteString("ET\n")
-	stream := content.Bytes()
+	pageStreams = append(pageStreams, append([]byte(nil), content.Bytes()...))
+	if len(pageStreams) == 0 {
+		return nil, errors.New("receipt_pdf_empty")
+	}
 
 	var buf bytes.Buffer
 	write := func(s string) { buf.WriteString(s) }
-	offsets := make([]int, 0, 20)
+	offsets := make([]int, 0, 32)
 	offsets = append(offsets, 0) // unused index 0
 
-	write("%PDF-1.4\n")
-	offsets = append(offsets, buf.Len())
-	write("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n")
-	offsets = append(offsets, buf.Len())
-	write("2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n")
-	offsets = append(offsets, buf.Len())
+	nPages := len(pageStreams)
+	// Object map: 1=Catalog 2=Pages; then pairs (Page, Contents) per page; then fonts; then images.
+	pageObj := func(i int) int { return 3 + i*2 }
+	contentObj := func(i int) int { return 4 + i*2 }
+	font1Obj := 3 + nPages*2
+	font2Obj := font1Obj + 1
+	nextObj := font2Obj + 1
 
-	// Pre-assign object numbers for images + soft masks after fonts (5,6).
-	// Page resources reference them; objects written after content stream.
-	nextObj := 7
 	type imgObjNums struct {
 		img  int
 		mask int // 0 if none
@@ -1250,21 +1313,41 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 
 	var resources string
 	if xobjects != "" {
-		resources = fmt.Sprintf("<< /Font << /F1 5 0 R /F2 6 0 R >> /XObject << %s >> >>", xobjects)
+		resources = fmt.Sprintf("<< /Font << /F1 %d 0 R /F2 %d 0 R >> /XObject << %s >> >>", font1Obj, font2Obj, xobjects)
 	} else {
-		resources = "<< /Font << /F1 5 0 R /F2 6 0 R >> >>"
+		resources = fmt.Sprintf("<< /Font << /F1 %d 0 R /F2 %d 0 R >> >>", font1Obj, font2Obj)
 	}
-	write(fmt.Sprintf("3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources %s >>\nendobj\n", resources))
+
+	kids := make([]string, 0, nPages)
+	for i := 0; i < nPages; i++ {
+		kids = append(kids, fmt.Sprintf("%d 0 R", pageObj(i)))
+	}
+
+	write("%PDF-1.4\n")
+	offsets = append(offsets, buf.Len())
+	write("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n")
+	offsets = append(offsets, buf.Len())
+	write(fmt.Sprintf("2 0 obj\n<< /Type /Pages /Kids [%s] /Count %d >>\nendobj\n", strings.Join(kids, " "), nPages))
+
+	// Page + content objects must appear in ascending object-number order for a
+	// compact xref (pageObj i, contentObj i interleaved).
+	for i := 0; i < nPages; i++ {
+		offsets = append(offsets, buf.Len())
+		write(fmt.Sprintf(
+			"%d 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 %.0f %.0f] /Contents %d 0 R /Resources %s >>\nendobj\n",
+			pageObj(i), pdfPageW, pdfPageH, contentObj(i), resources,
+		))
+		stream := pageStreams[i]
+		offsets = append(offsets, buf.Len())
+		write(fmt.Sprintf("%d 0 obj\n<< /Length %d >>\nstream\n", contentObj(i), len(stream)))
+		buf.Write(stream)
+		write("\nendstream\nendobj\n")
+	}
 
 	offsets = append(offsets, buf.Len())
-	write(fmt.Sprintf("4 0 obj\n<< /Length %d >>\nstream\n", len(stream)))
-	buf.Write(stream)
-	write("\nendstream\nendobj\n")
-
+	write(fmt.Sprintf("%d 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n", font1Obj))
 	offsets = append(offsets, buf.Len())
-	write("5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n")
-	offsets = append(offsets, buf.Len())
-	write("6 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>\nendobj\n")
+	write(fmt.Sprintf("%d 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>\nendobj\n", font2Obj))
 
 	for _, io := range imgObjs {
 		img := io.slot.img
