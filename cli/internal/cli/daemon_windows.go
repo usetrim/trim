@@ -13,19 +13,24 @@ import (
 	"time"
 
 	"github.com/usetrim/trim/cli/internal/cliout"
+	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
 )
 
 const windowsRunValueName = "TrimProxy"
 
-// configureDetachedStartProc: new process group so Ctrl+C in the parent shell
-// does not stop the background `trim start` worker.
+// configureDetachedStartProc: fully detach the background `trim start` worker from
+// the parent console so CMD/PowerShell regain the prompt after ready banners.
+// CREATE_NEW_PROCESS_GROUP alone still leaves a console process attached (shell
+// looks "stuck"); CREATE_NO_WINDOW + HideWindow is the Windows CLI daemon pattern.
+// Parent owns all user-facing stdout; worker stdio is redirected to NUL by the caller.
 func configureDetachedStartProc(cmd *exec.Cmd) {
 	if cmd == nil {
 		return
 	}
 	cmd.SysProcAttr = &syscall.SysProcAttr{
-		CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP,
+		HideWindow:    true,
+		CreationFlags: windows.CREATE_NEW_PROCESS_GROUP | windows.CREATE_NO_WINDOW,
 	}
 }
 
@@ -63,7 +68,7 @@ func uninstallWindowsTask(chrome cliChrome) error {
 	if stable, err := windowsStableDaemonExe(); err == nil {
 		stopWindowsTrimExactPath(stable)
 		_ = os.Remove(stable)
-		_ = os.Remove(filepath.Dir(stable)) // bin/
+		_ = os.Remove(filepath.Dir(stable))               // bin/
 		_ = os.Remove(filepath.Dir(filepath.Dir(stable))) // Trim/ if empty
 	}
 	stopWindowsTrimPathContains(`node_modules\@usetrim`)
