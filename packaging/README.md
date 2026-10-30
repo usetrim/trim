@@ -73,7 +73,7 @@ Prefer Release binaries, Homebrew, npm, or the curl/irm installers for end users
 
 ## End-user uninstall
 
-Worldwide one-shot (full purge by default - data dirs, Deep caches from site_messages, binary/PATH, Windows Apps entry):
+Worldwide one-shot (full purge by default - data dirs, Deep caches from site_messages, CLI binary, Windows user PATH / Apps entry):
 
 ```bash
 trim uninstall
@@ -89,14 +89,15 @@ curl -fsSL https://use-trim.com/uninstall.sh | sh
 irm https://use-trim.com/uninstall.ps1 | iex
 ```
 
-On Windows, Settings → Apps → Trim also runs `trim uninstall` (same full purge of `%USERPROFILE%\.trim` and Deep model weights).
+On Windows, Settings → Apps → Trim also runs `trim uninstall` (same full purge of `%USERPROFILE%\.trim`, Deep model weights, `%LOCALAPPDATA%\Trim`, and detected npm/Scoop/winget installs). The running `trim.exe` is renamed and deleted by a detached post-exit helper (Windows cannot delete a mapped exe while it runs).
 
-Package managers (after `trim uninstall` so local caches are cleared):
+Package-manager fallbacks only if `trim` still resolves after `trim uninstall`:
 
 ```bash
 brew uninstall trim
 scoop uninstall trim
 winget uninstall Trim.CLI
+npm uninstall -g @usetrim/trim
 ```
 
 Product docs: `/docs/uninstall`.

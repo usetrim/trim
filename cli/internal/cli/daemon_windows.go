@@ -65,12 +65,15 @@ func installWindowsTask(exe string, chrome cliChrome) error {
 func uninstallWindowsTask(chrome cliChrome) error {
 	_ = deleteWindowsRunKey()
 	removeLegacyWindowsScheduledTask()
-	// Stop stable + legacy npm-locked processes, then best-effort remove stable binary.
+	// Stop stable + legacy npm-locked processes. Full wipe of LocalAppData\Trim is
+	// skipped when daemonUninstallPreserveBinary is set (`trim uninstall` defers wipe
+	// until after rename; `--keep-data` skips wipe entirely).
 	if stable, err := windowsStableDaemonExe(); err == nil {
 		stopWindowsTrimExactPath(stable)
-		_ = os.Remove(stable)
-		_ = os.Remove(filepath.Dir(stable))               // bin/
-		_ = os.Remove(filepath.Dir(filepath.Dir(stable))) // Trim/ if empty
+		if !daemonUninstallPreserveBinary {
+			_ = os.Remove(stable)
+			_ = os.RemoveAll(filepath.Dir(filepath.Dir(stable))) // %LOCALAPPDATA%\Trim
+		}
 	}
 	stopWindowsTrimPathContains(`node_modules\@usetrim`)
 	stopWindowsTrimPathContains(`/node_modules/@usetrim/`)

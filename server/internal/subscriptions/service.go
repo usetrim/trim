@@ -2527,17 +2527,19 @@ func builtinMessageForCode(code string) string {
 	case "CLI_HELP_LOGOUT_SHORT":
 		return "Sign out and clear the stored API token"
 	case "CLI_HELP_UNINSTALL_SHORT":
-		return "Fully remove Trim from this machine (proxy, daemon, data, Deep caches, binary)"
+		return "Fully remove Trim from this machine (proxy, daemon, data, Deep caches, binary, package install)"
 	case "CLI_HELP_UNINSTALL_LONG":
-		return "Fully removes Trim from this machine:\n  - stops the local proxy and Cursor Link tunnel\n  - removes the OS login daemon\n  - clears CLI credentials\n  - reverts IDE Base URL overrides from trim setup\n  - deletes ~/.trim and ~/.config/trim, Deep caches, sidecars, and the CLI binary/PATH when possible\n\nUse --keep-data to skip deleting local data directories, Deep caches, and the binary.\n\nIf you installed via a package manager, also uninstall that package after trim uninstall:\n  brew uninstall trim\n  scoop uninstall trim\n  winget uninstall Trim.CLI\n  npm uninstall -g @usetrim/trim"
+		return "Fully removes Trim from this machine:\n  - stops the local proxy, Cursor Link tunnel, and other Trim processes\n  - removes the OS login daemon\n  - clears CLI credentials\n  - reverts IDE Base URL overrides from trim setup\n  - deletes ~/.trim and ~/.config/trim, Deep caches, sidecars, and the CLI binary (plus Windows user PATH / Apps entry)\n  - when installed via npm / Scoop / Homebrew / winget, schedules that package uninstall after exit (so Windows can release the running binary)\n\nUse --keep-data to skip deleting local data directories, Deep caches, the CLI binary/package, and Windows LocalAppData Trim.\n\nIDE extension is separate: Trim: Clear API Key, then uninstall Trim IDE from the Extensions view.\nIf a detected package install was not auto-removed after exit:\n  brew uninstall trim\n  scoop uninstall trim\n  winget uninstall Trim.CLI\n  npm uninstall -g @usetrim/trim"
 	case "CLI_HELP_UNINSTALL_FLAG_KEEP_DATA":
-		return "Keep ~/.trim, ~/.config/trim, Deep Mode caches, and the CLI binary (only stop/daemon/logout/setup revert)"
+		return "Keep ~/.trim, ~/.config/trim, Deep Mode caches, the CLI binary/package, and Windows LocalAppData Trim (only stop / unregister Always-on / logout / setup revert)"
 	case "CLI_HELP_UNINSTALL_FLAG_PURGE":
 		return "Deprecated: uninstall purges by default; use --keep-data to retain local data"
 	case "CLI_UNINSTALL_STARTING":
 		return "Uninstalling Trim from this machine…"
 	case "CLI_UNINSTALL_STOPPED":
 		return "Local proxy stop attempted."
+	case "CLI_UNINSTALL_PROCESSES_STOPPED":
+		return "Stopped other Trim processes on this machine."
 	case "CLI_UNINSTALL_DAEMON_OK":
 		return "OS login daemon removed (when supported)."
 	case "CLI_UNINSTALL_LOGOUT_OK":
@@ -2558,8 +2560,12 @@ func builtinMessageForCode(code string) string {
 		return "Removed Deep Mode sidecar: %s"
 	case "CLI_UNINSTALL_BINARY_REMOVED_FMT":
 		return "Removed CLI binary: %s"
+	case "CLI_UNINSTALL_BINARY_SCHEDULED_FMT":
+		return "Scheduled CLI binary removal after exit: %s"
 	case "CLI_UNINSTALL_BINARY_MANUAL_FMT":
-		return "Could not remove the running binary automatically. Delete manually: %s"
+		return "Could not schedule binary removal. Delete manually after closing all Trim windows (or reboot if Windows deferred the delete): %s"
+	case "CLI_UNINSTALL_PKG_SCHEDULED_FMT":
+		return "Scheduled package removal after exit: %s"
 	case "CLI_UNINSTALL_PATH_REMOVED":
 		return "Removed Trim install directory from the user PATH (Windows)."
 	case "CLI_UNINSTALL_DONE":
@@ -2567,13 +2573,13 @@ func builtinMessageForCode(code string) string {
 	case "CLI_UNINSTALL_NEXT_EXT":
 		return "IDE extension: Trim: Clear API Key (clears Secret Storage + local extension state), then Command Palette → Extensions → uninstall Trim IDE."
 	case "CLI_UNINSTALL_NEXT_PKG_BREW":
-		return "If installed via Homebrew: brew uninstall trim"
+		return "Fallback if Homebrew install was not auto-removed: brew uninstall trim"
 	case "CLI_UNINSTALL_NEXT_PKG_SCOOP":
-		return "If installed via Scoop: scoop uninstall trim"
+		return "Fallback if Scoop install was not auto-removed: scoop uninstall trim"
 	case "CLI_UNINSTALL_NEXT_PKG_WINGET":
-		return "If installed via winget: winget uninstall Trim.CLI"
+		return "Fallback if winget install was not auto-removed: winget uninstall Trim.CLI"
 	case "CLI_UNINSTALL_NEXT_PKG_NPM":
-		return "If installed via npm: npm uninstall -g @usetrim/trim"
+		return "Fallback if npm install was not auto-removed: npm uninstall -g @usetrim/trim"
 	case "CLI_UNINSTALL_HF_HUB_DIRS":
 		return "models--microsoft--llmlingua-2-bert-base-multilingual-cased-meetingbank,models--microsoft--llmlingua-2-xlm-roberta-large-meetingbank"
 	case "CLI_UNINSTALL_HF_CACHE_REL":

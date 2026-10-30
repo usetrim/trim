@@ -75,7 +75,7 @@ func applyHumanChromeFallbacks(ch *cliChrome) {
 	// Always refresh root / config / uninstall / Cursor Link help so a CLI newer than
 	// the deployed site_messages catalog still lists cursor-link, config sync, and
 	// package-manager uninstall (npm -g) correctly worldwide.
-	ch.HelpRootLong = "Trim keeps a local Fast Mode proxy on your machine so IDE traffic uses less noisy context.\n\nEveryday: start, stop, status, stats, upgrade, autostart, cursor-link, login, logout, uninstall, setup, version\nAdvanced: tui, compress, daemon, telemetry, config (get | set | sync | rates | models)\n\nFast vs Deep (new accounts default to Deep = Fast then Deep):\n  trim config get default-tier\n  trim config set default-tier deep\n  trim config set default-tier fast\n  trim config rates\n  trim config set compression-rate 0.7\n  trim config models\n  trim config set deep-v2-backbone mbert-base\n  trim config sync\n\nDeep keep-rate (after/before, Microsoft LLMLingua): Dashboard slider or trim config rates / set compression-rate (billing min/max/step).\nDeep Base Model (Microsoft LLMLingua-2): Dashboard picker or trim config models / set deep-v2-backbone (billing catalog; default mbert-base, optional xlm-roberta-large).\n\nCursor Agent: trim cursor-link enable → trim start → trim cursor-link url (paste HTTPS …/v1; not 127.0.0.1).\n\nSimple savings check after trim start:\n  trim stats\n  open http://127.0.0.1:<port>/dashboard → Show savings detail\n\ntrim status = cloud quota. trim stats = local Deep status / savings meter.\n\nFull remove: trim uninstall (then brew/scoop/winget/npm uninstall if you installed that way).\n\nRun \"trim help <command>\" for details. Prefer trim start / autostart for daily use (new accounts default Deep = Fast then Deep on the live proxy). Use trim compress --deep for file/batch."
+	ch.HelpRootLong = "Trim keeps a local Fast Mode proxy on your machine so IDE traffic uses less noisy context.\n\nEveryday: start, stop, status, stats, upgrade, autostart, cursor-link, login, logout, uninstall, setup, version\nAdvanced: tui, compress, daemon, telemetry, config (get | set | sync | rates | models)\n\nFast vs Deep (new accounts default to Deep = Fast then Deep):\n  trim config get default-tier\n  trim config set default-tier deep\n  trim config set default-tier fast\n  trim config rates\n  trim config set compression-rate 0.7\n  trim config models\n  trim config set deep-v2-backbone mbert-base\n  trim config sync\n\nDeep keep-rate (after/before, Microsoft LLMLingua): Dashboard slider or trim config rates / set compression-rate (billing min/max/step).\nDeep Base Model (Microsoft LLMLingua-2): Dashboard picker or trim config models / set deep-v2-backbone (billing catalog; default mbert-base, optional xlm-roberta-large).\n\nCursor Agent: trim cursor-link enable → trim start → trim cursor-link url (paste HTTPS …/v1; not 127.0.0.1).\n\nSimple savings check after trim start:\n  trim stats\n  open http://127.0.0.1:<port>/dashboard → Show savings detail\n\ntrim status = cloud quota. trim stats = local Deep status / savings meter.\n\nFull remove: trim uninstall (stops Trim processes, deletes local data/binary, and auto-removes npm/Scoop/Homebrew/winget installs when detected).\n\nRun \"trim help <command>\" for details. Prefer trim start / autostart for daily use (new accounts default Deep = Fast then Deep on the live proxy). Use trim compress --deep for file/batch."
 	ch.HelpConfigShort = "Local Fast/Deep preferences (get | set | sync | rates | models)"
 	ch.HelpConfigLong = "Manage local Fast/Deep preferences under ~/.config/trim/.\n\nNew accounts default to Deep Mode (live proxy runs Fast then Deep). Switch to Fast anytime.\n\n  trim config get\n  trim config get default-tier\n  trim config get compression-rate\n  trim config get deep-v2-backbone\n  trim config rates\n  trim config models\n  trim config set default-tier deep\n  trim config set default-tier fast\n  trim config set compression-rate 0.7\n  trim config set deep-v2-backbone mbert-base\n  trim config set deep-v2-backbone xlm-roberta-large\n  trim config sync\n\nget - show local preferences\nrates - list allowed keep-rates; mark billing default and selected\nmodels - list allowed LLMLingua-2 Base Models; mark billing default and selected\nset - write a local preference key (when logged in, default-tier / deep-engine / compression-rate / deep-v2-backbone also update your Trim cloud profile)\nsync - pull Fast/Deep preferences and provider adapters from your Trim cloud profile (requires trim login)\n\nFast = live proxy Fast only. Deep = live proxy runs Fast then Deep (LLMLingua-2) at your compression rate and Base Model.\nAfter Dashboard → Settings changes: trim config sync, then restart with trim start."
 	ch.HelpConfigGetShort = "Show preferences (default-tier, deep-engine, deep-v2-backbone, compression-rate)"
@@ -109,9 +109,47 @@ func applyHumanChromeFallbacks(ch *cliChrome) {
 	set(&ch.HelpCompressLong, "Fast Mode is low-latency local compression (live proxy and files). Deep Mode is stronger on-machine LLMLingua: live proxy when Preferences Deep is on, and trim compress --deep for file/batch. Engines are not loaded in Trim cloud.\n\nDeep engines (pick one): v2 LLMLingua-2 (recommended; uses synced Base Model from trim config models), long LongLLMLingua (question-aware; requires --question), v1 LLMLingua (classic).\n\nKeep-rate: --rate or synced compression-rate (Dashboard / trim config rates).\nBase Model (v2 only): Dashboard picker or trim config models / set deep-v2-backbone (billing catalog; default mbert-base, optional xlm-roberta-large). No free-text Hugging Face box.\n\nLicensed use still requires Trim login and network.")
 	set(&ch.HelpCompressFlagEngine, "Deep engine: v2 (recommended; uses synced Base Model) | long (needs --question) | v1 (classic). Else prefs deep-engine.")
 	ch.ProxyLiveDeepEnabledFmt = "Live Deep Mode on (engine %s, backbone %s, compression_rate %g, oom=%s). Synced from account preferences / billing settings."
-	ch.HelpUninstallShort = "Fully remove Trim from this machine (proxy, daemon, data, Deep caches, binary)"
-	ch.HelpUninstallLong = "Fully removes Trim from this machine:\n  - stops the local proxy and Cursor Link tunnel\n  - removes the OS login daemon\n  - clears CLI credentials\n  - reverts IDE Base URL overrides from trim setup\n  - deletes ~/.trim and ~/.config/trim, Deep caches, sidecars, and the CLI binary/PATH when possible\n\nUse --keep-data to skip deleting local data directories, Deep caches, and the binary.\n\nIf you installed via a package manager, also uninstall that package after trim uninstall:\n  brew uninstall trim\n  scoop uninstall trim\n  winget uninstall Trim.CLI\n  npm uninstall -g @usetrim/trim"
-	ch.UninstallNextPkgNpm = "If installed via npm: npm uninstall -g @usetrim/trim"
+	ch.HelpUninstallShort = "Fully remove Trim from this machine (proxy, daemon, data, Deep caches, binary, package install)"
+	ch.HelpUninstallLong = "Fully removes Trim from this machine:\n  - stops the local proxy, Cursor Link tunnel, and other Trim processes\n  - removes the OS login daemon\n  - clears CLI credentials\n  - reverts IDE Base URL overrides from trim setup\n  - deletes ~/.trim and ~/.config/trim, Deep caches, sidecars, and the CLI binary (plus Windows user PATH / Apps entry)\n  - when installed via npm / Scoop / Homebrew / winget, schedules that package uninstall after exit (so Windows can release the running binary)\n\nUse --keep-data to skip deleting local data directories, Deep caches, the CLI binary/package, and Windows LocalAppData Trim.\n\nIDE extension is separate: Trim: Clear API Key, then uninstall Trim IDE from the Extensions view.\nIf a detected package install was not auto-removed after exit:\n  brew uninstall trim\n  scoop uninstall trim\n  winget uninstall Trim.CLI\n  npm uninstall -g @usetrim/trim"
+	ch.HelpUninstallFlagKeepData = "Keep ~/.trim, ~/.config/trim, Deep Mode caches, the CLI binary/package, and Windows LocalAppData Trim (only stop / unregister Always-on / logout / setup revert)"
+	ch.UninstallProcessesStopped = "Stopped other Trim processes on this machine."
+	ch.UninstallBinaryScheduledFmt = "Scheduled CLI binary removal after exit: %s"
+	ch.UninstallPkgScheduledFmt = "Scheduled package removal after exit: %s"
+	ch.UninstallBinaryManualFmt = "Could not schedule binary removal. Delete manually after closing all Trim windows (or reboot if Windows deferred the delete): %s"
+	ch.UninstallNextPkgBrew = "Fallback if Homebrew install was not auto-removed: brew uninstall trim"
+	ch.UninstallNextPkgScoop = "Fallback if Scoop install was not auto-removed: scoop uninstall trim"
+	ch.UninstallNextPkgWinget = "Fallback if winget install was not auto-removed: winget uninstall Trim.CLI"
+	ch.UninstallNextPkgNpm = "Fallback if npm install was not auto-removed: npm uninstall -g @usetrim/trim"
+	// Offline fail-open purge lists (same defaults as MessageForCode) so uninstall
+	// still wipes local data / Deep / sidecars when API chrome is stale or unreachable.
+	set(&ch.UninstallHomeDirsRel, ".trim,.config/trim")
+	set(&ch.UninstallHfCacheRel, ".cache/huggingface")
+	set(&ch.UninstallHfHubSubdir, "hub")
+	set(&ch.UninstallHfHubDirs, "models--microsoft--llmlingua-2-bert-base-multilingual-cased-meetingbank,models--microsoft--llmlingua-2-xlm-roberta-large-meetingbank")
+	set(&ch.UninstallPipPackages, "llmlingua")
+	set(&ch.UninstallPipBins, "pip,pip3")
+	set(&ch.UninstallPythonBins, "python,python3")
+	set(&ch.UninstallPipModule, "pip")
+	set(&ch.UninstallSidecarNames, "trim-deep,trim-deep.exe,optimizer,optimizer.exe,optimizer.py,requirements-deep.txt,requirements.txt")
+	set(&ch.UninstallDarwinLogRels, "Library/Logs/trim.log,Library/Logs/trim.err.log")
+	set(&ch.UninstallArpDisplayName, "Trim")
+	set(&ch.UninstallArpPublisher, "Trim")
+	set(&ch.UninstallArpRegKey, "Trim")
+	set(&ch.UninstallStarting, "Uninstalling Trim from this machine…")
+	set(&ch.UninstallStopped, "Local proxy stop attempted.")
+	set(&ch.UninstallDaemonOk, "OS login daemon removed (when supported).")
+	set(&ch.UninstallLogoutOk, "CLI credentials cleared.")
+	set(&ch.UninstallSetupNone, "No trim setup Base URL overrides found to revert.")
+	set(&ch.UninstallSetupRevertedFmt, "Reverted IDE/local proxy Base URL in %s")
+	set(&ch.UninstallConfigRemovedFmt, "Removed local data: %s")
+	set(&ch.UninstallLogsRemoved, "Removed Trim log files (when present).")
+	set(&ch.UninstallDeepOk, "Deep Mode local caches and pip packages cleaned (when present).")
+	set(&ch.UninstallBinaryRemovedFmt, "Removed CLI binary: %s")
+	set(&ch.UninstallPathRemoved, "Removed Trim install directory from the user PATH (Windows).")
+	set(&ch.UninstallArpRemoved, "Removed Trim from Windows Apps & features.")
+	set(&ch.UninstallDone, "Trim local uninstall finished.")
+	set(&ch.UninstallNextExt, "IDE extension: Trim: Clear API Key (clears Secret Storage + local extension state), then Command Palette → Extensions → uninstall Trim IDE.")
+	set(&ch.UninstallSidecarRemovedFmt, "Removed Deep Mode sidecar: %s")
 	ch.HelpCursorLinkShort = "Public HTTPS URL to local Trim for Cursor Agent (managed tunnel)"
 	ch.HelpCursorLinkLong = "Trim Cursor Link exposes your local Trim proxy through an automatic Cloudflare quick tunnel so Cursor Agent (cloud) can reach it without 127.0.0.1.\n\nCompression, meters, and adapters still run on this PC. The public hostname is only a door. Lifecycle matches trim start / trim stop when enabled.\n\nTypical flow:\n  trim cursor-link enable\n  trim start\n  trim cursor-link url\n  # paste …/cl/<token>/v1 into Cursor Override OpenAI Base URL\n  trim stop\n\nSubcommands: enable, disable, status, url, rotate"
 	ch.HelpCursorLinkEnableShort = "Enable Cursor Link (auto tunnel while trim start is running)"

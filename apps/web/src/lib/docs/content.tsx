@@ -517,7 +517,7 @@ go install ./cmd/trim
       { type: "h2", id: "remove", text: "Remove Trim" },
       {
         type: "p",
-        text: "To fully remove Trim, local data, and Deep Mode caches from a machine, see Uninstall. Prefer trim uninstall (or Windows Settings → Apps) before brew/scoop/winget uninstall so local caches are cleared.",
+        text: "To fully remove Trim, local data, and Deep Mode caches from a machine, see Uninstall. Prefer trim uninstall (or Windows Settings → Apps); it also schedules npm / Scoop / Homebrew / winget package removal when that install channel is detected.",
       },
       { type: "h2", id: "updates", text: "Keeping Trim updated" },
       {
@@ -529,7 +529,7 @@ go install ./cmd/trim
 
   uninstall: page(
     "Uninstall",
-    "Fully remove Trim from a machine worldwide: one command (or Windows Apps & features) clears proxy, daemon, credentials, setup overrides, local data, Deep Mode caches, and the CLI binary.",
+    "Fully remove Trim from a machine worldwide: one command (or Windows Apps & features) clears proxy, other Trim processes, daemon, credentials, setup overrides, local data, Deep Mode caches, the CLI binary, and detected npm / Scoop / Homebrew / winget installs.",
     [
       {
         type: "p",
@@ -538,7 +538,7 @@ go install ./cmd/trim
       {
         type: "callout",
         title: "Recommended",
-        text: "On any OS: run trim uninstall. On Windows you can also use Settings → Apps → Trim. Both run the same full purge, including %USERPROFILE%\\.trim (or ~/.trim) and Deep Mode model caches listed in site_messages.",
+        text: "On any OS: run trim uninstall. On Windows you can also use Settings → Apps → Trim. Both run the same full purge, including %USERPROFILE%\\.trim (or ~/.trim) and Deep Mode model caches listed in site_messages. On Windows, the running binary is renamed and package removal is scheduled after exit so the file lock cannot leave trim on PATH.",
       },
       { type: "h2", id: "one-shot", text: "One-shot full uninstall" },
       {
@@ -548,12 +548,13 @@ go install ./cmd/trim
       },
       {
         type: "p",
-        text: "That single command stops the local proxy, removes the OS login daemon, clears CLI credentials, reverts IDE Base URL overrides written by trim setup, deletes local config/data directories from site_messages, cleans Deep Mode Hugging Face hub dirs and pip packages from site_messages, removes Deep sidecars next to the binary, deletes the CLI binary and Windows user PATH entry when possible, and removes the Windows Apps & features registration.",
+        text: "That single command stops the local proxy and other Trim processes, removes the OS login daemon, clears CLI credentials, reverts IDE Base URL overrides written by trim setup, deletes local config/data directories from site_messages, cleans Deep Mode Hugging Face hub dirs and pip packages from site_messages, removes Deep sidecars next to the binary, deletes or schedules removal of the CLI binary and Windows user PATH entry, removes the Windows Apps & features registration, and when the install path is npm / Scoop / Homebrew / winget schedules that package uninstall after exit.",
       },
       {
         type: "code",
         language: "bash",
-        code: `# Keep local data, Deep caches, and the binary (stop / daemon / logout / setup revert only)
+        code: `# Keep local data, Deep caches, CLI binary, and package install
+# (stop / unregister Always-on / logout / setup revert only)
 trim uninstall --keep-data`,
       },
       { type: "h2", id: "helpers", text: "Helper scripts" },
@@ -581,21 +582,22 @@ irm https://use-trim.com/uninstall.ps1 | iex`,
       },
       {
         type: "p",
-        text: "Windows runs the same UninstallString as trim uninstall, so user data and Deep Mode weights are swept with the product-not left behind after Remove Programs.",
+        text: "Windows runs the same UninstallString as trim uninstall, so user data and Deep Mode weights are swept with the product - not left behind after Remove Programs.",
       },
       { type: "h2", id: "packages", text: "Package managers" },
       {
         type: "code",
         language: "bash",
         code: `trim uninstall
-brew uninstall trim
-scoop uninstall trim
-winget uninstall Trim.CLI
-npm uninstall -g @usetrim/trim`,
+# If a detected channel was not auto-removed after exit:
+# brew uninstall trim
+# scoop uninstall trim
+# winget uninstall Trim.CLI
+# npm uninstall -g @usetrim/trim`,
       },
       {
         type: "p",
-        text: "Run trim uninstall first so local data and Deep caches are cleared, then remove the package-manager formula if you installed via brew, scoop, winget, or npm (-g).",
+        text: "trim uninstall detects npm / Scoop / Homebrew / winget from the running binary path and by probing each package manager, then schedules that package removal after exit (required on Windows while the CLI file is locked). The CLI also prints the matching fallback for each detected channel in case the post-exit helper or package manager fails.",
       },
       { type: "h2", id: "extension", text: "IDE extension" },
       {
@@ -625,7 +627,7 @@ npm uninstall -g @usetrim/trim`,
           "Local data dirs from site_messages (typically ~/.trim and ~/.config/trim, including metrics)",
           "macOS Trim log files from site_messages when present",
           "Deep Mode Hugging Face hub dirs, pip packages, and sidecars from site_messages",
-          "CLI binary and Windows user PATH / Apps entry when possible",
+          "CLI binary, Windows user PATH / Apps entry, %LOCALAPPDATA%\\Trim, and detected npm / Scoop / Homebrew / winget installs (scheduled after exit on Windows)",
         ],
       },
       {
@@ -1006,10 +1008,7 @@ trim status
 trim stats
 trim config sync
 trim stop
-trim uninstall
-# if installed via package manager, also:
-# npm uninstall -g @usetrim/trim
-# brew uninstall trim | scoop uninstall trim | winget uninstall Trim.CLI`,
+trim uninstall`,
       },
       {
         type: "callout",
@@ -5974,9 +5973,10 @@ Optional build features: follow README flags for native parsers`,
         type: "ul",
         items: [
           "Run trim uninstall (full purge by default), or curl -fsSL https://use-trim.com/uninstall.sh | sh / irm https://use-trim.com/uninstall.ps1 | iex",
-          "On Windows, Settings → Apps → Trim runs the same full purge including %USERPROFILE%\\.trim and Deep Hugging Face hub dirs from site_messages (CLI_UNINSTALL_HF_HUB_DIRS covers both mbert and xlm-roberta-large meetingbank caches when configured)",
+          "On Windows, Settings → Apps → Trim runs the same full purge including %USERPROFILE%\\.trim and Deep Hugging Face hub dirs from site_messages (both mbert and xlm-roberta-large meetingbank caches when configured)",
           "Clear the IDE key and uninstall the Trim IDE extension in the editor",
-          "If you used brew/scoop/winget, run trim uninstall first, then the package-manager uninstall",
+          "On Windows, trim uninstall renames the running binary; a detached post-exit helper deletes it and removes detected package installs (Windows cannot delete a mapped exe while it runs). A reboot-pending delete is also registered so a killed helper cannot leave vendor\\trim.exe",
+          "trim uninstall schedules removal of detected npm / Scoop / Homebrew / winget installs after exit; if one remains, run the matching package-manager uninstall printed as a fallback",
           "Deleting a cloud account does not wipe local machines-uninstall on each device",
         ],
       },
@@ -6096,7 +6096,7 @@ Optional build features: follow README flags for native parsers`,
       { type: "h2", id: "uninstall", text: "How do I fully remove Trim from my machine?" },
       {
         type: "p",
-        text: "Run trim uninstall (full purge by default). On Windows you can also use Settings → Apps → Trim. That clears proxy, daemon, credentials, setup overrides, local data, Deep Mode caches from site_messages, and the binary when possible. Then Clear API Key and uninstall the Trim IDE extension in the editor. Delete the cloud account from the home Dashboard (confirm dialog) only if you also want hosted data removed. See Uninstall.",
+        text: "Run trim uninstall (full purge by default). On Windows you can also use Settings → Apps → Trim. That stops Trim processes, clears credentials and setup overrides, deletes local data and Deep Mode caches, removes the CLI binary (scheduled after exit when Windows locks it), wipes %LOCALAPPDATA%\\Trim, and auto-removes detected npm / Scoop / Homebrew / winget installs. Then Clear API Key and uninstall the Trim IDE extension in the editor. Delete the cloud account from the home Dashboard (confirm dialog) only if you also want hosted data removed. See Uninstall.",
       },
       { type: "h2", id: "admin", text: "Where is the Admin console documented?" },
       {

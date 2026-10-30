@@ -8,12 +8,36 @@
 const { spawnSync } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
+const os = require("node:os");
 const { install } = require("../scripts/install");
 const { resolvePlatform } = require("../scripts/platform");
 
 async function main() {
   const { binaryName } = resolvePlatform();
-  const binPath = path.join(__dirname, "..", "vendor", binaryName);
+  const pkgRoot = path.join(__dirname, "..");
+  const marker = path.join(pkgRoot, ".trim-uninstalling");
+  // Always heal sticky TEMP leftovers from older builds that wrote
+  // %TEMP%/trim-uninstalling and never cleared it (even when refusing below).
+  try {
+    fs.unlinkSync(path.join(os.tmpdir(), "trim-uninstalling"));
+  } catch {
+    // ignore missing / permission
+  }
+  // Package-local marker only blocks self-heal mid-uninstall.
+  if (fs.existsSync(marker)) {
+    console.error("@usetrim/trim: uninstall in progress (or incomplete). Refusing to run or re-download.");
+    console.error("If Trim should be gone: npm uninstall -g @usetrim/trim");
+    process.exit(1);
+  }
+
+  const binPath = path.join(pkgRoot, "vendor", binaryName);
+  const asidePath = binPath + ".uninstalling";
+  // If Windows renamed the running binary mid-uninstall, never self-heal over it.
+  if (fs.existsSync(asidePath)) {
+    console.error("@usetrim/trim: uninstall in progress (renamed binary present). Refusing to re-download.");
+    console.error("If Trim should be gone: npm uninstall -g @usetrim/trim");
+    process.exit(1);
+  }
 
   if (!fs.existsSync(binPath)) {
     console.error("@usetrim/trim: binary missing - downloading from GitHub Releases…");
