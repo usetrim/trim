@@ -96,7 +96,7 @@ export function SettingsClient({ accessToken }: { accessToken?: string }) {
 
   const [tier, setTier] = useState("");
   const [engine, setEngine] = useState("");
-  const [target, setTarget] = useState<number | null>(null);
+  const [rate, setRate] = useState<number | null>(null);
   const [autoStart, setAutoStart] = useState<boolean | null>(null);
   const [dirty, setDirty] = useState(false);
   const [freshKey, setFreshKey] = useState<string | null>(null);
@@ -127,7 +127,7 @@ export function SettingsClient({ accessToken }: { accessToken?: string }) {
     if (!prefs.data) return;
     setTier(prefs.data.compression_tier);
     setEngine(prefs.data.deep_engine);
-    setTarget(prefs.data.deep_target_token);
+    setRate(prefs.data.deep_compression_rate);
     setAutoStart(Boolean(prefs.data.auto_start_with_ide));
     setDirty(false);
   }, [prefs.data]);
@@ -183,6 +183,31 @@ export function SettingsClient({ accessToken }: { accessToken?: string }) {
   }, [authProviders.data, searchParams]);
 
   const identityRowActions = prefs.data?.table_row_actions?.trim() || "";
+  const rateLabel = prefs.data?.rate_label?.trim() || "";
+  const rateHint = prefs.data?.rate_hint?.trim() || undefined;
+  const rateMin =
+    typeof prefs.data?.deep_compression_rate_min === "number" &&
+    prefs.data.deep_compression_rate_min > 0
+      ? prefs.data.deep_compression_rate_min
+      : null;
+  const rateMax =
+    typeof prefs.data?.deep_compression_rate_max === "number" &&
+    rateMin !== null &&
+    prefs.data.deep_compression_rate_max >= rateMin
+      ? prefs.data.deep_compression_rate_max
+      : null;
+  const rateStep =
+    typeof prefs.data?.deep_compression_rate_step === "number" &&
+    prefs.data.deep_compression_rate_step > 0
+      ? prefs.data.deep_compression_rate_step
+      : null;
+  const rateValid =
+    rate !== null &&
+    rateMin !== null &&
+    rateMax !== null &&
+    rateStep !== null &&
+    rate >= rateMin &&
+    rate <= rateMax;
 
   const identityColumns = useMemo<ColumnDef<LinkedIdentity>[]>(
     () => [
@@ -694,63 +719,61 @@ export function SettingsClient({ accessToken }: { accessToken?: string }) {
               </div>
 
               <div className="space-y-2">
-                {prefs.data?.target_label ? (
-                  <Field
-                    id="target-token"
-                    label={prefs.data.target_label}
-                    description={prefs.data.target_hint}
-                  >
-                    <Input
-                      id="target-token"
-                      type="number"
-                      min={
-                        prefs.data?.deep_target_token_min && prefs.data.deep_target_token_min >= 1
-                          ? prefs.data.deep_target_token_min
-                          : undefined
-                      }
-                      max={
-                        prefs.data?.deep_target_token_max &&
-                        prefs.data.deep_target_token_max >= (prefs.data.deep_target_token_min ?? 0)
-                          ? prefs.data.deep_target_token_max
-                          : undefined
-                      }
-                      value={target ?? ""}
-                      placeholder={prefs.data.target_label}
-                      disabled={
-                        !prefs.data?.deep_tier_id ||
-                        tier !== prefs.data.deep_tier_id ||
-                        target === null
-                      }
-                      onChange={(e) => {
-                        const n = Number(e.target.value);
-                        if (!Number.isFinite(n)) return;
-                        setTarget(n);
-                        setDirty(true);
-                      }}
-                    />
+                {rateLabel && rateMin !== null && rateMax !== null && rateStep !== null ? (
+                  <Field id="compression-rate" label={rateLabel} description={rateHint}>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                      <input
+                        id="compression-rate"
+                        type="range"
+                        min={rateMin}
+                        max={rateMax}
+                        step={rateStep}
+                        value={rate ?? rateMin}
+                        disabled={
+                          !prefs.data?.deep_tier_id ||
+                          tier !== prefs.data.deep_tier_id ||
+                          rate === null
+                        }
+                        className="w-full accent-[var(--trim-fg)]"
+                        onChange={(e) => {
+                          const n = Number(e.target.value);
+                          if (!Number.isFinite(n)) return;
+                          const decimals = Math.max(
+                            0,
+                            (String(rateStep).split(".")[1] || "").length,
+                          );
+                          const factor = 10 ** decimals;
+                          setRate(
+                            Math.round(Math.min(rateMax, Math.max(rateMin, n)) * factor) / factor,
+                          );
+                          setDirty(true);
+                        }}
+                      />
+                      <Input
+                        id="compression-rate-value"
+                        type="number"
+                        min={rateMin}
+                        max={rateMax}
+                        step={rateStep}
+                        value={rate ?? ""}
+                        placeholder={rateLabel}
+                        disabled={
+                          !prefs.data?.deep_tier_id ||
+                          tier !== prefs.data.deep_tier_id ||
+                          rate === null
+                        }
+                        className="w-full sm:w-28"
+                        onChange={(e) => {
+                          const n = Number(e.target.value);
+                          if (!Number.isFinite(n)) return;
+                          setRate(n);
+                          setDirty(true);
+                        }}
+                      />
+                    </div>
                   </Field>
                 ) : null}
               </div>
-
-              {prefs.data?.live_deep_min_hint ? (
-                <p className="text-sm text-[var(--trim-muted)]">{prefs.data.live_deep_min_hint}</p>
-              ) : null}
-              {prefs.data?.live_deep_stream_hint ? (
-                <p className="text-sm text-[var(--trim-muted)]">
-                  {prefs.data.live_deep_stream_hint}
-                </p>
-              ) : null}
-              {typeof prefs.data?.live_deep_min_input_tokens === "number" ? (
-                <p className="text-sm text-[var(--trim-muted)]">
-                  live_deep_min_input_tokens={prefs.data.live_deep_min_input_tokens}
-                  {prefs.data.live_deep_oom_policy
-                    ? ` · oom=${prefs.data.live_deep_oom_policy}`
-                    : ""}
-                  {typeof prefs.data.live_deep_skip_on_stream === "boolean"
-                    ? ` · skip_stream=${prefs.data.live_deep_skip_on_stream}`
-                    : ""}
-                </p>
-              ) : null}
 
               <Button
                 disabled={
@@ -759,20 +782,19 @@ export function SettingsClient({ accessToken }: { accessToken?: string }) {
                   !prefs.data?.save_action_label ||
                   !tier ||
                   !engine ||
-                  target === null ||
-                  target <= 0 ||
+                  !rateValid ||
                   autoStart === null
                 }
                 isLoading={patch.isPending}
                 pendingLabel={prefs.data?.save_pending_label || undefined}
                 onClick={() => {
-                  if (target === null || target <= 0) return;
+                  if (!rateValid || rate === null) return;
                   if (autoStart === null) return;
                   patch.mutate(
                     {
                       compression_tier: tier,
                       deep_engine: engine,
-                      deep_target_token: target,
+                      deep_compression_rate: rate,
                       auto_start_with_ide: autoStart,
                     },
                     { onSuccess: () => setDirty(false) },

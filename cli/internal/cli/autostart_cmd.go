@@ -99,10 +99,10 @@ func setAutostart(on bool) error {
 	prefsChrome := deepopt.PrefsChrome{
 		Unavailable:    chrome.ChromeUnavailable,
 		EngineInvalid:  chrome.PrefsEngineInvalid,
-		TargetNonNeg:   chrome.PrefsTargetNonNeg,
+		RateNonNeg:     chrome.PrefsRateNonNeg,
 		TierRequired:   chrome.PrefsTierRequired,
 		EngineRequired: chrome.PrefsEngineRequired,
-		TargetRequired: chrome.PrefsTargetRequired,
+		RateRequired:   chrome.PrefsRateRequired,
 	}
 	if err := deepopt.SavePreferences(p, prefsChrome); err != nil {
 		return err

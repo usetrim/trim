@@ -52,6 +52,7 @@ func installWindowsTask(exe string, chrome cliChrome) error {
 	removeLegacyWindowsScheduledTask()
 
 	cmd := exec.Command(stable, "daemon", "run")
+	configureDetachedStartProc(cmd)
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("start daemon: %w", err)
 	}

@@ -88,8 +88,10 @@ export type PlansResponse = {
     default_checkout_quantity?: number;
     enterprise_message_rows?: number;
     date_range_months?: number;
-    deep_target_token_min?: number;
-    deep_target_token_max?: number;
+    deep_compression_rate_min?: number;
+    deep_compression_rate_max?: number;
+    deep_compression_rate_step?: number;
+    default_deep_compression_rate?: number;
     default_plan_interval?: BillingInterval;
     default_page_size?: number;
     max_page_size?: number;

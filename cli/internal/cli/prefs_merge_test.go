@@ -20,12 +20,19 @@ func TestPreferencesFromRemotePreservesAdaptersWhenAPIOmits(t *testing.T) {
 		}},
 	}
 	remote := remotePreferences{
-		CompressionTier: "deep",
-		DeepEngine:      "v2",
-		DeepTargetToken: 300,
+		CompressionTier:           "deep",
+		DeepEngine:                 "v2",
+		DeepCompressionRate:        0.7,
+		DeepCompressionRateMin:     0.3,
+		DeepCompressionRateMax:     1.0,
+		DeepCompressionRateStep:    0.1,
+		DefaultDeepCompressionRate: 0.7,
 		// ProviderAdaptersSynced false / nil arrays = older API; must not wipe.
 	}
 	out := preferencesFromRemote(remote, cur)
+	if out.CompressionRate != 0.7 || out.CompressionRateMin != 0.3 || out.CompressionRateMax != 1.0 {
+		t.Fatalf("rate prefs: got rate=%g min=%g max=%g", out.CompressionRate, out.CompressionRateMin, out.CompressionRateMax)
+	}
 	if !out.ProviderAdaptersSynced {
 		t.Fatal("expected local adapters preserved")
 	}

@@ -10,6 +10,9 @@ Engines:
   long - LongLLMLingua (question-aware + context reorder)
   v2   - LLMLingua-2 (token classification, faster)
 
+Compression control matches Microsoft HF demos:
+  rate = after_tokens / before_tokens (keep-rate). Lower = more compression.
+
 Model ids and device_map MUST come from the Go CLI request (env-backed). No invent.
 
 Requires: pip install llmlingua  (auto-bootstrapped by `trim compress --deep` on first use)
@@ -26,6 +29,19 @@ def fail(message: str, code: int = 1) -> None:
     sys.exit(code)
 
 
+def parse_rate(payload: dict) -> float:
+    raw = payload.get("rate")
+    if raw is None or raw == "":
+        fail("DEEP_OPT_RATE_REQUIRED")
+    try:
+        rate = float(raw)
+    except (TypeError, ValueError):
+        fail(f"DEEP_OPT_RATE_INVALID:{raw!r}")
+    if rate <= 0 or rate > 1:
+        fail("DEEP_OPT_RATE_INVALID")
+    return rate
+
+
 def main() -> None:
     try:
         raw = sys.stdin.read()
@@ -37,20 +53,11 @@ def main() -> None:
 
     text = payload.get("text") or ""
     question = payload.get("question") or ""
-    raw_target = payload.get("target_token")
-    if raw_target is None or raw_target == "":
-        fail("DEEP_OPT_TARGET_TOKEN_REQUIRED")
-    try:
-        target_token = int(raw_target)
-    except (TypeError, ValueError):
-        fail(f"DEEP_OPT_TARGET_TOKEN_INVALID:{raw_target!r}")
-    if target_token <= 0:
-        fail("DEEP_OPT_TARGET_TOKEN_INVALID")
+    rate = parse_rate(payload)
     raw_engine = payload.get("engine")
     if not raw_engine:
         fail("DEEP_OPT_ENGINE_REQUIRED")
     engine = str(raw_engine).lower().strip()
-    rate = payload.get("rate")
 
     model_name = str(payload.get("model_name") or "").strip()
     device_map = str(payload.get("device_map") or "").strip()
@@ -92,18 +99,15 @@ def main() -> None:
                 use_llmlingua2=use_llmlingua2,
                 device_map=device_map,
             )
-            # Microsoft LLMLingua: question/instruction are high-sensitivity; context is
-            # what should be compressed hardest. Prefer structured call when question set.
+            # Microsoft LLMLingua-2 Space: rate is the primary knob (after/before).
             q = question.strip()
-            kwargs = {"target_token": target_token}
+            kwargs = {"rate": rate}
             if force_tokens:
                 kwargs["force_tokens"] = force_tokens
                 # Official LLMLingua-2 examples pair force_tokens with drop_consecutive
                 # and often force_reserve_digit so line numbers / versions survive.
                 kwargs["drop_consecutive"] = True
                 kwargs["force_reserve_digit"] = True
-            if rate is not None:
-                kwargs["rate"] = float(rate)
             if q:
                 kwargs["question"] = q
                 kwargs["instruction"] = ""
@@ -111,21 +115,17 @@ def main() -> None:
                     results = compressor.compress_prompt([text], **kwargs)
                 except TypeError:
                     # Some LLMLingua-2 builds reject question=/instruction=/drop_consecutive.
-                    fallback = {"target_token": target_token}
+                    fallback = {"rate": rate}
                     if force_tokens:
                         fallback["force_tokens"] = force_tokens
-                    if rate is not None:
-                        fallback["rate"] = float(rate)
                     results = compressor.compress_prompt(text, **fallback)
             else:
                 try:
                     results = compressor.compress_prompt(text, **kwargs)
                 except TypeError:
-                    fallback = {"target_token": target_token}
+                    fallback = {"rate": rate}
                     if force_tokens:
                         fallback["force_tokens"] = force_tokens
-                    if rate is not None:
-                        fallback["rate"] = float(rate)
                     results = compressor.compress_prompt(text, **fallback)
         elif engine == "long":
             if not question.strip():
@@ -133,7 +133,7 @@ def main() -> None:
             compressor = PromptCompressor(model_name=model_name, device_map=device_map)
             long_kwargs = {
                 "question": question.strip(),
-                "target_token": target_token,
+                "rate": rate,
                 "reorder_context": "sort",
                 "condition_compare": True,
                 "rank_method": "longllmlingua",
@@ -157,26 +157,22 @@ def main() -> None:
         else:
             compressor = PromptCompressor(model_name=model_name, device_map=device_map)
             q = question.strip()
-            kwargs = {"target_token": target_token}
+            kwargs = {"rate": rate}
             if force_tokens:
                 kwargs["force_tokens"] = force_tokens
                 # Official Microsoft LLMLingua: force_reserve_digit + drop_consecutive
                 # with force_tokens (same as v2 path) - protects digits in paths/versions.
                 kwargs["force_reserve_digit"] = True
                 kwargs["drop_consecutive"] = True
-            if rate is not None:
-                kwargs["rate"] = float(rate)
             if q:
                 kwargs["question"] = q
                 kwargs["instruction"] = ""
                 try:
                     results = compressor.compress_prompt([text], **kwargs)
                 except TypeError:
-                    fallback = {"target_token": target_token}
+                    fallback = {"rate": rate}
                     if force_tokens:
                         fallback["force_tokens"] = force_tokens
-                    if rate is not None:
-                        fallback["rate"] = float(rate)
                     try:
                         results = compressor.compress_prompt(text, **fallback)
                     except TypeError:
@@ -186,11 +182,9 @@ def main() -> None:
                 try:
                     results = compressor.compress_prompt(text, **kwargs)
                 except TypeError:
-                    fallback = {"target_token": target_token}
+                    fallback = {"rate": rate}
                     if force_tokens:
                         fallback["force_tokens"] = force_tokens
-                    if rate is not None:
-                        fallback["rate"] = float(rate)
                     try:
                         results = compressor.compress_prompt(text, **fallback)
                     except TypeError:

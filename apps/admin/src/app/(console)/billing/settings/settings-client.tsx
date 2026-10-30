@@ -63,10 +63,9 @@ export function BillingSettingsClient({
   const [deepDefault, setDeepDefault] = useState("");
   const [deepMin, setDeepMin] = useState("");
   const [deepMax, setDeepMax] = useState("");
-  const [liveDeepMin, setLiveDeepMin] = useState("");
+  const [deepStep, setDeepStep] = useState("");
   const [liveDeepOom, setLiveDeepOom] = useState("");
   const [liveDeepWarmup, setLiveDeepWarmup] = useState(false);
-  const [liveDeepSkipStream, setLiveDeepSkipStream] = useState(false);
   const [deepV1Model, setDeepV1Model] = useState("");
   const [deepV2Model, setDeepV2Model] = useState("");
   const [deepLongModel, setDeepLongModel] = useState("");
@@ -91,13 +90,12 @@ export function BillingSettingsClient({
   const maxPageLabel = chrome.data?.ADMIN_BILLING_MAX_PAGE_SIZE?.trim() || "";
   const seatsLabel = chrome.data?.ADMIN_BILLING_DEFAULT_SEATS?.trim() || "";
   const minSeatsLabel = chrome.data?.ADMIN_BILLING_MIN_SEATS?.trim() || "";
-  const deepDefLabel = chrome.data?.ADMIN_BILLING_DEEP_TARGET_DEFAULT?.trim() || "";
-  const deepMinLabel = chrome.data?.ADMIN_BILLING_DEEP_TARGET_MIN?.trim() || "";
-  const deepMaxLabel = chrome.data?.ADMIN_BILLING_DEEP_TARGET_MAX?.trim() || "";
-  const liveDeepMinLabel = chrome.data?.ADMIN_BILLING_LIVE_DEEP_MIN?.trim() || "";
+  const deepDefLabel = chrome.data?.ADMIN_BILLING_DEEP_RATE_DEFAULT?.trim() || "";
+  const deepMinLabel = chrome.data?.ADMIN_BILLING_DEEP_RATE_MIN?.trim() || "";
+  const deepMaxLabel = chrome.data?.ADMIN_BILLING_DEEP_RATE_MAX?.trim() || "";
+  const deepStepLabel = chrome.data?.ADMIN_BILLING_DEEP_RATE_STEP?.trim() || "";
   const liveDeepOomLabel = chrome.data?.ADMIN_BILLING_LIVE_DEEP_OOM?.trim() || "";
   const liveDeepWarmupLabel = chrome.data?.ADMIN_BILLING_LIVE_DEEP_WARMUP?.trim() || "";
-  const liveDeepSkipStreamLabel = chrome.data?.ADMIN_BILLING_LIVE_DEEP_SKIP_STREAM?.trim() || "";
   const deepV1Label = chrome.data?.ADMIN_BILLING_DEEP_V1_MODEL?.trim() || "";
   const deepV2Label = chrome.data?.ADMIN_BILLING_DEEP_V2_MODEL?.trim() || "";
   const deepLongLabel = chrome.data?.ADMIN_BILLING_DEEP_LONG_MODEL?.trim() || "";
@@ -156,13 +154,12 @@ export function BillingSettingsClient({
     setCancelAtPeriodEnd(Boolean(d.allow_cancel_at_period_end));
     setDefaultSeats(numField(d.default_seat_quantity));
     setMinSeats(numField(d.min_seat_quantity));
-    setDeepDefault(numField(d.default_deep_target_token));
-    setDeepMin(numField(d.deep_target_token_min));
-    setDeepMax(numField(d.deep_target_token_max));
-    setLiveDeepMin(numField(d.live_deep_min_input_tokens));
+    setDeepDefault(numField(d.default_deep_compression_rate));
+    setDeepMin(numField(d.deep_compression_rate_min));
+    setDeepMax(numField(d.deep_compression_rate_max));
+    setDeepStep(numField(d.deep_compression_rate_step));
     setLiveDeepOom(strField(d.live_deep_oom_policy));
     setLiveDeepWarmup(Boolean(d.live_deep_warmup_on_start));
-    setLiveDeepSkipStream(Boolean(d.live_deep_skip_on_stream));
     setDeepV1Model(strField(d.deep_v1_model));
     setDeepV2Model(strField(d.deep_v2_model));
     setDeepLongModel(strField(d.deep_long_model));
@@ -272,16 +269,26 @@ export function BillingSettingsClient({
     </div>
   );
 
+  const deepRateDefaultDesc = chromeFieldDesc(
+    chrome.data,
+    "ADMIN_BILLING_DEEP_RATE_DEFAULT_DESC",
+  ).description;
+  const deepRateMinDesc = chromeFieldDesc(
+    chrome.data,
+    "ADMIN_BILLING_DEEP_RATE_MIN_DESC",
+  ).description;
+  const deepRateMaxDesc = chromeFieldDesc(
+    chrome.data,
+    "ADMIN_BILLING_DEEP_RATE_MAX_DESC",
+  ).description;
+
   const deepGrid = (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       {deepDefLabel ? (
-        <Field
-          id="billing-deep-default"
-          label={deepDefLabel}
-          {...chromeFieldDesc(chrome.data, "ADMIN_BILLING_DEEP_TARGET_DEFAULT_DESC")}
-        >
+        <Field id="billing-deep-default" label={deepDefLabel} description={deepRateDefaultDesc}>
           <Input
             id="billing-deep-default"
+            type="number"
             value={deepDefault}
             onChange={(e) => setDeepDefault(e.target.value)}
             placeholder={deepDefLabel}
@@ -289,13 +296,10 @@ export function BillingSettingsClient({
         </Field>
       ) : null}
       {deepMinLabel ? (
-        <Field
-          id="billing-deep-min"
-          label={deepMinLabel}
-          {...chromeFieldDesc(chrome.data, "ADMIN_BILLING_DEEP_TARGET_MIN_DESC")}
-        >
+        <Field id="billing-deep-min" label={deepMinLabel} description={deepRateMinDesc}>
           <Input
             id="billing-deep-min"
+            type="number"
             value={deepMin}
             onChange={(e) => setDeepMin(e.target.value)}
             placeholder={deepMinLabel}
@@ -303,30 +307,28 @@ export function BillingSettingsClient({
         </Field>
       ) : null}
       {deepMaxLabel ? (
-        <Field
-          id="billing-deep-max"
-          label={deepMaxLabel}
-          {...chromeFieldDesc(chrome.data, "ADMIN_BILLING_DEEP_TARGET_MAX_DESC")}
-        >
+        <Field id="billing-deep-max" label={deepMaxLabel} description={deepRateMaxDesc}>
           <Input
             id="billing-deep-max"
+            type="number"
             value={deepMax}
             onChange={(e) => setDeepMax(e.target.value)}
             placeholder={deepMaxLabel}
           />
         </Field>
       ) : null}
-      {liveDeepMinLabel ? (
+      {deepStepLabel ? (
         <Field
-          id="billing-live-deep-min"
-          label={liveDeepMinLabel}
-          {...chromeFieldDesc(chrome.data, "ADMIN_BILLING_LIVE_DEEP_MIN_DESC")}
+          id="billing-deep-step"
+          label={deepStepLabel}
+          {...chromeFieldDesc(chrome.data, "ADMIN_BILLING_DEEP_RATE_STEP_DESC")}
         >
           <Input
-            id="billing-live-deep-min"
-            value={liveDeepMin}
-            onChange={(e) => setLiveDeepMin(e.target.value)}
-            placeholder={liveDeepMinLabel}
+            id="billing-deep-step"
+            type="number"
+            value={deepStep}
+            onChange={(e) => setDeepStep(e.target.value)}
+            placeholder={deepStepLabel}
           />
         </Field>
       ) : null}
@@ -352,16 +354,6 @@ export function BillingSettingsClient({
             onChange={(e) => setLiveDeepWarmup(e.target.checked)}
           />
           <span>{liveDeepWarmupLabel}</span>
-        </label>
-      ) : null}
-      {liveDeepSkipStreamLabel ? (
-        <label className="flex items-center gap-2 text-sm text-[var(--trim-fg)] sm:col-span-2">
-          <input
-            type="checkbox"
-            checked={liveDeepSkipStream}
-            onChange={(e) => setLiveDeepSkipStream(e.target.checked)}
-          />
-          <span>{liveDeepSkipStreamLabel}</span>
         </label>
       ) : null}
       {deepV1Label ? (
@@ -652,14 +644,12 @@ export function BillingSettingsClient({
                     default_plan_interval: planInterval || undefined,
                     default_seat_quantity: defaultSeats ? Number(defaultSeats) : undefined,
                     min_seat_quantity: minSeats ? Number(minSeats) : undefined,
-                    default_deep_target_token: deepDefault ? Number(deepDefault) : undefined,
-                    deep_target_token_min: deepMin ? Number(deepMin) : undefined,
-                    deep_target_token_max: deepMax ? Number(deepMax) : undefined,
-                    live_deep_min_input_tokens:
-                      liveDeepMin !== "" ? Number(liveDeepMin) : undefined,
+                    default_deep_compression_rate: deepDefault ? Number(deepDefault) : undefined,
+                    deep_compression_rate_min: deepMin ? Number(deepMin) : undefined,
+                    deep_compression_rate_max: deepMax ? Number(deepMax) : undefined,
+                    deep_compression_rate_step: deepStep ? Number(deepStep) : undefined,
                     live_deep_oom_policy: liveDeepOom || undefined,
                     live_deep_warmup_on_start: liveDeepWarmup,
-                    live_deep_skip_on_stream: liveDeepSkipStream,
                     deep_v1_model: deepV1Model || undefined,
                     deep_v2_model: deepV2Model || undefined,
                     deep_long_model: deepLongModel || undefined,

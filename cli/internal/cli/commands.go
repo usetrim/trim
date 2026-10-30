@@ -583,7 +583,7 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 			DeepPyMissing                      string `json:"deep_py_missing"`
 			DeepLLMMissingFmt                  string `json:"deep_llm_missing_fmt"`
 			DeepPipFailed                      string `json:"deep_pip_failed"`
-			DeepTargetRequired                 string `json:"deep_target_required"`
+			DeepRateRequired                   string `json:"deep_rate_required"`
 			DeepEngineRequired                 string `json:"deep_engine_required"`
 			DeepQuestionRequired               string `json:"deep_question_required"`
 			DeepOptimizeFmt                    string `json:"deep_optimize_fmt"`
@@ -595,8 +595,6 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 			ProxyDeepCompactStub               string `json:"proxy_deep_compact_stub"`
 			ProxyDeepChromeRequired            string `json:"proxy_deep_chrome_required"`
 			ProxyDeepPrefsRequired             string `json:"proxy_deep_prefs_required"`
-			ProxyDeepSkippedMinFmt             string `json:"proxy_deep_skipped_min_fmt"`
-			ProxyDeepSkippedStream             string `json:"proxy_deep_skipped_stream"`
 			ProxyDeepOOMSkipped                string `json:"proxy_deep_oom_skipped"`
 			ProxyDeepRuntimeRequired           string `json:"proxy_deep_runtime_required"`
 			ProxyAdapterRequired               string `json:"proxy_adapter_required"`
@@ -625,16 +623,23 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 			ProxyDoorOpenAI                    string `json:"proxy_door_openai"`
 			ProxyDoorAnthropic                 string `json:"proxy_door_anthropic"`
 			PrefsEngineInvalid                 string `json:"prefs_engine_invalid"`
-			PrefsTargetNonNeg                  string `json:"prefs_target_nonneg"`
+			PrefsRateNonNeg                    string `json:"prefs_rate_nonneg"`
 			PrefsTierRequired                  string `json:"prefs_tier_required"`
 			PrefsEngineRequired                string `json:"prefs_engine_required"`
-			PrefsTargetRequired                string `json:"prefs_target_required"`
+			PrefsRateRequired                  string `json:"prefs_rate_required"`
 			ConfigGetTierFmt                   string `json:"config_get_tier_fmt"`
 			ConfigGetEngineFmt                 string `json:"config_get_engine_fmt"`
-			ConfigGetTargetFmt                 string `json:"config_get_target_fmt"`
+			ConfigGetRateFmt                   string `json:"config_get_rate_fmt"`
+			ConfigRatesTitle                   string `json:"config_rates_title"`
+			ConfigRatesDefaultLabel            string `json:"config_rates_default_label"`
+			ConfigRatesSelectedLabel           string `json:"config_rates_selected_label"`
+			ConfigRatesSelectedMark            string `json:"config_rates_selected_mark"`
+			ConfigRatesSyncHint                string `json:"config_rates_sync_hint"`
+			ConfigRatesUnsynced                string `json:"config_rates_unsynced"`
+			HelpConfigRatesShort               string `json:"help_config_rates_short"`
 			ConfigGetAutostartFmt              string `json:"config_get_autostart_fmt"`
 			ConfigUnknownKeyFmt                string `json:"config_unknown_key_fmt"`
-			ConfigTargetPositive               string `json:"config_target_positive"`
+			ConfigRateRange                    string `json:"config_rate_range"`
 			ConfigSavedFmt                     string `json:"config_saved_fmt"`
 			ConfigNotLoggedIn                  string `json:"config_not_logged_in"`
 			ConfigSyncFailedFmt                string `json:"config_sync_failed_fmt"`
@@ -721,6 +726,7 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 			HelpCompressFlagDeep               string `json:"help_compress_flag_deep"`
 			HelpCompressFlagEngine             string `json:"help_compress_flag_engine"`
 			HelpCompressFlagQuestion           string `json:"help_compress_flag_question"`
+			HelpCompressFlagRate               string `json:"help_compress_flag_rate"`
 			HelpCompressFlagTarget             string `json:"help_compress_flag_target"`
 			HelpCompressFlagBootstrap          string `json:"help_compress_flag_bootstrap"`
 			HelpCompressFlagOut                string `json:"help_compress_flag_out"`
@@ -931,7 +937,7 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 		DeepPyMissing:                      body.CLI.DeepPyMissing,
 		DeepLLMMissingFmt:                  body.CLI.DeepLLMMissingFmt,
 		DeepPipFailed:                      body.CLI.DeepPipFailed,
-		DeepTargetRequired:                 body.CLI.DeepTargetRequired,
+		DeepRateRequired:                   body.CLI.DeepRateRequired,
 		DeepEngineRequired:                 body.CLI.DeepEngineRequired,
 		DeepQuestionRequired:               body.CLI.DeepQuestionRequired,
 		DeepOptimizeFmt:                    body.CLI.DeepOptimizeFmt,
@@ -943,8 +949,6 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 		ProxyDeepCompactStub:               body.CLI.ProxyDeepCompactStub,
 		ProxyDeepChromeRequired:            body.CLI.ProxyDeepChromeRequired,
 		ProxyDeepPrefsRequired:             body.CLI.ProxyDeepPrefsRequired,
-		ProxyDeepSkippedMinFmt:             body.CLI.ProxyDeepSkippedMinFmt,
-		ProxyDeepSkippedStream:             body.CLI.ProxyDeepSkippedStream,
 		ProxyDeepOOMSkipped:                body.CLI.ProxyDeepOOMSkipped,
 		ProxyDeepRuntimeRequired:           body.CLI.ProxyDeepRuntimeRequired,
 		ProxyAdapterRequired:               body.CLI.ProxyAdapterRequired,
@@ -973,16 +977,23 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 		ProxyDoorOpenAI:                    body.CLI.ProxyDoorOpenAI,
 		ProxyDoorAnthropic:                 body.CLI.ProxyDoorAnthropic,
 		PrefsEngineInvalid:                 body.CLI.PrefsEngineInvalid,
-		PrefsTargetNonNeg:                  body.CLI.PrefsTargetNonNeg,
+		PrefsRateNonNeg:                    body.CLI.PrefsRateNonNeg,
 		PrefsTierRequired:                  body.CLI.PrefsTierRequired,
 		PrefsEngineRequired:                body.CLI.PrefsEngineRequired,
-		PrefsTargetRequired:                body.CLI.PrefsTargetRequired,
+		PrefsRateRequired:                  body.CLI.PrefsRateRequired,
 		ConfigGetTierFmt:                   body.CLI.ConfigGetTierFmt,
 		ConfigGetEngineFmt:                 body.CLI.ConfigGetEngineFmt,
-		ConfigGetTargetFmt:                 body.CLI.ConfigGetTargetFmt,
+		ConfigGetRateFmt:                   body.CLI.ConfigGetRateFmt,
+		ConfigRatesTitle:                   body.CLI.ConfigRatesTitle,
+		ConfigRatesDefaultLabel:            body.CLI.ConfigRatesDefaultLabel,
+		ConfigRatesSelectedLabel:           body.CLI.ConfigRatesSelectedLabel,
+		ConfigRatesSelectedMark:            body.CLI.ConfigRatesSelectedMark,
+		ConfigRatesSyncHint:                body.CLI.ConfigRatesSyncHint,
+		ConfigRatesUnsynced:                body.CLI.ConfigRatesUnsynced,
+		HelpConfigRatesShort:               body.CLI.HelpConfigRatesShort,
 		ConfigGetAutostartFmt:              body.CLI.ConfigGetAutostartFmt,
 		ConfigUnknownKeyFmt:                body.CLI.ConfigUnknownKeyFmt,
-		ConfigTargetPositive:               body.CLI.ConfigTargetPositive,
+		ConfigRateRange:                    body.CLI.ConfigRateRange,
 		ConfigSavedFmt:                     body.CLI.ConfigSavedFmt,
 		ConfigNotLoggedIn:                  body.CLI.ConfigNotLoggedIn,
 		ConfigSyncFailedFmt:                body.CLI.ConfigSyncFailedFmt,
@@ -1069,6 +1080,7 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 		HelpCompressFlagDeep:               body.CLI.HelpCompressFlagDeep,
 		HelpCompressFlagEngine:             body.CLI.HelpCompressFlagEngine,
 		HelpCompressFlagQuestion:           body.CLI.HelpCompressFlagQuestion,
+		HelpCompressFlagRate:               body.CLI.HelpCompressFlagRate,
 		HelpCompressFlagTarget:             body.CLI.HelpCompressFlagTarget,
 		HelpCompressFlagBootstrap:          body.CLI.HelpCompressFlagBootstrap,
 		HelpCompressFlagOut:                body.CLI.HelpCompressFlagOut,
@@ -1314,7 +1326,7 @@ type cliChrome struct {
 	DeepPyMissing                      string
 	DeepLLMMissingFmt                  string
 	DeepPipFailed                      string
-	DeepTargetRequired                 string
+	DeepRateRequired                   string
 	DeepEngineRequired                 string
 	DeepQuestionRequired               string
 	DeepOptimizeFmt                    string
@@ -1326,8 +1338,6 @@ type cliChrome struct {
 	ProxyDeepCompactStub               string
 	ProxyDeepChromeRequired            string
 	ProxyDeepPrefsRequired             string
-	ProxyDeepSkippedMinFmt             string
-	ProxyDeepSkippedStream             string
 	ProxyDeepOOMSkipped                string
 	ProxyDeepRuntimeRequired           string
 	ProxyAdapterRequired               string
@@ -1356,16 +1366,23 @@ type cliChrome struct {
 	ProxyDoorOpenAI                    string
 	ProxyDoorAnthropic                 string
 	PrefsEngineInvalid                 string
-	PrefsTargetNonNeg                  string
+	PrefsRateNonNeg                    string
 	PrefsTierRequired                  string
 	PrefsEngineRequired                string
-	PrefsTargetRequired                string
+	PrefsRateRequired                  string
 	ConfigGetTierFmt                   string
 	ConfigGetEngineFmt                 string
-	ConfigGetTargetFmt                 string
+	ConfigGetRateFmt                   string
+	ConfigRatesTitle                   string
+	ConfigRatesDefaultLabel            string
+	ConfigRatesSelectedLabel           string
+	ConfigRatesSelectedMark            string
+	ConfigRatesSyncHint                string
+	ConfigRatesUnsynced                string
+	HelpConfigRatesShort               string
 	ConfigGetAutostartFmt              string
 	ConfigUnknownKeyFmt                string
-	ConfigTargetPositive               string
+	ConfigRateRange                    string
 	ConfigSavedFmt                     string
 	ConfigNotLoggedIn                  string
 	ConfigSyncFailedFmt                string
@@ -1452,6 +1469,7 @@ type cliChrome struct {
 	HelpCompressFlagDeep               string
 	HelpCompressFlagEngine             string
 	HelpCompressFlagQuestion           string
+	HelpCompressFlagRate               string
 	HelpCompressFlagTarget             string
 	HelpCompressFlagBootstrap          string
 	HelpCompressFlagOut                string

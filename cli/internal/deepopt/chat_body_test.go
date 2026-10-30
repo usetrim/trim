@@ -15,8 +15,8 @@ func TestCompressOpenAIChatJSONKeepsSystem(t *testing.T) {
 		if req.Engine != "v2" {
 			t.Fatalf("engine=%q", req.Engine)
 		}
-		if req.TargetToken != 100 {
-			t.Fatalf("target=%d", req.TargetToken)
+		if req.Rate != 0.7 {
+			t.Fatalf("rate=%g", req.Rate)
 		}
 		// Last-user-only: must not fold assistant history into Deep text.
 		if strings.Contains(req.Text, "assistant:") || strings.Contains(req.Text, "please refactor") {
@@ -35,7 +35,7 @@ func TestCompressOpenAIChatJSONKeepsSystem(t *testing.T) {
 	}
 
 	in := []byte(`{"model":"gemini-3.6-flash","messages":[{"role":"system","content":"sys"},{"role":"user","content":"please refactor"},{"role":"assistant","content":"ok"},{"role":"user","content":"more"}]}`)
-	out, origin, compressed, err := CompressOpenAIChatJSON(in, EngineV2, 100, "", UXChrome{}, 30, ChatDeepChrome{
+	out, origin, compressed, err := CompressOpenAIChatJSON(in, EngineV2, 0.7, "", UXChrome{}, 30, ChatDeepChrome{
 		CompactStub: "(prior turns compacted)",
 		Unavailable: "unavailable",
 	}, Runtime{
@@ -563,7 +563,7 @@ func TestCompressSkipsTextBeforeCacheBreakpoint(t *testing.T) {
 	cases := []struct {
 		name string
 		in   string
-		fn   func([]byte, Engine, int, string, UXChrome, int, ChatDeepChrome, Runtime) ([]byte, int, int, error)
+		fn   func([]byte, Engine, float64, string, UXChrome, int, ChatDeepChrome, Runtime) ([]byte, int, int, error)
 	}{
 		{
 			name: "anthropic_cache_control_before",
@@ -1009,7 +1009,7 @@ func TestRootCauseMatrixNoWholeBodySmash(t *testing.T) {
 	cases := []struct {
 		name string
 		in   string
-		fn   func([]byte, Engine, int, string, UXChrome, int, ChatDeepChrome, Runtime) ([]byte, int, int, error)
+		fn   func([]byte, Engine, float64, string, UXChrome, int, ChatDeepChrome, Runtime) ([]byte, int, int, error)
 	}{
 		{
 			name: "anthropic_claude_code_chrome",

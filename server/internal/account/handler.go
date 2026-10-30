@@ -382,83 +382,83 @@ type LinkableProvider struct {
 }
 
 type PreferencesResponse struct {
-	CompressionTier          string                    `json:"compression_tier"`
-	DeepEngine               string                    `json:"deep_engine"`
-	DeepTargetToken          int                       `json:"deep_target_token"`
-	AutoStartWithIDE         bool                      `json:"auto_start_with_ide"`
-	FastTierID               string                    `json:"fast_tier_id"`
-	DeepTierID               string                    `json:"deep_tier_id"`
-	Note                     string                    `json:"note"`
-	SavedMessage             string                    `json:"saved_message"`
-	EngineOptions            []PreferencesEngineOption `json:"engine_options"`
-	SaveActionLabel          string                    `json:"save_action_label"`
-	SavePendingLabel         string                    `json:"save_pending_label"`
-	PageTitle                string                    `json:"page_title"`
-	PageDescription          string                    `json:"page_description"`
-	DeepHint                 string                    `json:"deep_hint"`
-	EngineHint               string                    `json:"engine_hint"`
-	TargetHint               string                    `json:"target_hint"`
-	AutoStartTitle           string                    `json:"auto_start_title"`
-	AutoStartLabel           string                    `json:"auto_start_label"`
-	AutoStartHint            string                    `json:"auto_start_hint"`
-	AutoStartNote            string                    `json:"auto_start_note"`
-	LocalAgentTitle          string                    `json:"local_agent_title"`
-	LocalAgentStatus         string                    `json:"local_agent_status"`
-	LocalAgentStatusLabel    string                    `json:"local_agent_status_label"`
-	LocalAgentHint           string                    `json:"local_agent_hint"`
-	BackActionLabel          string                    `json:"back_action_label"`
-	BackHref                 string                    `json:"back_href"`
-	TierTitle                string                    `json:"tier_title"`
-	DeepLabel                string                    `json:"deep_label"`
-	EngineLabel              string                    `json:"engine_label"`
-	TargetLabel              string                    `json:"target_label"`
-	DeepTargetTokenMin       int                       `json:"deep_target_token_min"`
-	DeepTargetTokenMax       int                       `json:"deep_target_token_max"`
-	LiveDeepMinInputTokens   int                       `json:"live_deep_min_input_tokens"`
-	LiveDeepOOMPolicy        string                    `json:"live_deep_oom_policy"`
-	LiveDeepWarmupOnStart    bool                      `json:"live_deep_warmup_on_start"`
-	LiveDeepSkipOnStream     bool                      `json:"live_deep_skip_on_stream"`
-	DeepV1Model              string                    `json:"deep_v1_model"`
-	DeepV2Model              string                    `json:"deep_v2_model"`
-	DeepLongModel            string                    `json:"deep_long_model"`
-	DeepV2ForceTokens        []string                  `json:"deep_v2_force_tokens"`
-	LiveDeepMinHint          string                    `json:"live_deep_min_hint"`
-	LiveDeepStreamHint       string                    `json:"live_deep_stream_hint"`
-	ProviderAdapters         []provideradapt.AdapterConfig      `json:"provider_adapters"`
-	OpenAIModelAliases       []provideradapt.ModelAlias         `json:"openai_model_aliases"`
-	DiscoverableModels       []provideradapt.DiscoverableModel  `json:"provider_discoverable_models"`
-	ProviderAdaptersSynced   bool                               `json:"provider_adapters_synced"`
-	CLITitle                 string                    `json:"cli_title"`
-	CLIHelpLines             []string                  `json:"cli_help_lines"`
-	KeysTitle                string                    `json:"keys_title"`
-	AuthProvider             string                    `json:"auth_provider"`
-	AuthProviderDisplay      string                    `json:"auth_provider_display"`
-	AccountTitle             string                    `json:"account_title"`
-	AuthProviderPrefix       string                    `json:"auth_provider_prefix"`
-	LinkedIdentities         []LinkedIdentity          `json:"linked_identities"`
-	LinkableProviders        []LinkableProvider        `json:"linkable_providers"`
-	LinkHint                 string                    `json:"link_hint"`
-	UnlinkActionLabel        string                    `json:"unlink_action_label"`
-	UnlinkPendingLabel       string                    `json:"unlink_pending_label"`
-	UnlinkConfirmMessage     string                    `json:"unlink_confirm_message"`
-	UnlinkLastBlockedMessage string                    `json:"unlink_last_blocked_message"`
-	UnlinkFailedMessage      string                    `json:"unlink_failed_message"`
-	UnlinkDoneMessage        string                    `json:"unlink_done_message"`
-	IdentityPrimaryLabel     string                    `json:"identity_primary_label"`
-	IdentityLastUsedLabel    string                    `json:"identity_last_used_label"`
-	CanUnlink                bool                      `json:"can_unlink"`
-	TableRowActions          string                    `json:"table_row_actions"`
+	CompressionTier          string                            `json:"compression_tier"`
+	DeepEngine               string                            `json:"deep_engine"`
+	DeepCompressionRate      float64                           `json:"deep_compression_rate"`
+	AutoStartWithIDE         bool                              `json:"auto_start_with_ide"`
+	FastTierID               string                            `json:"fast_tier_id"`
+	DeepTierID               string                            `json:"deep_tier_id"`
+	Note                     string                            `json:"note"`
+	SavedMessage             string                            `json:"saved_message"`
+	EngineOptions            []PreferencesEngineOption         `json:"engine_options"`
+	SaveActionLabel          string                            `json:"save_action_label"`
+	SavePendingLabel         string                            `json:"save_pending_label"`
+	PageTitle                string                            `json:"page_title"`
+	PageDescription          string                            `json:"page_description"`
+	DeepHint                 string                            `json:"deep_hint"`
+	EngineHint               string                            `json:"engine_hint"`
+	RateHint                 string                            `json:"rate_hint"`
+	TargetHint               string                            `json:"target_hint"`
+	AutoStartTitle           string                            `json:"auto_start_title"`
+	AutoStartLabel           string                            `json:"auto_start_label"`
+	AutoStartHint            string                            `json:"auto_start_hint"`
+	AutoStartNote            string                            `json:"auto_start_note"`
+	LocalAgentTitle          string                            `json:"local_agent_title"`
+	LocalAgentStatus         string                            `json:"local_agent_status"`
+	LocalAgentStatusLabel    string                            `json:"local_agent_status_label"`
+	LocalAgentHint           string                            `json:"local_agent_hint"`
+	BackActionLabel          string                            `json:"back_action_label"`
+	BackHref                 string                            `json:"back_href"`
+	TierTitle                string                            `json:"tier_title"`
+	DeepLabel                string                            `json:"deep_label"`
+	EngineLabel              string                            `json:"engine_label"`
+	RateLabel                string                            `json:"rate_label"`
+	TargetLabel              string                            `json:"target_label"`
+	DeepCompressionRateMin     float64                           `json:"deep_compression_rate_min"`
+	DeepCompressionRateMax     float64                           `json:"deep_compression_rate_max"`
+	DeepCompressionRateStep    float64                           `json:"deep_compression_rate_step"`
+	DefaultDeepCompressionRate float64                           `json:"default_deep_compression_rate"`
+	LiveDeepOOMPolicy          string                            `json:"live_deep_oom_policy"`
+	LiveDeepWarmupOnStart    bool                              `json:"live_deep_warmup_on_start"`
+	DeepV1Model              string                            `json:"deep_v1_model"`
+	DeepV2Model              string                            `json:"deep_v2_model"`
+	DeepLongModel            string                            `json:"deep_long_model"`
+	DeepV2ForceTokens        []string                          `json:"deep_v2_force_tokens"`
+	ProviderAdapters         []provideradapt.AdapterConfig     `json:"provider_adapters"`
+	OpenAIModelAliases       []provideradapt.ModelAlias        `json:"openai_model_aliases"`
+	DiscoverableModels       []provideradapt.DiscoverableModel `json:"provider_discoverable_models"`
+	ProviderAdaptersSynced   bool                              `json:"provider_adapters_synced"`
+	CLITitle                 string                            `json:"cli_title"`
+	CLIHelpLines             []string                          `json:"cli_help_lines"`
+	KeysTitle                string                            `json:"keys_title"`
+	AuthProvider             string                            `json:"auth_provider"`
+	AuthProviderDisplay      string                            `json:"auth_provider_display"`
+	AccountTitle             string                            `json:"account_title"`
+	AuthProviderPrefix       string                            `json:"auth_provider_prefix"`
+	LinkedIdentities         []LinkedIdentity                  `json:"linked_identities"`
+	LinkableProviders        []LinkableProvider                `json:"linkable_providers"`
+	LinkHint                 string                            `json:"link_hint"`
+	UnlinkActionLabel        string                            `json:"unlink_action_label"`
+	UnlinkPendingLabel       string                            `json:"unlink_pending_label"`
+	UnlinkConfirmMessage     string                            `json:"unlink_confirm_message"`
+	UnlinkLastBlockedMessage string                            `json:"unlink_last_blocked_message"`
+	UnlinkFailedMessage      string                            `json:"unlink_failed_message"`
+	UnlinkDoneMessage        string                            `json:"unlink_done_message"`
+	IdentityPrimaryLabel     string                            `json:"identity_primary_label"`
+	IdentityLastUsedLabel    string                            `json:"identity_last_used_label"`
+	CanUnlink                bool                              `json:"can_unlink"`
+	TableRowActions          string                            `json:"table_row_actions"`
 }
 
 func preferencesChromeFromDB(ctx context.Context, db *pgxpool.Pool) (PreferencesResponse, bool) {
 	codes := []string{
 		"COMPRESSION_TIER_FAST", "COMPRESSION_TIER_DEEP",
 		"PREFERENCES_NOTE", "PREFERENCES_SAVED", "PREFERENCES_PAGE_TITLE", "PREFERENCES_PAGE_DESCRIPTION",
-		"PREFERENCES_DEEP_HINT", "PREFERENCES_ENGINE_HINT", "PREFERENCES_TARGET_HINT", "PREFERENCES_LIVE_DEEP_MIN_HINT", "PREFERENCES_LIVE_DEEP_STREAM_HINT",
+		"PREFERENCES_DEEP_HINT", "PREFERENCES_ENGINE_HINT", "PREFERENCES_RATE_HINT", "PREFERENCES_RATE_LABEL",
 		"PREFERENCES_AUTO_START_TITLE", "PREFERENCES_AUTO_START_LABEL", "PREFERENCES_AUTO_START_HINT", "PREFERENCES_AUTO_START_NOTE",
 		"PREFERENCES_LOCAL_AGENT_TITLE", "PREFERENCES_LOCAL_AGENT_HINT",
 		"PREFERENCES_BACK_LABEL", "APP_PATH_DASHBOARD",
-		"PREFERENCES_TIER_TITLE", "PREFERENCES_DEEP_LABEL", "PREFERENCES_ENGINE_LABEL", "PREFERENCES_TARGET_LABEL",
+		"PREFERENCES_TIER_TITLE", "PREFERENCES_DEEP_LABEL", "PREFERENCES_ENGINE_LABEL",
 		"PREFERENCES_CLI_TITLE", "PREFERENCES_KEYS_TITLE",
 		"PREFERENCES_CLI_HELP_1", "PREFERENCES_CLI_HELP_2", "PREFERENCES_CLI_HELP_3",
 		"PREFERENCES_CLI_HELP_4", "PREFERENCES_CLI_HELP_5", "PREFERENCES_CLI_HELP_6",
@@ -479,6 +479,7 @@ func preferencesChromeFromDB(ctx context.Context, db *pgxpool.Pool) (Preferences
 		"PREFERENCES_LOCAL_AGENT_TITLE", "PREFERENCES_LOCAL_AGENT_HINT",
 		"COMPRESSION_TIER_FAST", "COMPRESSION_TIER_DEEP",
 		"PREFERENCES_PAGE_TITLE",
+		"PREFERENCES_RATE_LABEL", "PREFERENCES_RATE_HINT",
 		"ACTION:PREFERENCES_SAVE", "PENDING:PREFERENCES_SAVE",
 	}
 	for _, c := range required {
@@ -495,9 +496,8 @@ func preferencesChromeFromDB(ctx context.Context, db *pgxpool.Pool) (Preferences
 		PageDescription: msg("PREFERENCES_PAGE_DESCRIPTION"),
 		DeepHint:        msg("PREFERENCES_DEEP_HINT"),
 		EngineHint:      msg("PREFERENCES_ENGINE_HINT"),
-		TargetHint:      msg("PREFERENCES_TARGET_HINT"),
-		LiveDeepMinHint: msg("PREFERENCES_LIVE_DEEP_MIN_HINT"),
-		LiveDeepStreamHint: msg("PREFERENCES_LIVE_DEEP_STREAM_HINT"),
+		RateHint:        msg("PREFERENCES_RATE_HINT"),
+		TargetHint:      msg("PREFERENCES_RATE_HINT"),
 		AutoStartTitle:  msg("PREFERENCES_AUTO_START_TITLE"),
 		AutoStartLabel:  msg("PREFERENCES_AUTO_START_LABEL"),
 		AutoStartHint:   msg("PREFERENCES_AUTO_START_HINT"),
@@ -509,7 +509,8 @@ func preferencesChromeFromDB(ctx context.Context, db *pgxpool.Pool) (Preferences
 		TierTitle:       msg("PREFERENCES_TIER_TITLE"),
 		DeepLabel:       msg("PREFERENCES_DEEP_LABEL"),
 		EngineLabel:     msg("PREFERENCES_ENGINE_LABEL"),
-		TargetLabel:     msg("PREFERENCES_TARGET_LABEL"),
+		RateLabel:       msg("PREFERENCES_RATE_LABEL"),
+		TargetLabel:     msg("PREFERENCES_RATE_LABEL"),
 		CLITitle:        msg("PREFERENCES_CLI_TITLE"),
 		KeysTitle:       msg("PREFERENCES_KEYS_TITLE"),
 		CLIHelpLines: filterNonEmptyStrings([]string{
@@ -704,10 +705,10 @@ func (h *Handler) attachLinkedIdentities(w http.ResponseWriter, r *http.Request,
 }
 
 type PreferencesPatchRequest struct {
-	CompressionTier  *string `json:"compression_tier"`
-	DeepEngine       *string `json:"deep_engine"`
-	DeepTargetToken  *int    `json:"deep_target_token"`
-	AutoStartWithIDE *bool   `json:"auto_start_with_ide"`
+	CompressionTier     *string  `json:"compression_tier"`
+	DeepEngine          *string  `json:"deep_engine"`
+	DeepCompressionRate *float64 `json:"deep_compression_rate"`
+	AutoStartWithIDE    *bool    `json:"auto_start_with_ide"`
 }
 
 func filterNonEmptyStrings(in []string) []string {
@@ -789,30 +790,33 @@ func (h *Handler) GetPreferences(w http.ResponseWriter, r *http.Request) {
 
 	db := h.readPool()
 	var tier, engine, authProvider string
-	var target int
+	var rate float64
 	var autoStart bool
 	err := db.QueryRow(r.Context(), `
-		select compression_tier, deep_engine, deep_target_token, auto_start_with_ide, lower(auth_provider)
+		select compression_tier, deep_engine, deep_compression_rate, auto_start_with_ide, lower(auth_provider)
 		from public.profiles where id = $1::uuid
-	`, userID).Scan(&tier, &engine, &target, &autoStart, &authProvider)
+	`, userID).Scan(&tier, &engine, &rate, &autoStart, &authProvider)
 	if err != nil {
 		writeJSONErr(w, r.Context(), h.readPool(), http.StatusInternalServerError, "ACCOUNT_OPERATION_FAILED")
 		return
 	}
 
-	var deepMin, deepMax, liveMin int
+	var deepMin, deepMax, deepDefault, deepStep float64
 	var oomPolicy, deepV1, deepV2, deepLong string
-	var warmup, skipStream bool
+	var warmup bool
 	var forceRaw []byte
 	err = db.QueryRow(r.Context(), `
-		select coalesce(deep_target_token_min, 0), coalesce(deep_target_token_max, 0),
-		       coalesce(live_deep_min_input_tokens, -1), coalesce(live_deep_oom_policy, ''),
-		       coalesce(live_deep_warmup_on_start, false), coalesce(live_deep_skip_on_stream, false),
+		select coalesce(deep_compression_rate_min, 0), coalesce(deep_compression_rate_max, 0),
+		       coalesce(default_deep_compression_rate, 0), coalesce(deep_compression_rate_step, 0),
+		       coalesce(live_deep_oom_policy, ''),
+		       coalesce(live_deep_warmup_on_start, false),
 		       coalesce(deep_v1_model, ''), coalesce(deep_v2_model, ''), coalesce(deep_long_model, ''),
 		       coalesce(deep_v2_force_tokens, 'null'::jsonb)
 		from public.billing_settings where id = 'default'
-	`).Scan(&deepMin, &deepMax, &liveMin, &oomPolicy, &warmup, &skipStream, &deepV1, &deepV2, &deepLong, &forceRaw)
-	if err != nil || deepMin < 1 || deepMax < deepMin || liveMin < 0 {
+	`).Scan(&deepMin, &deepMax, &deepDefault, &deepStep, &oomPolicy, &warmup, &deepV1, &deepV2, &deepLong, &forceRaw)
+	if err != nil || deepMin <= 0 || deepMax < deepMin || deepMax > 1 ||
+		deepDefault < deepMin || deepDefault > deepMax ||
+		deepStep <= 0 || deepStep > 1 {
 		writeJSONErr(w, r.Context(), h.readPool(), http.StatusServiceUnavailable, "BILLING_SETTINGS_UNAVAILABLE")
 		return
 	}
@@ -835,14 +839,14 @@ func (h *Handler) GetPreferences(w http.ResponseWriter, r *http.Request) {
 	}
 	resp.CompressionTier = tier
 	resp.DeepEngine = engine
-	resp.DeepTargetToken = target
+	resp.DeepCompressionRate = rate
 	resp.AutoStartWithIDE = autoStart
-	resp.DeepTargetTokenMin = deepMin
-	resp.DeepTargetTokenMax = deepMax
-	resp.LiveDeepMinInputTokens = liveMin
+	resp.DeepCompressionRateMin = deepMin
+	resp.DeepCompressionRateMax = deepMax
+	resp.DeepCompressionRateStep = deepStep
+	resp.DefaultDeepCompressionRate = deepDefault
 	resp.LiveDeepOOMPolicy = oomPolicy
 	resp.LiveDeepWarmupOnStart = warmup
-	resp.LiveDeepSkipOnStream = skipStream
 	resp.DeepV1Model = deepV1
 	resp.DeepV2Model = deepV2
 	resp.DeepLongModel = deepLong
@@ -901,12 +905,12 @@ func (h *Handler) PatchPreferences(w http.ResponseWriter, r *http.Request) {
 
 	tier := ""
 	engine := ""
-	target := 0
+	rate := 0.0
 	autoStart := false
 	err := h.DB.QueryRow(r.Context(), `
-		select compression_tier, deep_engine, deep_target_token, auto_start_with_ide
+		select compression_tier, deep_engine, deep_compression_rate, auto_start_with_ide
 		from public.profiles where id = $1::uuid
-	`, userID).Scan(&tier, &engine, &target, &autoStart)
+	`, userID).Scan(&tier, &engine, &rate, &autoStart)
 	if err != nil {
 		writeJSONErr(w, r.Context(), h.readPool(), http.StatusInternalServerError, "ACCOUNT_OPERATION_FAILED")
 		return
@@ -937,21 +941,21 @@ func (h *Handler) PatchPreferences(w http.ResponseWriter, r *http.Request) {
 		}
 		engine = v
 	}
-	if req.DeepTargetToken != nil {
-		var deepMin, deepMax int
+	if req.DeepCompressionRate != nil {
+		var deepMin, deepMax float64
 		err := h.DB.QueryRow(r.Context(), `
-			select coalesce(deep_target_token_min, 0), coalesce(deep_target_token_max, 0)
+			select coalesce(deep_compression_rate_min, 0), coalesce(deep_compression_rate_max, 0)
 			from public.billing_settings where id = 'default'
 		`).Scan(&deepMin, &deepMax)
-		if err != nil || deepMin < 1 || deepMax < deepMin {
+		if err != nil || deepMin <= 0 || deepMax < deepMin || deepMax > 1 {
 			writeJSONErr(w, r.Context(), h.readPool(), http.StatusServiceUnavailable, "BILLING_SETTINGS_UNAVAILABLE")
 			return
 		}
-		if *req.DeepTargetToken < deepMin || *req.DeepTargetToken > deepMax {
-			writeJSONErr(w, r.Context(), h.readPool(), http.StatusBadRequest, "DEEP_TARGET_TOKEN_RANGE")
+		if *req.DeepCompressionRate < deepMin || *req.DeepCompressionRate > deepMax {
+			writeJSONErr(w, r.Context(), h.readPool(), http.StatusBadRequest, "DEEP_COMPRESSION_RATE_RANGE")
 			return
 		}
-		target = *req.DeepTargetToken
+		rate = *req.DeepCompressionRate
 	}
 	if req.AutoStartWithIDE != nil {
 		autoStart = *req.AutoStartWithIDE
@@ -961,11 +965,11 @@ func (h *Handler) PatchPreferences(w http.ResponseWriter, r *http.Request) {
 		update public.profiles
 		set compression_tier = $2,
 		    deep_engine = $3,
-		    deep_target_token = $4,
+		    deep_compression_rate = $4,
 		    auto_start_with_ide = $5,
 		    updated_at = now()
 		where id = $1::uuid
-	`, userID, tier, engine, target, autoStart)
+	`, userID, tier, engine, rate, autoStart)
 	if err != nil {
 		writeJSONErr(w, r.Context(), h.readPool(), http.StatusInternalServerError, "ACCOUNT_OPERATION_FAILED")
 		return
@@ -984,31 +988,35 @@ func (h *Handler) PatchPreferences(w http.ResponseWriter, r *http.Request) {
 	}
 	resp.CompressionTier = tier
 	resp.DeepEngine = engine
-	resp.DeepTargetToken = target
+	resp.DeepCompressionRate = rate
 	resp.AutoStartWithIDE = autoStart
-	var deepMin, deepMax, liveMin int
+	var deepMin, deepMax, deepDefault, deepStep float64
 	var oomPolicy, deepV1, deepV2, deepLong string
-	var warmup, skipStream bool
+	var warmup bool
 	var forceRaw []byte
 	if err := h.DB.QueryRow(r.Context(), `
-		select coalesce(deep_target_token_min, 0), coalesce(deep_target_token_max, 0),
-		       coalesce(live_deep_min_input_tokens, -1), coalesce(live_deep_oom_policy, ''),
-		       coalesce(live_deep_warmup_on_start, false), coalesce(live_deep_skip_on_stream, false),
+		select coalesce(deep_compression_rate_min, 0), coalesce(deep_compression_rate_max, 0),
+		       coalesce(default_deep_compression_rate, 0), coalesce(deep_compression_rate_step, 0),
+		       coalesce(live_deep_oom_policy, ''),
+		       coalesce(live_deep_warmup_on_start, false),
 		       coalesce(deep_v1_model, ''), coalesce(deep_v2_model, ''), coalesce(deep_long_model, ''),
 		       coalesce(deep_v2_force_tokens, 'null'::jsonb)
 		from public.billing_settings where id = 'default'
-	`).Scan(&deepMin, &deepMax, &liveMin, &oomPolicy, &warmup, &skipStream, &deepV1, &deepV2, &deepLong, &forceRaw); err == nil && deepMin >= 1 && deepMax >= deepMin && liveMin >= 0 {
+	`).Scan(&deepMin, &deepMax, &deepDefault, &deepStep, &oomPolicy, &warmup, &deepV1, &deepV2, &deepLong, &forceRaw); err == nil &&
+		deepMin > 0 && deepMax >= deepMin && deepMax <= 1 &&
+		deepDefault >= deepMin && deepDefault <= deepMax &&
+		deepStep > 0 && deepStep <= 1 {
 		oomPolicy = strings.ToLower(strings.TrimSpace(oomPolicy))
 		var forceTokens []string
 		if json.Unmarshal(forceRaw, &forceTokens) == nil && forceTokens != nil &&
 			(oomPolicy == "fail" || oomPolicy == "skip") &&
 			strings.TrimSpace(deepV1) != "" && strings.TrimSpace(deepV2) != "" && strings.TrimSpace(deepLong) != "" {
-			resp.DeepTargetTokenMin = deepMin
-			resp.DeepTargetTokenMax = deepMax
-			resp.LiveDeepMinInputTokens = liveMin
+			resp.DeepCompressionRateMin = deepMin
+			resp.DeepCompressionRateMax = deepMax
+			resp.DeepCompressionRateStep = deepStep
+			resp.DefaultDeepCompressionRate = deepDefault
 			resp.LiveDeepOOMPolicy = oomPolicy
 			resp.LiveDeepWarmupOnStart = warmup
-			resp.LiveDeepSkipOnStream = skipStream
 			resp.DeepV1Model = deepV1
 			resp.DeepV2Model = deepV2
 			resp.DeepLongModel = deepLong

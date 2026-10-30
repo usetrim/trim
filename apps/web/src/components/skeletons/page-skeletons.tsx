@@ -1284,7 +1284,7 @@ export function InviteAcceptSkeleton({
   );
 }
 
-/** Settings: Fast/Deep toggles, engine select, target tokens, CLI help. */
+/** Settings: Fast/Deep toggles, engine select, compression rate, CLI help. */
 export type SettingsSkeletonChrome = {
   page_title?: string;
   page_description?: string;

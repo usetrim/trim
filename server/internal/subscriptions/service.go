@@ -1254,15 +1254,17 @@ func builtinMessageForCode(code string) string {
 	case "PREFERENCES_PAGE_TITLE":
 		return "Compression defaults"
 	case "PREFERENCES_PAGE_DESCRIPTION":
-		return "When Deep Mode is on, the live IDE proxy (trim start) runs Fast then Deep (LLMLingua) using your engine and target_token from this page, subject to billing live_deep_min_input_tokens. Off = Fast only. Trim cloud never loads Deep engines; auth, quotas, and billing still use Trim cloud."
+		return "Live proxy runs Fast Mode on every turn. When account preferences set compression_tier=deep, the local proxy also runs Deep Mode (LLMLingua) after Fast using your compression rate. Models and OOM policy come from billing settings via trim config sync."
 	case "DOCS_FAST_VS_DEEP_LIVE":
-		return "Live proxy runs Fast Mode on every turn. When account preferences set compression_tier=deep, the local proxy also runs Deep Mode (LLMLingua) after Fast when input tokens meet billing live_deep_min_input_tokens (0 = all turns), unless live_deep_skip_on_stream skips Deep on stream=true. Models and OOM policy come from billing settings via trim config sync."
+		return "Live proxy runs Fast Mode on every turn. When account preferences set compression_tier=deep, the local proxy also runs Deep Mode (LLMLingua) after Fast using your compression rate. Models and OOM policy come from billing settings via trim config sync."
 	case "PREFERENCES_DEEP_HINT":
-		return "On = Deep Mode for live IDE proxy (trim start) and trim compress. Live Deep also respects billing min input tokens and OOM policy (synced). Off = Fast Mode only on the live proxy and for compress defaults. Engine and target apply whenever Deep is on. Run trim config sync after saving."
+		return "When Deep Mode is on, the live IDE proxy (trim start) runs Fast then Deep (LLMLingua) using your engine and compression rate from this page. Off = Fast only. Trim cloud never loads Deep engines; auth, quotas, and billing still use Trim cloud."
 	case "PREFERENCES_ENGINE_HINT":
 		return "Default selected: LLMLingua-2 (v2). Pick long (needs a question) or v1 if you prefer. Applies to live proxy Deep and trim compress when Deep Mode is on."
+	case "PREFERENCES_RATE_HINT":
+		return "Keep-rate after / before (Microsoft LLMLingua). Lower = more compression. Drag within billing min/max by billing step (usually 0.1). Default from billing is usually 0.7. Save, then run: trim config sync"
 	case "PREFERENCES_TARGET_HINT":
-		return "Target token budget for Deep Mode (live proxy and trim compress). Only applies when Deep Mode is on."
+		return "Keep-rate after / before (Microsoft LLMLingua). Lower = more compression. Drag within billing min/max by billing step (usually 0.1). Default from billing is usually 0.7. Save, then run: trim config sync"
 	case "PREFERENCES_BACK_LABEL":
 		return "Back to dashboard"
 	case "WORKSPACE_BACK_LABEL":
@@ -1347,8 +1349,10 @@ func builtinMessageForCode(code string) string {
 		return "Deep Mode"
 	case "PREFERENCES_ENGINE_LABEL":
 		return "Deep engine"
+	case "PREFERENCES_RATE_LABEL":
+		return "Compression rate"
 	case "PREFERENCES_TARGET_LABEL":
-		return "Deep target tokens"
+		return "Compression rate"
 	case "PREFERENCES_CLI_TITLE":
 		return "CLI usage"
 	case "PREFERENCES_CLI_HELP_1":
@@ -1358,7 +1362,7 @@ func builtinMessageForCode(code string) string {
 	case "PREFERENCES_CLI_HELP_3":
 		return "trim compress --bootstrap installs Deep Mode dependencies on your machine (may download packages)."
 	case "PREFERENCES_CLI_HELP_4":
-		return "trim config set default-tier deep"
+		return "trim config set default-tier fast"
 	case "PREFERENCES_CLI_HELP_5":
 		return "trim config sync copies this dashboard profile into ~/.config/trim/preferences.json."
 	case "PREFERENCES_CLI_HELP_6":
@@ -2220,7 +2224,7 @@ func builtinMessageForCode(code string) string {
 	case "RECEIPT_PDF_FILENAME_FMT":
 		return "receipt-%s.pdf"
 	case "CLI_COMPRESS_DEEP_PREFS_REQUIRED":
-		return "Deep Mode requires deep_engine and target_token (run: trim config sync, or trim config set deep-engine / target-token, or pass --engine and --target-token)"
+		return "Deep Mode requires deep_engine and compression-rate (run: trim config sync, or trim config set deep-engine / compression-rate, or pass --engine and --rate)"
 	case "CLI_COMPRESS_DEEP_RESULT_FMT":
 		return "Deep (%s): %d -> %d tokens (%s)"
 	case "CLI_COMPRESS_WROTE_FMT":
@@ -2280,8 +2284,10 @@ func builtinMessageForCode(code string) string {
 		return "Deep Mode dependencies missing (%v): %s; run: trim compress --bootstrap"
 	case "CLI_DEEP_PIP_FAILED":
 		return "Installing Deep Mode dependencies failed"
+	case "CLI_DEEP_RATE_REQUIRED":
+		return "Deep Mode requires deep_engine and compression-rate (run: trim config sync, or trim config set deep-engine / compression-rate, or pass --engine and --rate)"
 	case "CLI_DEEP_TARGET_REQUIRED":
-		return "deep_target_token must be a positive integer (set via trim config or preferences)"
+		return "Deep Mode requires deep_engine and compression-rate (run: trim config sync, or trim config set deep-engine / compression-rate, or pass --engine and --rate)"
 	case "CLI_DEEP_ENGINE_REQUIRED":
 		return "deep engine required (v1, long, or v2); set via --engine or trim config sync"
 	case "CLI_DEEP_QUESTION_REQUIRED":
@@ -2297,17 +2303,17 @@ func builtinMessageForCode(code string) string {
 	case "CLI_PROXY_LIVE_DEEP_MODE_FMT":
 		return "deep/%s"
 	case "CLI_PROXY_LIVE_DEEP_ENABLED_FMT":
-		return "Live Deep Mode on (engine %s, target_token %d, min_input_tokens %d, oom=%s, skip_stream=%t). Synced from account preferences / billing settings."
+		return "Live Deep Mode on (engine %s, compression_rate %g, oom=%s). Synced from account preferences / billing settings."
 	case "CLI_PROXY_DEEP_COMPACT_STUB":
 		return "(prior turns compacted by Deep Mode)"
 	case "CLI_PROXY_DEEP_CHROME_REQUIRED":
 		return "Live Deep Mode chrome missing from Trim cloud (CLI_PROXY_LIVE_DEEP_MODE_FMT / CLI_PROXY_DEEP_COMPACT_STUB). Sync site_messages and retry."
 	case "CLI_PROXY_DEEP_PREFS_REQUIRED":
-		return "Live Deep Mode requires compression_tier=deep plus deep_engine and deep_target_token. Save Dashboard → Settings, then run: trim config sync"
+		return "Live Deep Mode requires compression_tier=deep plus deep_engine and deep_compression_rate. Save Dashboard → Settings, then run: trim config sync"
 	case "CLI_PROXY_DEEP_SKIPPED_MIN_FMT":
-		return "Live Deep skipped (input ~%d tokens < min %d). Fast Mode only for this request."
+		return ""
 	case "CLI_PROXY_DEEP_SKIPPED_STREAM":
-		return "Live Deep skipped (stream=true and billing live_deep_skip_on_stream). Fast Mode only for this request."
+		return ""
 	case "CLI_PROXY_DEEP_OOM_SKIPPED":
 		return "Live Deep skipped after OOM/memory error (billing live_deep_oom_policy=skip). Fast Mode only for this request."
 	case "CLI_PROXY_DEEP_RUNTIME_REQUIRED":
@@ -2389,17 +2395,17 @@ func builtinMessageForCode(code string) string {
 	case "PREFERENCES_CLI_HELP_9":
 		return "GPT / Gemini / DeepSeek / Mistral: same OpenAI Base URL → Trim. DB provider_adapters (openai_compat) pick the host from the model prefix. Put that host’s key in the OpenAI key field for the model you pick. After trim config sync, unmatched prefixes return a clear Trim error (no silent invent). UPSTREAM_OPENAI_URL is only the OpenAI-door default when adapters are not synced. Do not edit .env every day."
 	case "PREFERENCES_LIVE_DEEP_MIN_HINT":
-		return "Live Deep runs only when estimated compressible input tokens are at least live_deep_min_input_tokens from billing settings (0 = every turn). Lower values run Deep on more chats (more CPU/latency). Synced by trim config sync."
+		return ""
 	case "PREFERENCES_LIVE_DEEP_STREAM_HINT":
-		return "Billing may skip live Deep when the client sets stream=true (live_deep_skip_on_stream). Synced by trim config sync."
+		return ""
 	case "ADMIN_BILLING_LIVE_DEEP_SKIP_STREAM":
-		return "Skip Deep on stream requests"
+		return ""
 	case "ADMIN_BILLING_LIVE_DEEP_SKIP_STREAM_DESC":
-		return "When on, live proxy skips Deep for stream=true chat (lower latency). When off, Deep still runs on the full body before upstream streaming."
+		return ""
 	case "ADMIN_BILLING_LIVE_DEEP_MIN":
-		return "Live Deep min input tokens"
+		return ""
 	case "ADMIN_BILLING_LIVE_DEEP_MIN_DESC":
-		return "Skip Deep on the live proxy when estimated input tokens are below this (0 = every turn). Lowering increases Deep coverage and local CPU/latency. Synced to CLI."
+		return ""
 	case "ADMIN_BILLING_LIVE_DEEP_OOM":
 		return "Live Deep OOM policy"
 	case "ADMIN_BILLING_LIVE_DEEP_OOM_DESC":
@@ -2408,6 +2414,22 @@ func builtinMessageForCode(code string) string {
 		return "Warm Deep on trim start"
 	case "ADMIN_BILLING_LIVE_DEEP_WARMUP_DESC":
 		return "When on, trim start warms the local Deep engine once after binding prefs."
+	case "ADMIN_BILLING_DEEP_RATE_DEFAULT":
+		return "Default deep compression rate"
+	case "ADMIN_BILLING_DEEP_RATE_DEFAULT_DESC":
+		return "Seeded into new subscriptions as profiles.deep_compression_rate. Microsoft keep-rate after/before (typical 0.7)."
+	case "ADMIN_BILLING_DEEP_RATE_MIN":
+		return "Deep compression rate min"
+	case "ADMIN_BILLING_DEEP_RATE_MIN_DESC":
+		return "Lower bound users may select on Dashboard and CLI (professional floor is 0.3; Microsoft demo allows 0.1)."
+	case "ADMIN_BILLING_DEEP_RATE_MAX":
+		return "Deep compression rate max"
+	case "ADMIN_BILLING_DEEP_RATE_MAX_DESC":
+		return "Upper bound users may select (1.0 = keep almost everything)."
+	case "ADMIN_BILLING_DEEP_RATE_STEP":
+		return "Deep compression rate step"
+	case "ADMIN_BILLING_DEEP_RATE_STEP_DESC":
+		return "Slider and CLI list step (Microsoft HF Space uses 0.1)."
 	case "ADMIN_BILLING_DEEP_V1_MODEL":
 		return "Deep v1 model id"
 	case "ADMIN_BILLING_DEEP_V2_MODEL":
@@ -2418,24 +2440,46 @@ func builtinMessageForCode(code string) string {
 		return "Deep v2 force_tokens JSON"
 	case "CLI_PREFS_ENGINE_INVALID":
 		return "deep_engine must be v1, long, or v2"
+	case "CLI_PREFS_RATE_NONNEG":
+		return "compression-rate must be greater than 0"
 	case "CLI_PREFS_TARGET_NONNEG":
-		return "target_token must be a non-negative integer"
+		return "compression-rate must be greater than 0"
 	case "CLI_PREFS_TIER_REQUIRED":
 		return "default_tier must be set (fast or deep) via trim config set or trim config sync"
 	case "CLI_PREFS_ENGINE_REQUIRED":
 		return "deep_engine must be set (v1, long, or v2) via trim config set or trim config sync"
+	case "CLI_PREFS_RATE_REQUIRED":
+		return "compression-rate must be a positive keep-rate (after/before); set via trim config or preferences"
 	case "CLI_PREFS_TARGET_REQUIRED":
-		return "target_token must be a positive integer (trim config set target-token <n> or trim config sync)"
+		return "compression-rate must be a positive keep-rate (after/before); set via trim config or preferences"
 	case "CLI_CONFIG_GET_TIER_FMT":
 		return "default-tier=%s"
 	case "CLI_CONFIG_GET_ENGINE_FMT":
 		return "deep-engine=%s"
+	case "CLI_CONFIG_RATES_TITLE":
+		return "Compression rates (after / before)"
+	case "CLI_CONFIG_RATES_DEFAULT_LABEL":
+		return "billing default"
+	case "CLI_CONFIG_RATES_SELECTED_LABEL":
+		return "selected"
+	case "CLI_CONFIG_RATES_SELECTED_MARK":
+		return "selected"
+	case "CLI_CONFIG_RATES_SYNC_HINT":
+		return "Bounds and step come from Admin billing via trim config sync. Set with: trim config set compression-rate <rate>"
+	case "CLI_CONFIG_RATES_UNSYNCED":
+		return "Rate bounds not synced. Run: trim config sync"
+	case "CLI_HELP_CONFIG_RATES_SHORT":
+		return "List allowed Deep compression rates; mark billing default and selected"
+	case "CLI_CONFIG_GET_RATE_FMT":
+		return "compression-rate: %g"
 	case "CLI_CONFIG_GET_TARGET_FMT":
-		return "target-token=%d"
+		return "compression-rate: %g"
 	case "CLI_CONFIG_UNKNOWN_KEY_FMT":
-		return "unknown key %q (default-tier|deep-engine|target-token)"
+		return "unknown key %q (default-tier|deep-engine|compression-rate)"
+	case "CLI_CONFIG_RATE_RANGE":
+		return "compression-rate must be within billing deep_compression_rate_min..max (typically 0.3 to 1.0)"
 	case "CLI_CONFIG_TARGET_POSITIVE":
-		return "target-token must be a positive integer"
+		return "compression-rate must be within billing deep_compression_rate_min..max (typically 0.3 to 1.0)"
 	case "CLI_CONFIG_SAVED_FMT":
 		return "Saved %s"
 	case "CLI_CONFIG_NOT_LOGGED_IN":
@@ -2443,11 +2487,11 @@ func builtinMessageForCode(code string) string {
 	case "CLI_CONFIG_SYNC_FAILED_FMT":
 		return "preferences sync failed (%s): %s"
 	case "CLI_CONFIG_SYNCED_FMT":
-		return "Synced: default-tier=%s deep-engine=%s target-token=%d"
+		return "Synced preferences: tier=%s engine=%s compression-rate=%g"
 	case "CLI_HELP_ROOT_SHORT":
 		return "Local Fast Mode proxy for AI coding tools"
 	case "CLI_HELP_ROOT_LONG":
-		return "Trim keeps a local Fast Mode proxy on your machine so IDE traffic uses less noisy context.\n\nEveryday: start, stop, status, stats, upgrade, autostart, cursor-link, login, logout, uninstall, setup, version\nAdvanced: tui, compress, daemon, telemetry, config (get | set | sync)\n\nCursor Agent: trim cursor-link enable → trim start → trim cursor-link url (paste HTTPS …/v1; not 127.0.0.1).\n\nSimple savings check after trim start:\n  trim stats\n  open http://127.0.0.1:<port>/dashboard → Show savings detail\n\ntrim status = cloud quota. trim stats = local Deep status / savings meter.\n\nFull remove: trim uninstall (then brew/scoop/winget/npm uninstall if you installed that way).\n\nRun \"trim help <command>\" for details. Prefer trim start / autostart for daily use; compress and Deep Mode are file/batch tools, not the everyday IDE path."
+		return "Trim keeps a local Fast Mode proxy on your machine so IDE traffic uses less noisy context.\n\nEveryday: start, stop, status, stats, upgrade, autostart, cursor-link, login, logout, uninstall, setup, version\nAdvanced: tui, compress, daemon, telemetry, config (get | set | sync | rates)\n\nFast vs Deep (new accounts default to Deep = Fast then Deep):\n  trim config get default-tier\n  trim config set default-tier deep\n  trim config set default-tier fast\n  trim config rates\n  trim config set compression-rate 0.7\n  trim config sync\n\nDeep keep-rate (after/before, Microsoft LLMLingua): Dashboard slider or trim config rates / set compression-rate (billing min/max/step).\n\nCursor Agent: trim cursor-link enable → trim start → trim cursor-link url (paste HTTPS …/v1; not 127.0.0.1).\n\nSimple savings check after trim start:\n  trim stats\n  open http://127.0.0.1:<port>/dashboard → Show savings detail\n\ntrim status = cloud quota. trim stats = local Deep status / savings meter.\n\nFull remove: trim uninstall (then brew/scoop/winget/npm uninstall if you installed that way).\n\nRun \"trim help <command>\" for details. Prefer trim start / autostart for daily use (new accounts default Deep = Fast then Deep on the live proxy). Use trim compress --deep for file/batch."
 	case "CLI_HELP_GROUP_EVERYDAY":
 		return "Everyday Commands:"
 	case "CLI_HELP_GROUP_ADVANCED":
@@ -2596,20 +2640,22 @@ func builtinMessageForCode(code string) string {
 		return "Deep engine: v2 (recommended, usually faster) | long (needs --question) | v1 (classic). Else prefs deep-engine."
 	case "CLI_HELP_COMPRESS_FLAG_QUESTION":
 		return "question required when Deep engine is long"
+	case "CLI_HELP_COMPRESS_FLAG_RATE":
+		return "Deep keep-rate after/before (Microsoft LLMLingua); omit to use synced preferences"
 	case "CLI_HELP_COMPRESS_FLAG_TARGET":
-		return "deep target token budget (0 = prefs default)"
+		return "Deep keep-rate after/before (Microsoft LLMLingua); omit to use synced preferences"
 	case "CLI_HELP_COMPRESS_FLAG_BOOTSTRAP":
 		return "install Deep Mode dependencies on this machine"
 	case "CLI_HELP_COMPRESS_FLAG_OUT":
 		return "write result to file instead of stdout"
 	case "CLI_HELP_CONFIG_SHORT":
-		return "Local Fast/Deep preferences (get | set | sync)"
+		return "Local Fast/Deep preferences (get | set | sync | rates)"
 	case "CLI_HELP_CONFIG_LONG":
-		return "Manage local Fast/Deep preferences under ~/.config/trim/.\n\n  trim config get\n  trim config get default-tier\n  trim config set default-tier deep\n  trim config sync\n\nget - show local preferences\nset - write a local preference key\nsync - pull Fast/Deep preferences and provider adapters from your Trim cloud profile (requires trim login)"
+		return "Manage local Fast/Deep preferences under ~/.config/trim/.\n\nNew accounts default to Deep Mode (live proxy runs Fast then Deep). Switch to Fast anytime.\n\n  trim config get\n  trim config get default-tier\n  trim config get compression-rate\n  trim config rates\n  trim config set default-tier deep\n  trim config set default-tier fast\n  trim config set compression-rate 0.7\n  trim config sync\n\nget - show local preferences\nrates - list allowed keep-rates; mark billing default and selected\nset - write a local preference key (when logged in, default-tier / deep-engine / compression-rate also update your Trim cloud profile)\nsync - pull Fast/Deep preferences and provider adapters from your Trim cloud profile (requires trim login)\n\nFast = live proxy Fast only. Deep = live proxy runs Fast then Deep (LLMLingua) at your compression rate.\nAfter Dashboard → Settings changes: trim config sync, then restart with trim start."
 	case "CLI_HELP_CONFIG_GET_SHORT":
-		return "Show preferences (default-tier, deep-engine, target-token)"
+		return "Show preferences (default-tier, deep-engine, compression-rate)"
 	case "CLI_HELP_CONFIG_SET_SHORT":
-		return "Set a preference (example: trim config set default-tier deep)"
+		return "Set a preference (example: trim config set compression-rate 0.7)"
 	case "CLI_HELP_CONFIG_SYNC_SHORT":
 		return "Pull Fast/Deep preferences and provider adapters from your Trim cloud profile into ~/.config/trim/"
 	case "CLI_HELP_CURSOR_LINK_SHORT":
@@ -2962,8 +3008,10 @@ func builtinMessageForCode(code string) string {
 		return "compression_tier must be fast or deep"
 	case "DEEP_ENGINE_INVALID":
 		return "deep_engine must be v1, long, or v2"
+	case "DEEP_COMPRESSION_RATE_RANGE":
+		return "deep_compression_rate out of range"
 	case "DEEP_TARGET_TOKEN_RANGE":
-		return "deep_target_token out of range"
+		return "deep_compression_rate out of range"
 	case "ACCOUNT_OPERATION_FAILED":
 		return "account operation failed"
 	case "PLAN_NOT_FOUND":
