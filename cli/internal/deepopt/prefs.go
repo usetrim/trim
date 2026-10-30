@@ -55,6 +55,10 @@ type Preferences struct {
 	DeepV2Model           string    `json:"deep_v2_model"`
 	DeepLongModel         string    `json:"deep_long_model"`
 	DeepV2ForceTokens     []string  `json:"deep_v2_force_tokens"`
+	// DeepV2Backbone is the Microsoft Space Base Model id (catalog row). DeepV2Model is its HF id.
+	DeepV2Backbone          string             `json:"deep_v2_backbone"`
+	DefaultDeepV2Backbone   string             `json:"default_deep_v2_backbone"`
+	DeepV2BackboneOptions   []V2BackboneOption `json:"deep_v2_backbone_options"`
 	LiveDeepPolicySynced  bool      `json:"live_deep_policy_synced"`
 	// ProviderAdapters / OpenAIModelAliases / DiscoverableModels come from Trim cloud tables via preferences sync (no invent).
 	ProviderAdapters       []ProviderAdapterPref     `json:"provider_adapters"`
@@ -251,6 +255,15 @@ func RequireLiveDeepPolicy(p Preferences) bool {
 	if p.DeepV2ForceTokens == nil {
 		return false
 	}
+	if ValidateBackboneCatalog(p.DeepV2BackboneOptions, p.DefaultDeepV2Backbone) != nil {
+		return false
+	}
+	if !BackboneInCatalog(p.DeepV2BackboneOptions, p.DeepV2Backbone) {
+		return false
+	}
+	if resolved, ok := ResolveV2Model(p.DeepV2BackboneOptions, p.DeepV2Backbone); !ok || resolved != strings.TrimSpace(p.DeepV2Model) {
+		return false
+	}
 	if p.CompressionRateMin <= 0 || p.CompressionRateMax < p.CompressionRateMin || p.CompressionRateMax > 1 {
 		return false
 	}
@@ -290,10 +303,14 @@ func ListCompressionRates(min, max, step float64) []float64 {
 
 // RuntimeFromPreferences builds Deep Runtime from synced billing models (device_map stays local).
 func RuntimeFromPreferences(p Preferences, deviceMap string) Runtime {
+	v2 := strings.TrimSpace(p.DeepV2Model)
+	if resolved, ok := ResolveV2Model(p.DeepV2BackboneOptions, p.DeepV2Backbone); ok {
+		v2 = resolved
+	}
 	return Runtime{
 		DeviceMap:     deviceMap,
 		V1Model:       strings.TrimSpace(p.DeepV1Model),
-		V2Model:       strings.TrimSpace(p.DeepV2Model),
+		V2Model:       v2,
 		LongModel:     strings.TrimSpace(p.DeepLongModel),
 		V2ForceTokens: append([]string(nil), p.DeepV2ForceTokens...),
 	}

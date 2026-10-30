@@ -31,6 +31,11 @@ export type PreferencesResponse = {
   deep_v2_model?: string;
   deep_long_model?: string;
   deep_v2_force_tokens?: string[];
+  deep_v2_backbone?: string;
+  default_deep_v2_backbone?: string;
+  deep_v2_backbone_options?: Array<{ id: string; label: string; model: string }>;
+  backbone_label?: string;
+  backbone_hint?: string;
   provider_adapters?: Array<{
     id: string;
     enabled: boolean;
@@ -117,6 +122,7 @@ export type PatchPreferencesBody = {
   compression_tier?: string;
   deep_engine?: string;
   deep_compression_rate?: number;
+  deep_v2_backbone?: string;
   auto_start_with_ide?: boolean;
 };
 

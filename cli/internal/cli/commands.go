@@ -637,6 +637,16 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 			ConfigRatesSyncHint                string `json:"config_rates_sync_hint"`
 			ConfigRatesUnsynced                string `json:"config_rates_unsynced"`
 			HelpConfigRatesShort               string `json:"help_config_rates_short"`
+			ConfigModelsTitle                  string `json:"config_models_title"`
+			ConfigModelsDefaultLabel           string `json:"config_models_default_label"`
+			ConfigModelsSelectedLabel          string `json:"config_models_selected_label"`
+			ConfigModelsSelectedMark           string `json:"config_models_selected_mark"`
+			ConfigModelsSyncHint               string `json:"config_models_sync_hint"`
+			ConfigModelsUnsynced               string `json:"config_models_unsynced"`
+			ConfigModelsHfLabel                string `json:"config_models_hf_label"`
+			HelpConfigModelsShort              string `json:"help_config_models_short"`
+			ConfigGetBackboneFmt               string `json:"config_get_backbone_fmt"`
+			ConfigBackboneInvalid              string `json:"config_backbone_invalid"`
 			ConfigGetAutostartFmt              string `json:"config_get_autostart_fmt"`
 			ConfigUnknownKeyFmt                string `json:"config_unknown_key_fmt"`
 			ConfigRateRange                    string `json:"config_rate_range"`
@@ -991,6 +1001,16 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 		ConfigRatesSyncHint:                body.CLI.ConfigRatesSyncHint,
 		ConfigRatesUnsynced:                body.CLI.ConfigRatesUnsynced,
 		HelpConfigRatesShort:               body.CLI.HelpConfigRatesShort,
+		ConfigModelsTitle:                  body.CLI.ConfigModelsTitle,
+		ConfigModelsDefaultLabel:           body.CLI.ConfigModelsDefaultLabel,
+		ConfigModelsSelectedLabel:          body.CLI.ConfigModelsSelectedLabel,
+		ConfigModelsSelectedMark:           body.CLI.ConfigModelsSelectedMark,
+		ConfigModelsSyncHint:               body.CLI.ConfigModelsSyncHint,
+		ConfigModelsUnsynced:               body.CLI.ConfigModelsUnsynced,
+		ConfigModelsHfLabel:                body.CLI.ConfigModelsHfLabel,
+		HelpConfigModelsShort:              body.CLI.HelpConfigModelsShort,
+		ConfigGetBackboneFmt:               body.CLI.ConfigGetBackboneFmt,
+		ConfigBackboneInvalid:              body.CLI.ConfigBackboneInvalid,
 		ConfigGetAutostartFmt:              body.CLI.ConfigGetAutostartFmt,
 		ConfigUnknownKeyFmt:                body.CLI.ConfigUnknownKeyFmt,
 		ConfigRateRange:                    body.CLI.ConfigRateRange,
@@ -1380,6 +1400,16 @@ type cliChrome struct {
 	ConfigRatesSyncHint                string
 	ConfigRatesUnsynced                string
 	HelpConfigRatesShort               string
+	ConfigModelsTitle                  string
+	ConfigModelsDefaultLabel           string
+	ConfigModelsSelectedLabel          string
+	ConfigModelsSelectedMark           string
+	ConfigModelsSyncHint               string
+	ConfigModelsUnsynced               string
+	ConfigModelsHfLabel                string
+	HelpConfigModelsShort              string
+	ConfigGetBackboneFmt               string
+	ConfigBackboneInvalid              string
 	ConfigGetAutostartFmt              string
 	ConfigUnknownKeyFmt                string
 	ConfigRateRange                    string

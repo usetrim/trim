@@ -39,6 +39,9 @@ var configGetCmd = &cobra.Command{
 			if chrome.ConfigGetRateFmt != "" {
 				fmt.Printf(chrome.ConfigGetRateFmt+"\n", p.CompressionRate)
 			}
+			if chrome.ConfigGetBackboneFmt != "" {
+				fmt.Printf(chrome.ConfigGetBackboneFmt+"\n", p.DeepV2Backbone)
+			}
 			if chrome.ConfigGetAutostartFmt != "" {
 				if !p.AutoStartSet() {
 					if chrome.ConfigGetAutostartUnset != "" {
@@ -63,6 +66,14 @@ var configGetCmd = &cobra.Command{
 			}
 		case "rates":
 			return printCompressionRatesFlow(p, chrome)
+		case "deep-v2-backbone", "backbone", "base-model", "v2-backbone":
+			if chrome.ConfigGetBackboneFmt != "" {
+				fmt.Printf(chrome.ConfigGetBackboneFmt+"\n", p.DeepV2Backbone)
+			} else {
+				fmt.Println(p.DeepV2Backbone)
+			}
+		case "models", "backbones":
+			return printDeepV2ModelsFlow(p, chrome)
 		case "auto-start-with-ide", "autostart", "auto-start":
 			if !p.AutoStartSet() {
 				if chrome.ConfigGetAutostartUnset != "" {
@@ -94,6 +105,7 @@ var configSetCmd = &cobra.Command{
 		key := strings.ToLower(args[0])
 		val := args[1]
 		showRatesAfter := false
+		showModelsAfter := false
 		switch key {
 		case "default-tier", "default-mode", "tier", "mode":
 			tier := deepopt.NormalizeTier(val)
@@ -129,6 +141,25 @@ var configSetCmd = &cobra.Command{
 			}
 			p.CompressionRate = n
 			showRatesAfter = true
+		case "deep-v2-backbone", "backbone", "base-model", "v2-backbone":
+			id := strings.TrimSpace(val)
+			if !p.LiveDeepPolicySynced {
+				if chrome.ConfigModelsUnsynced != "" {
+					return fmt.Errorf("%s", chrome.ConfigModelsUnsynced)
+				}
+				return chrome.fail("")
+			}
+			if id == "" || !deepopt.BackboneInCatalog(p.DeepV2BackboneOptions, id) {
+				if chrome.ConfigBackboneInvalid != "" {
+					return fmt.Errorf("%s", chrome.ConfigBackboneInvalid)
+				}
+				return chrome.fail("")
+			}
+			if model, ok := deepopt.ResolveV2Model(p.DeepV2BackboneOptions, id); ok {
+				p.DeepV2Model = model
+			}
+			p.DeepV2Backbone = id
+			showModelsAfter = true
 		case "auto-start-with-ide", "autostart", "auto-start":
 			switch strings.ToLower(strings.TrimSpace(val)) {
 			case "true", "1", "on", "yes", "enable", "enabled":
@@ -161,7 +192,8 @@ var configSetCmd = &cobra.Command{
 		// Push Fast/Deep dials to cloud so trim start refresh does not overwrite local set.
 		switch key {
 		case "default-tier", "default-mode", "tier", "mode",
-			"deep-engine", "engine", "compression-rate", "rate":
+			"deep-engine", "engine", "compression-rate", "rate",
+			"deep-v2-backbone", "backbone", "base-model", "v2-backbone":
 			if err := pushCompressPreferences(p, chrome); err != nil {
 				return err
 			}
@@ -171,6 +203,9 @@ var configSetCmd = &cobra.Command{
 		}
 		if showRatesAfter {
 			_ = printCompressionRatesFlow(p, chrome)
+		}
+		if showModelsAfter {
+			_ = printDeepV2ModelsFlow(p, chrome)
 		}
 		return nil
 	},
@@ -186,11 +221,16 @@ func pushCompressPreferences(p deepopt.Preferences, chrome cliChrome) error {
 	if err != nil || token == "" {
 		return nil // local-only until login
 	}
-	body, err := json.Marshal(map[string]any{
-		"compression_tier":       string(p.DefaultTier),
-		"deep_engine":            string(p.DeepEngine),
-		"deep_compression_rate":  p.CompressionRate,
-	})
+	payload := map[string]any{
+		"compression_tier":      string(p.DefaultTier),
+		"deep_engine":           string(p.DeepEngine),
+		"deep_compression_rate": p.CompressionRate,
+	}
+	// Match Dashboard Save: only patch Base Model when engine is v2 (catalog applies there).
+	if deepopt.NormalizeEngine(string(p.DeepEngine)) == "v2" && strings.TrimSpace(p.DeepV2Backbone) != "" {
+		payload["deep_v2_backbone"] = p.DeepV2Backbone
+	}
+	body, err := json.Marshal(payload)
 	if err != nil {
 		return err
 	}
@@ -290,7 +330,7 @@ var configSyncCmd = &cobra.Command{
 			fmt.Println(chrome.AutostartSyncDaemonOk)
 		}
 		if chrome.ConfigSyncedFmt != "" {
-			fmt.Printf(chrome.ConfigSyncedFmt+"\n", p.DefaultTier, p.DeepEngine, p.CompressionRate)
+			fmt.Printf(chrome.ConfigSyncedFmt+"\n", p.DefaultTier, p.DeepEngine, p.DeepV2Backbone, p.CompressionRate)
 		}
 		return nil
 	},

@@ -22,6 +22,9 @@ type remotePreferences struct {
 	DeepV2Model            string                          `json:"deep_v2_model"`
 	DeepLongModel          string                          `json:"deep_long_model"`
 	DeepV2ForceTokens      []string                        `json:"deep_v2_force_tokens"`
+	DeepV2Backbone         string                          `json:"deep_v2_backbone"`
+	DefaultDeepV2Backbone  string                          `json:"default_deep_v2_backbone"`
+	DeepV2BackboneOptions  []deepopt.V2BackboneOption      `json:"deep_v2_backbone_options"`
 	ProviderAdapters       []deepopt.ProviderAdapterPref   `json:"provider_adapters"`
 	OpenAIModelAliases     []deepopt.OpenAIModelAliasPref  `json:"openai_model_aliases"`
 	DiscoverableModels     []deepopt.DiscoverableModelPref `json:"provider_discoverable_models"`
@@ -38,14 +41,23 @@ func preferencesFromRemote(remote remotePreferences, cur deepopt.Preferences) de
 	rateMax := remote.DeepCompressionRateMax
 	rateStep := remote.DeepCompressionRateStep
 	rateDefault := remote.DefaultDeepCompressionRate
+	backboneOpts := append([]deepopt.V2BackboneOption{}, remote.DeepV2BackboneOptions...)
+	backboneID := strings.TrimSpace(remote.DeepV2Backbone)
+	defaultBackbone := strings.TrimSpace(remote.DefaultDeepV2Backbone)
+	v2Model := strings.TrimSpace(remote.DeepV2Model)
+	if resolved, ok := deepopt.ResolveV2Model(backboneOpts, backboneID); ok {
+		v2Model = resolved
+	}
 	policySynced := oom != "" &&
 		rateMin > 0 && rateMax >= rateMin && rateMax <= 1 &&
 		rateStep > 0 && rateStep <= 1 &&
 		rateDefault > 0 && rateDefault <= 1 &&
 		strings.TrimSpace(remote.DeepV1Model) != "" &&
-		strings.TrimSpace(remote.DeepV2Model) != "" &&
+		v2Model != "" &&
 		strings.TrimSpace(remote.DeepLongModel) != "" &&
-		remote.DeepV2ForceTokens != nil
+		remote.DeepV2ForceTokens != nil &&
+		deepopt.ValidateBackboneCatalog(backboneOpts, defaultBackbone) == nil &&
+		deepopt.BackboneInCatalog(backboneOpts, backboneID)
 
 	adapters := cur.ProviderAdapters
 	aliases := cur.OpenAIModelAliases
@@ -73,9 +85,12 @@ func preferencesFromRemote(remote remotePreferences, cur deepopt.Preferences) de
 		LiveDeepOOMPolicy:     oom,
 		LiveDeepWarmupOnStart: remote.LiveDeepWarmupOnStart,
 		DeepV1Model:           strings.TrimSpace(remote.DeepV1Model),
-		DeepV2Model:           strings.TrimSpace(remote.DeepV2Model),
+		DeepV2Model:           v2Model,
 		DeepLongModel:         strings.TrimSpace(remote.DeepLongModel),
 		DeepV2ForceTokens:     append([]string(nil), remote.DeepV2ForceTokens...),
+		DeepV2Backbone:        backboneID,
+		DefaultDeepV2Backbone: defaultBackbone,
+		DeepV2BackboneOptions: backboneOpts,
 		LiveDeepPolicySynced:  policySynced,
 		ProviderAdapters:      adapters,
 		OpenAIModelAliases:    aliases,

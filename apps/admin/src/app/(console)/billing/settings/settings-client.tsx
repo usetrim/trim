@@ -70,6 +70,8 @@ export function BillingSettingsClient({
   const [deepV2Model, setDeepV2Model] = useState("");
   const [deepLongModel, setDeepLongModel] = useState("");
   const [deepV2ForceTokens, setDeepV2ForceTokens] = useState("");
+  const [deepV2BackboneDefault, setDeepV2BackboneDefault] = useState("");
+  const [deepV2BackboneOptions, setDeepV2BackboneOptions] = useState("");
   const [allowDowngrades, setAllowDowngrades] = useState(false);
   const [prorationMode, setProrationMode] = useState("");
   const [monthlyToAnnual, setMonthlyToAnnual] = useState(false);
@@ -100,6 +102,10 @@ export function BillingSettingsClient({
   const deepV2Label = chrome.data?.ADMIN_BILLING_DEEP_V2_MODEL?.trim() || "";
   const deepLongLabel = chrome.data?.ADMIN_BILLING_DEEP_LONG_MODEL?.trim() || "";
   const deepForceLabel = chrome.data?.ADMIN_BILLING_DEEP_V2_FORCE_TOKENS?.trim() || "";
+  const deepBackboneDefaultLabel =
+    chrome.data?.ADMIN_BILLING_DEEP_V2_BACKBONE_DEFAULT?.trim() || "";
+  const deepBackboneOptionsLabel =
+    chrome.data?.ADMIN_BILLING_DEEP_V2_BACKBONE_OPTIONS?.trim() || "";
   const downgradeLabel = chrome.data?.ADMIN_BILLING_ALLOW_DOWNGRADES?.trim() || "";
   const prorationLabel = chrome.data?.ADMIN_BILLING_PRORATION_MODE?.trim() || "";
   const monthlyAnnualLabel = chrome.data?.ADMIN_BILLING_MONTHLY_TO_ANNUAL?.trim() || "";
@@ -167,6 +173,12 @@ export function BillingSettingsClient({
       Array.isArray(d.deep_v2_force_tokens)
         ? JSON.stringify(d.deep_v2_force_tokens)
         : strField(d.deep_v2_force_tokens),
+    );
+    setDeepV2BackboneDefault(strField(d.default_deep_v2_backbone));
+    setDeepV2BackboneOptions(
+      Array.isArray(d.deep_v2_backbone_options)
+        ? JSON.stringify(d.deep_v2_backbone_options)
+        : strField(d.deep_v2_backbone_options),
     );
     setAllowDowngrades(Boolean(d.allow_downgrades));
     setProrationMode(strField(d.upgrade_proration_mode));
@@ -366,13 +378,46 @@ export function BillingSettingsClient({
           />
         </Field>
       ) : null}
+      {deepBackboneDefaultLabel ? (
+        <Field
+          id="billing-deep-v2-backbone-default"
+          label={deepBackboneDefaultLabel}
+          {...chromeFieldDesc(chrome.data, "ADMIN_BILLING_DEEP_V2_BACKBONE_DEFAULT_DESC")}
+        >
+          <Input
+            id="billing-deep-v2-backbone-default"
+            value={deepV2BackboneDefault}
+            onChange={(e) => setDeepV2BackboneDefault(e.target.value)}
+            placeholder={deepBackboneDefaultLabel}
+          />
+        </Field>
+      ) : null}
+      {deepBackboneOptionsLabel ? (
+        <Field
+          id="billing-deep-v2-backbone-options"
+          label={deepBackboneOptionsLabel}
+          {...chromeFieldDesc(chrome.data, "ADMIN_BILLING_DEEP_V2_BACKBONE_OPTIONS_DESC")}
+        >
+          <Input
+            id="billing-deep-v2-backbone-options"
+            value={deepV2BackboneOptions}
+            onChange={(e) => setDeepV2BackboneOptions(e.target.value)}
+            placeholder={deepBackboneOptionsLabel}
+          />
+        </Field>
+      ) : null}
       {deepV2Label ? (
-        <Field id="billing-deep-v2" label={deepV2Label}>
+        <Field
+          id="billing-deep-v2"
+          label={deepV2Label}
+          {...chromeFieldDesc(chrome.data, "ADMIN_BILLING_DEEP_V2_MODEL_DESC")}
+        >
           <Input
             id="billing-deep-v2"
             value={deepV2Model}
             onChange={(e) => setDeepV2Model(e.target.value)}
             placeholder={deepV2Label}
+            readOnly
           />
         </Field>
       ) : null}
@@ -651,8 +696,20 @@ export function BillingSettingsClient({
                     live_deep_oom_policy: liveDeepOom || undefined,
                     live_deep_warmup_on_start: liveDeepWarmup,
                     deep_v1_model: deepV1Model || undefined,
-                    deep_v2_model: deepV2Model || undefined,
                     deep_long_model: deepLongModel || undefined,
+                    default_deep_v2_backbone: deepV2BackboneDefault || undefined,
+                    deep_v2_backbone_options: (() => {
+                      if (!deepV2BackboneOptions.trim()) return undefined;
+                      try {
+                        return JSON.parse(deepV2BackboneOptions) as Array<{
+                          id: string;
+                          label: string;
+                          model: string;
+                        }>;
+                      } catch {
+                        return undefined;
+                      }
+                    })(),
                     deep_v2_force_tokens: (() => {
                       if (!deepV2ForceTokens.trim()) return undefined;
                       try {

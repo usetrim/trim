@@ -515,8 +515,10 @@ func (h *Handler) patchBillingSettings(w http.ResponseWriter, r *http.Request) {
 		"deep_compression_rate_min": true, "deep_compression_rate_max": true,
 		"deep_compression_rate_step": true,
 		"live_deep_oom_policy": true, "live_deep_warmup_on_start": true,
-		"deep_v1_model": true, "deep_v2_model": true, "deep_long_model": true,
+		// deep_v2_model is derived from deep_v2_backbone_options[default_deep_v2_backbone].model (not operator-writable).
+		"deep_v1_model": true, "deep_long_model": true,
 		"deep_v2_force_tokens": true,
+		"deep_v2_backbone_options": true, "default_deep_v2_backbone": true,
 		"allow_downgrades":     true, "upgrade_proration_mode": true,
 		"allow_monthly_to_annual_as_upgrade": true,
 		"apply_paddle_discount_on_annual":    true,
@@ -576,9 +578,38 @@ func (h *Handler) patchBillingSettings(w http.ResponseWriter, r *http.Request) {
 		h.writeErr(w, http.StatusBadRequest, "WS_INVALID_JSON")
 		return
 	}
+	_, hasBackboneOpts := patch["deep_v2_backbone_options"]
+	_, hasBackboneDefault := patch["default_deep_v2_backbone"]
+	if hasBackboneOpts || hasBackboneDefault {
+		if err := h.validateBillingBackboneFields(r.Context(), patch); err != nil {
+			h.writeErr(w, http.StatusBadRequest, "WS_INVALID_JSON")
+			return
+		}
+	}
 	args = append(args, "default")
 	sql := fmt.Sprintf(`update public.billing_settings set %s where id = $%d`, strings.Join(sets, ", "), n)
 	if _, err := h.DB.Exec(r.Context(), sql, args...); err != nil {
+		h.writeErr(w, http.StatusInternalServerError, "DATABASE_UNAVAILABLE")
+		return
+	}
+	// Keep deep_v2_model = HF id for the billing default Base Model (Microsoft catalog).
+	if _, err := h.DB.Exec(r.Context(), `
+		update public.billing_settings b
+		set deep_v2_model = (
+		      select nullif(btrim(opt->>'model'), '')
+		      from jsonb_array_elements(b.deep_v2_backbone_options) as opt
+		      where opt->>'id' = b.default_deep_v2_backbone
+		      limit 1
+		    ),
+		    updated_at = now()
+		where b.id = 'default'
+		  and exists (
+		    select 1
+		    from jsonb_array_elements(b.deep_v2_backbone_options) as opt
+		    where opt->>'id' = b.default_deep_v2_backbone
+		      and nullif(btrim(opt->>'model'), '') is not null
+		  )
+	`); err != nil {
 		h.writeErr(w, http.StatusInternalServerError, "DATABASE_UNAVAILABLE")
 		return
 	}

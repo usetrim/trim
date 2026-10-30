@@ -424,6 +424,11 @@ type PreferencesResponse struct {
 	DeepV2Model              string                            `json:"deep_v2_model"`
 	DeepLongModel            string                            `json:"deep_long_model"`
 	DeepV2ForceTokens        []string                          `json:"deep_v2_force_tokens"`
+	DeepV2Backbone           string                            `json:"deep_v2_backbone"`
+	DefaultDeepV2Backbone    string                            `json:"default_deep_v2_backbone"`
+	DeepV2BackboneOptions    []DeepV2BackboneOption            `json:"deep_v2_backbone_options"`
+	BackboneLabel            string                            `json:"backbone_label"`
+	BackboneHint             string                            `json:"backbone_hint"`
 	ProviderAdapters         []provideradapt.AdapterConfig     `json:"provider_adapters"`
 	OpenAIModelAliases       []provideradapt.ModelAlias        `json:"openai_model_aliases"`
 	DiscoverableModels       []provideradapt.DiscoverableModel `json:"provider_discoverable_models"`
@@ -455,6 +460,7 @@ func preferencesChromeFromDB(ctx context.Context, db *pgxpool.Pool) (Preferences
 		"COMPRESSION_TIER_FAST", "COMPRESSION_TIER_DEEP",
 		"PREFERENCES_NOTE", "PREFERENCES_SAVED", "PREFERENCES_PAGE_TITLE", "PREFERENCES_PAGE_DESCRIPTION",
 		"PREFERENCES_DEEP_HINT", "PREFERENCES_ENGINE_HINT", "PREFERENCES_RATE_HINT", "PREFERENCES_RATE_LABEL",
+		"PREFERENCES_BACKBONE_LABEL", "PREFERENCES_BACKBONE_HINT",
 		"PREFERENCES_AUTO_START_TITLE", "PREFERENCES_AUTO_START_LABEL", "PREFERENCES_AUTO_START_HINT", "PREFERENCES_AUTO_START_NOTE",
 		"PREFERENCES_LOCAL_AGENT_TITLE", "PREFERENCES_LOCAL_AGENT_HINT",
 		"PREFERENCES_BACK_LABEL", "APP_PATH_DASHBOARD",
@@ -463,6 +469,7 @@ func preferencesChromeFromDB(ctx context.Context, db *pgxpool.Pool) (Preferences
 		"PREFERENCES_CLI_HELP_1", "PREFERENCES_CLI_HELP_2", "PREFERENCES_CLI_HELP_3",
 		"PREFERENCES_CLI_HELP_4", "PREFERENCES_CLI_HELP_5", "PREFERENCES_CLI_HELP_6",
 		"PREFERENCES_CLI_HELP_7", "PREFERENCES_CLI_HELP_8", "PREFERENCES_CLI_HELP_9",
+		"PREFERENCES_CLI_HELP_10", "PREFERENCES_CLI_HELP_11",
 		"ENGINE_V2_LABEL", "ENGINE_LONG_LABEL", "ENGINE_V1_LABEL",
 		"ENGINE_V2_HINT", "ENGINE_LONG_HINT", "ENGINE_V1_HINT",
 		"PREFERENCES_ACCOUNT_TITLE", "PREFERENCES_AUTH_PROVIDER_PREFIX",
@@ -480,6 +487,7 @@ func preferencesChromeFromDB(ctx context.Context, db *pgxpool.Pool) (Preferences
 		"COMPRESSION_TIER_FAST", "COMPRESSION_TIER_DEEP",
 		"PREFERENCES_PAGE_TITLE",
 		"PREFERENCES_RATE_LABEL", "PREFERENCES_RATE_HINT",
+		"PREFERENCES_BACKBONE_LABEL", "PREFERENCES_BACKBONE_HINT",
 		"ACTION:PREFERENCES_SAVE", "PENDING:PREFERENCES_SAVE",
 	}
 	for _, c := range required {
@@ -498,6 +506,8 @@ func preferencesChromeFromDB(ctx context.Context, db *pgxpool.Pool) (Preferences
 		EngineHint:      msg("PREFERENCES_ENGINE_HINT"),
 		RateHint:        msg("PREFERENCES_RATE_HINT"),
 		TargetHint:      msg("PREFERENCES_RATE_HINT"),
+		BackboneLabel:   msg("PREFERENCES_BACKBONE_LABEL"),
+		BackboneHint:    msg("PREFERENCES_BACKBONE_HINT"),
 		AutoStartTitle:  msg("PREFERENCES_AUTO_START_TITLE"),
 		AutoStartLabel:  msg("PREFERENCES_AUTO_START_LABEL"),
 		AutoStartHint:   msg("PREFERENCES_AUTO_START_HINT"),
@@ -523,6 +533,8 @@ func preferencesChromeFromDB(ctx context.Context, db *pgxpool.Pool) (Preferences
 			msg("PREFERENCES_CLI_HELP_7"),
 			msg("PREFERENCES_CLI_HELP_8"),
 			msg("PREFERENCES_CLI_HELP_9"),
+			msg("PREFERENCES_CLI_HELP_10"),
+			msg("PREFERENCES_CLI_HELP_11"),
 		}),
 		EngineOptions: []PreferencesEngineOption{
 			{ID: "v2", Label: msg("ENGINE_V2_LABEL"), Hint: msg("ENGINE_V2_HINT")},
@@ -708,6 +720,7 @@ type PreferencesPatchRequest struct {
 	CompressionTier     *string  `json:"compression_tier"`
 	DeepEngine          *string  `json:"deep_engine"`
 	DeepCompressionRate *float64 `json:"deep_compression_rate"`
+	DeepV2Backbone      *string  `json:"deep_v2_backbone"`
 	AutoStartWithIDE    *bool    `json:"auto_start_with_ide"`
 }
 
@@ -789,31 +802,33 @@ func (h *Handler) GetPreferences(w http.ResponseWriter, r *http.Request) {
 	}
 
 	db := h.readPool()
-	var tier, engine, authProvider string
+	var tier, engine, authProvider, backbone string
 	var rate float64
 	var autoStart bool
 	err := db.QueryRow(r.Context(), `
-		select compression_tier, deep_engine, deep_compression_rate, auto_start_with_ide, lower(auth_provider)
+		select compression_tier, deep_engine, deep_compression_rate, deep_v2_backbone, auto_start_with_ide, lower(auth_provider)
 		from public.profiles where id = $1::uuid
-	`, userID).Scan(&tier, &engine, &rate, &autoStart, &authProvider)
+	`, userID).Scan(&tier, &engine, &rate, &backbone, &autoStart, &authProvider)
 	if err != nil {
 		writeJSONErr(w, r.Context(), h.readPool(), http.StatusInternalServerError, "ACCOUNT_OPERATION_FAILED")
 		return
 	}
 
 	var deepMin, deepMax, deepDefault, deepStep float64
-	var oomPolicy, deepV1, deepV2, deepLong string
+	var oomPolicy, deepV1, deepLong, defaultBackbone string
 	var warmup bool
-	var forceRaw []byte
+	var forceRaw, optionsRaw []byte
 	err = db.QueryRow(r.Context(), `
 		select coalesce(deep_compression_rate_min, 0), coalesce(deep_compression_rate_max, 0),
 		       coalesce(default_deep_compression_rate, 0), coalesce(deep_compression_rate_step, 0),
 		       coalesce(live_deep_oom_policy, ''),
 		       coalesce(live_deep_warmup_on_start, false),
-		       coalesce(deep_v1_model, ''), coalesce(deep_v2_model, ''), coalesce(deep_long_model, ''),
-		       coalesce(deep_v2_force_tokens, 'null'::jsonb)
+		       coalesce(deep_v1_model, ''), coalesce(deep_long_model, ''),
+		       coalesce(deep_v2_force_tokens, 'null'::jsonb),
+		       coalesce(default_deep_v2_backbone, ''),
+		       coalesce(deep_v2_backbone_options, 'null'::jsonb)
 		from public.billing_settings where id = 'default'
-	`).Scan(&deepMin, &deepMax, &deepDefault, &deepStep, &oomPolicy, &warmup, &deepV1, &deepV2, &deepLong, &forceRaw)
+	`).Scan(&deepMin, &deepMax, &deepDefault, &deepStep, &oomPolicy, &warmup, &deepV1, &deepLong, &forceRaw, &defaultBackbone, &optionsRaw)
 	if err != nil || deepMin <= 0 || deepMax < deepMin || deepMax > 1 ||
 		deepDefault < deepMin || deepDefault > deepMax ||
 		deepStep <= 0 || deepStep > 1 {
@@ -821,8 +836,18 @@ func (h *Handler) GetPreferences(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	oomPolicy = strings.ToLower(strings.TrimSpace(oomPolicy))
+	options, oerr := parseBackboneOptions(optionsRaw)
+	if oerr != nil || validateBackboneCatalog(options, defaultBackbone) != nil {
+		writeJSONErr(w, r.Context(), h.readPool(), http.StatusServiceUnavailable, "BILLING_SETTINGS_UNAVAILABLE")
+		return
+	}
+	if !backboneInCatalog(options, backbone) {
+		writeJSONErr(w, r.Context(), h.readPool(), http.StatusServiceUnavailable, "DEEP_V2_BACKBONE_INVALID")
+		return
+	}
+	deepV2, okModel := resolveV2Model(options, backbone)
 	if (oomPolicy != "fail" && oomPolicy != "skip") ||
-		strings.TrimSpace(deepV1) == "" || strings.TrimSpace(deepV2) == "" || strings.TrimSpace(deepLong) == "" {
+		strings.TrimSpace(deepV1) == "" || !okModel || strings.TrimSpace(deepLong) == "" {
 		writeJSONErr(w, r.Context(), h.readPool(), http.StatusServiceUnavailable, "BILLING_SETTINGS_UNAVAILABLE")
 		return
 	}
@@ -840,6 +865,7 @@ func (h *Handler) GetPreferences(w http.ResponseWriter, r *http.Request) {
 	resp.CompressionTier = tier
 	resp.DeepEngine = engine
 	resp.DeepCompressionRate = rate
+	resp.DeepV2Backbone = strings.TrimSpace(backbone)
 	resp.AutoStartWithIDE = autoStart
 	resp.DeepCompressionRateMin = deepMin
 	resp.DeepCompressionRateMax = deepMax
@@ -851,6 +877,8 @@ func (h *Handler) GetPreferences(w http.ResponseWriter, r *http.Request) {
 	resp.DeepV2Model = deepV2
 	resp.DeepLongModel = deepLong
 	resp.DeepV2ForceTokens = forceTokens
+	resp.DefaultDeepV2Backbone = strings.TrimSpace(defaultBackbone)
+	resp.DeepV2BackboneOptions = options
 	adapters, aerr := loadProviderAdaptersFromDB(r.Context(), db)
 	if aerr != nil {
 		writeJSONErr(w, r.Context(), h.readPool(), http.StatusServiceUnavailable, "PROVIDER_ADAPTERS_UNAVAILABLE")
@@ -905,12 +933,13 @@ func (h *Handler) PatchPreferences(w http.ResponseWriter, r *http.Request) {
 
 	tier := ""
 	engine := ""
+	backbone := ""
 	rate := 0.0
 	autoStart := false
 	err := h.DB.QueryRow(r.Context(), `
-		select compression_tier, deep_engine, deep_compression_rate, auto_start_with_ide
+		select compression_tier, deep_engine, deep_compression_rate, deep_v2_backbone, auto_start_with_ide
 		from public.profiles where id = $1::uuid
-	`, userID).Scan(&tier, &engine, &rate, &autoStart)
+	`, userID).Scan(&tier, &engine, &rate, &backbone, &autoStart)
 	if err != nil {
 		writeJSONErr(w, r.Context(), h.readPool(), http.StatusInternalServerError, "ACCOUNT_OPERATION_FAILED")
 		return
@@ -957,6 +986,30 @@ func (h *Handler) PatchPreferences(w http.ResponseWriter, r *http.Request) {
 		}
 		rate = *req.DeepCompressionRate
 	}
+	if req.DeepV2Backbone != nil {
+		v := strings.TrimSpace(*req.DeepV2Backbone)
+		var optionsRaw []byte
+		var defaultBackbone string
+		err := h.DB.QueryRow(r.Context(), `
+			select coalesce(default_deep_v2_backbone, ''),
+			       coalesce(deep_v2_backbone_options, 'null'::jsonb)
+			from public.billing_settings where id = 'default'
+		`).Scan(&defaultBackbone, &optionsRaw)
+		if err != nil {
+			writeJSONErr(w, r.Context(), h.readPool(), http.StatusServiceUnavailable, "BILLING_SETTINGS_UNAVAILABLE")
+			return
+		}
+		options, oerr := parseBackboneOptions(optionsRaw)
+		if oerr != nil || validateBackboneCatalog(options, defaultBackbone) != nil {
+			writeJSONErr(w, r.Context(), h.readPool(), http.StatusServiceUnavailable, "BILLING_SETTINGS_UNAVAILABLE")
+			return
+		}
+		if !backboneInCatalog(options, v) {
+			writeJSONErr(w, r.Context(), h.readPool(), http.StatusBadRequest, "DEEP_V2_BACKBONE_INVALID")
+			return
+		}
+		backbone = v
+	}
 	if req.AutoStartWithIDE != nil {
 		autoStart = *req.AutoStartWithIDE
 	}
@@ -966,10 +1019,11 @@ func (h *Handler) PatchPreferences(w http.ResponseWriter, r *http.Request) {
 		set compression_tier = $2,
 		    deep_engine = $3,
 		    deep_compression_rate = $4,
-		    auto_start_with_ide = $5,
+		    deep_v2_backbone = $5,
+		    auto_start_with_ide = $6,
 		    updated_at = now()
 		where id = $1::uuid
-	`, userID, tier, engine, rate, autoStart)
+	`, userID, tier, engine, rate, backbone, autoStart)
 	if err != nil {
 		writeJSONErr(w, r.Context(), h.readPool(), http.StatusInternalServerError, "ACCOUNT_OPERATION_FAILED")
 		return
@@ -989,50 +1043,81 @@ func (h *Handler) PatchPreferences(w http.ResponseWriter, r *http.Request) {
 	resp.CompressionTier = tier
 	resp.DeepEngine = engine
 	resp.DeepCompressionRate = rate
+	resp.DeepV2Backbone = strings.TrimSpace(backbone)
 	resp.AutoStartWithIDE = autoStart
 	var deepMin, deepMax, deepDefault, deepStep float64
-	var oomPolicy, deepV1, deepV2, deepLong string
+	var oomPolicy, deepV1, deepLong, defaultBackbone string
 	var warmup bool
-	var forceRaw []byte
+	var forceRaw, optionsRaw []byte
 	if err := h.DB.QueryRow(r.Context(), `
 		select coalesce(deep_compression_rate_min, 0), coalesce(deep_compression_rate_max, 0),
 		       coalesce(default_deep_compression_rate, 0), coalesce(deep_compression_rate_step, 0),
 		       coalesce(live_deep_oom_policy, ''),
 		       coalesce(live_deep_warmup_on_start, false),
-		       coalesce(deep_v1_model, ''), coalesce(deep_v2_model, ''), coalesce(deep_long_model, ''),
-		       coalesce(deep_v2_force_tokens, 'null'::jsonb)
+		       coalesce(deep_v1_model, ''), coalesce(deep_long_model, ''),
+		       coalesce(deep_v2_force_tokens, 'null'::jsonb),
+		       coalesce(default_deep_v2_backbone, ''),
+		       coalesce(deep_v2_backbone_options, 'null'::jsonb)
 		from public.billing_settings where id = 'default'
-	`).Scan(&deepMin, &deepMax, &deepDefault, &deepStep, &oomPolicy, &warmup, &deepV1, &deepV2, &deepLong, &forceRaw); err == nil &&
-		deepMin > 0 && deepMax >= deepMin && deepMax <= 1 &&
-		deepDefault >= deepMin && deepDefault <= deepMax &&
-		deepStep > 0 && deepStep <= 1 {
-		oomPolicy = strings.ToLower(strings.TrimSpace(oomPolicy))
-		var forceTokens []string
-		if json.Unmarshal(forceRaw, &forceTokens) == nil && forceTokens != nil &&
-			(oomPolicy == "fail" || oomPolicy == "skip") &&
-			strings.TrimSpace(deepV1) != "" && strings.TrimSpace(deepV2) != "" && strings.TrimSpace(deepLong) != "" {
-			resp.DeepCompressionRateMin = deepMin
-			resp.DeepCompressionRateMax = deepMax
-			resp.DeepCompressionRateStep = deepStep
-			resp.DefaultDeepCompressionRate = deepDefault
-			resp.LiveDeepOOMPolicy = oomPolicy
-			resp.LiveDeepWarmupOnStart = warmup
-			resp.DeepV1Model = deepV1
-			resp.DeepV2Model = deepV2
-			resp.DeepLongModel = deepLong
-			resp.DeepV2ForceTokens = forceTokens
-		}
+	`).Scan(&deepMin, &deepMax, &deepDefault, &deepStep, &oomPolicy, &warmup, &deepV1, &deepLong, &forceRaw, &defaultBackbone, &optionsRaw); err != nil ||
+		deepMin <= 0 || deepMax < deepMin || deepMax > 1 ||
+		deepDefault < deepMin || deepDefault > deepMax ||
+		deepStep <= 0 || deepStep > 1 {
+		writeJSONErr(w, r.Context(), h.readPool(), http.StatusServiceUnavailable, "BILLING_SETTINGS_UNAVAILABLE")
+		return
 	}
-	if adapters, aerr := loadProviderAdaptersFromDB(r.Context(), h.DB); aerr == nil {
-		if aliases, alerr := loadOpenAIModelAliasesFromDB(r.Context(), h.DB); alerr == nil {
-			if disco, derr := loadDiscoverableModelsFromDB(r.Context(), h.DB); derr == nil {
-				resp.ProviderAdapters = adapters
-				resp.OpenAIModelAliases = aliases
-				resp.DiscoverableModels = disco
-				resp.ProviderAdaptersSynced = true
-			}
-		}
+	oomPolicy = strings.ToLower(strings.TrimSpace(oomPolicy))
+	options, oerr := parseBackboneOptions(optionsRaw)
+	if oerr != nil || validateBackboneCatalog(options, defaultBackbone) != nil {
+		writeJSONErr(w, r.Context(), h.readPool(), http.StatusServiceUnavailable, "BILLING_SETTINGS_UNAVAILABLE")
+		return
 	}
+	if !backboneInCatalog(options, backbone) {
+		writeJSONErr(w, r.Context(), h.readPool(), http.StatusServiceUnavailable, "DEEP_V2_BACKBONE_INVALID")
+		return
+	}
+	deepV2, okModel := resolveV2Model(options, backbone)
+	if (oomPolicy != "fail" && oomPolicy != "skip") ||
+		strings.TrimSpace(deepV1) == "" || !okModel || strings.TrimSpace(deepLong) == "" {
+		writeJSONErr(w, r.Context(), h.readPool(), http.StatusServiceUnavailable, "BILLING_SETTINGS_UNAVAILABLE")
+		return
+	}
+	var forceTokens []string
+	if err := json.Unmarshal(forceRaw, &forceTokens); err != nil || forceTokens == nil {
+		writeJSONErr(w, r.Context(), h.readPool(), http.StatusServiceUnavailable, "BILLING_SETTINGS_UNAVAILABLE")
+		return
+	}
+	resp.DeepCompressionRateMin = deepMin
+	resp.DeepCompressionRateMax = deepMax
+	resp.DeepCompressionRateStep = deepStep
+	resp.DefaultDeepCompressionRate = deepDefault
+	resp.LiveDeepOOMPolicy = oomPolicy
+	resp.LiveDeepWarmupOnStart = warmup
+	resp.DeepV1Model = deepV1
+	resp.DeepV2Model = deepV2
+	resp.DeepLongModel = deepLong
+	resp.DeepV2ForceTokens = forceTokens
+	resp.DefaultDeepV2Backbone = strings.TrimSpace(defaultBackbone)
+	resp.DeepV2BackboneOptions = options
+	adapters, aerr := loadProviderAdaptersFromDB(r.Context(), h.DB)
+	if aerr != nil {
+		writeJSONErr(w, r.Context(), h.readPool(), http.StatusServiceUnavailable, "PROVIDER_ADAPTERS_UNAVAILABLE")
+		return
+	}
+	aliases, alerr := loadOpenAIModelAliasesFromDB(r.Context(), h.DB)
+	if alerr != nil {
+		writeJSONErr(w, r.Context(), h.readPool(), http.StatusServiceUnavailable, "PROVIDER_ADAPTERS_UNAVAILABLE")
+		return
+	}
+	disco, derr := loadDiscoverableModelsFromDB(r.Context(), h.DB)
+	if derr != nil {
+		writeJSONErr(w, r.Context(), h.readPool(), http.StatusServiceUnavailable, "PROVIDER_ADAPTERS_UNAVAILABLE")
+		return
+	}
+	resp.ProviderAdapters = adapters
+	resp.OpenAIModelAliases = aliases
+	resp.DiscoverableModels = disco
+	resp.ProviderAdaptersSynced = true
 	if !attachAccountProvider(r.Context(), h.DB, &resp, authProvider) {
 		writeJSONErr(w, r.Context(), h.readPool(), http.StatusServiceUnavailable, "ACCOUNT_AUTH_PROVIDER_MISSING")
 		return
