@@ -13,10 +13,10 @@ func prefsChromeFrom(chrome cliChrome) deepopt.PrefsChrome {
 	return deepopt.PrefsChrome{
 		Unavailable:    chrome.ChromeUnavailable,
 		EngineInvalid:  chrome.PrefsEngineInvalid,
-		TargetNonNeg:   chrome.PrefsTargetNonNeg,
+		RateNonNeg:     chrome.PrefsRateNonNeg,
 		TierRequired:   chrome.PrefsTierRequired,
 		EngineRequired: chrome.PrefsEngineRequired,
-		TargetRequired: chrome.PrefsTargetRequired,
+		RateRequired:   chrome.PrefsRateRequired,
 	}
 }
 
@@ -33,7 +33,7 @@ func deepUXFrom(chrome cliChrome) deepopt.UXChrome {
 		PyMissing:           chrome.DeepPyMissing,
 		LLMMissingFmt:       chrome.DeepLLMMissingFmt,
 		PipFailed:           chrome.DeepPipFailed,
-		TargetRequired:      chrome.DeepTargetRequired,
+		RateRequired:        chrome.DeepRateRequired,
 		EngineRequired:      chrome.DeepEngineRequired,
 		QuestionRequired:    chrome.DeepQuestionRequired,
 		OptimizeFmt:         chrome.DeepOptimizeFmt,
@@ -48,7 +48,7 @@ func deepFastOnly(optimized []byte, status string) proxy.DeepResult {
 }
 
 // prepareLiveDeep wires Deep Mode for trim start from synced account preferences + billing dials.
-// Fail-closed: deep tier requires engine, target, live-Deep chrome, and synced billing policy (no invent).
+// Fail-closed: deep tier requires engine, compression rate, live-Deep chrome, and synced billing policy (no invent).
 func prepareLiveDeep(cfg config.Local, chrome cliChrome) (liveModeLabel string, deepOptimize func([]byte, string) (proxy.DeepResult, error), errDeepFmt string, err error) {
 	prefs, err := deepopt.LoadPreferences()
 	if err != nil {
@@ -124,18 +124,6 @@ func prepareLiveDeep(cfg config.Local, chrome cliChrome) (liveModeLabel string, 
 			// Nothing compressible (empty/non-chat / chrome-only) - Fast-only, no Deep spam.
 			return deepFastOnly(optimized, proxy.DeepStatusSkippedEmpty), nil
 		}
-		if p.LiveDeepMinInputTokens > 0 && est < p.LiveDeepMinInputTokens {
-			if chrome.ProxyDeepSkippedMinFmt != "" {
-				fmt.Printf(chrome.ProxyDeepSkippedMinFmt+"\n", est, p.LiveDeepMinInputTokens)
-			}
-			return deepFastOnly(optimized, proxy.DeepStatusSkippedMin), nil
-		}
-		if p.LiveDeepSkipOnStream && deepopt.RequestWantsStream(optimized) {
-			if chrome.ProxyDeepSkippedStream != "" {
-				fmt.Println(chrome.ProxyDeepSkippedStream)
-			}
-			return deepFastOnly(optimized, proxy.DeepStatusSkippedStream), nil
-		}
 
 		rt := deepopt.RuntimeFromPreferences(p, deviceMap)
 		pl := strings.ToLower(path)
@@ -147,10 +135,10 @@ func prepareLiveDeep(cfg config.Local, chrome cliChrome) (liveModeLabel string, 
 		)
 		// Native Anthropic /v1/messages only (not count_tokens - handled above).
 		if strings.Contains(pl, "/messages") && !strings.Contains(pl, "count_tokens") {
-			out, deepOrigin, deepCompressed, deepErr = deepopt.CompressAnthropicMessagesJSON(optimized, p.DeepEngine, p.TargetToken, "", ux, timeoutSec, chatChrome, rt)
+			out, deepOrigin, deepCompressed, deepErr = deepopt.CompressAnthropicMessagesJSON(optimized, p.DeepEngine, p.CompressionRate, "", ux, timeoutSec, chatChrome, rt)
 		} else {
 			// OpenAI-shape door: GPT, Gemini openai_compat, DeepSeek, Mistral, Cursor BYOK.
-			out, deepOrigin, deepCompressed, deepErr = deepopt.CompressOpenAIChatJSON(optimized, p.DeepEngine, p.TargetToken, "", ux, timeoutSec, chatChrome, rt)
+			out, deepOrigin, deepCompressed, deepErr = deepopt.CompressOpenAIChatJSON(optimized, p.DeepEngine, p.CompressionRate, "", ux, timeoutSec, chatChrome, rt)
 		}
 		if deepErr != nil {
 			if p.LiveDeepOOMPolicy == deepopt.OOMSkip && deepopt.IsDeepOOMError(deepErr) {
@@ -189,16 +177,16 @@ func prepareLiveDeep(cfg config.Local, chrome cliChrome) (liveModeLabel string, 
 
 	// Detached worker: parent prints this after /health so the shell can return cleanly.
 	if chrome.ProxyLiveDeepEnabledFmt != "" && !isTrimStartWorker() {
-		fmt.Printf(chrome.ProxyLiveDeepEnabledFmt+"\n", prefs.DeepEngine, prefs.TargetToken, prefs.LiveDeepMinInputTokens, prefs.LiveDeepOOMPolicy, prefs.LiveDeepSkipOnStream)
+		fmt.Printf(chrome.ProxyLiveDeepEnabledFmt+"\n", prefs.DeepEngine, prefs.CompressionRate, prefs.LiveDeepOOMPolicy)
 	}
 
 	if prefs.LiveDeepWarmupOnStart {
 		go func() {
 			rt := deepopt.RuntimeFromPreferences(prefs, deviceMap)
 			req := deepopt.Request{
-				Text:        "warmup",
-				TargetToken: prefs.TargetToken,
-				Engine:      string(prefs.DeepEngine),
+				Text:   "warmup",
+				Rate:   prefs.CompressionRate,
+				Engine: string(prefs.DeepEngine),
 			}
 			if err := rt.ApplyEngine(&req, prefs.DeepEngine); err != nil {
 				return

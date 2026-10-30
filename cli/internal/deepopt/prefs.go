@@ -37,28 +37,30 @@ const (
 )
 
 // Preferences live in ~/.config/trim/preferences.json (local source of truth for CLI).
-// Empty DefaultTier / DeepEngine / TargetToken means unset until sync or explicit config set.
+// Empty DefaultTier / DeepEngine / CompressionRate<=0 means unset until sync or explicit config set.
 // AutoStartWithIDE nil means unset (fail-closed: do not auto-start until sync/enable).
-// Live Deep dials (min tokens, OOM, models) come from billing_settings via API sync - no invent.
+// Live Deep dials (OOM, models, force_tokens) come from billing_settings via API sync - no invent.
 type Preferences struct {
-	DefaultTier            Tier      `json:"default_tier"`
-	DeepEngine              Engine    `json:"deep_engine"`
-	TargetToken             int       `json:"target_token"`
-	AutoStartWithIDE        *bool     `json:"auto_start_with_ide,omitempty"`
-	LiveDeepMinInputTokens  int       `json:"live_deep_min_input_tokens"`
-	LiveDeepOOMPolicy       OOMPolicy `json:"live_deep_oom_policy"`
-	LiveDeepWarmupOnStart   bool      `json:"live_deep_warmup_on_start"`
-	LiveDeepSkipOnStream    bool      `json:"live_deep_skip_on_stream"`
-	DeepV1Model             string    `json:"deep_v1_model"`
-	DeepV2Model             string    `json:"deep_v2_model"`
-	DeepLongModel           string    `json:"deep_long_model"`
-	DeepV2ForceTokens       []string  `json:"deep_v2_force_tokens"`
-	LiveDeepPolicySynced    bool      `json:"live_deep_policy_synced"`
+	DefaultTier          Tier      `json:"default_tier"`
+	DeepEngine            Engine    `json:"deep_engine"`
+	CompressionRate          float64 `json:"compression_rate"`
+	CompressionRateMin       float64 `json:"compression_rate_min"`
+	CompressionRateMax       float64 `json:"compression_rate_max"`
+	CompressionRateStep      float64 `json:"compression_rate_step"`
+	DefaultCompressionRate   float64 `json:"default_compression_rate"`
+	AutoStartWithIDE      *bool     `json:"auto_start_with_ide,omitempty"`
+	LiveDeepOOMPolicy     OOMPolicy `json:"live_deep_oom_policy"`
+	LiveDeepWarmupOnStart bool      `json:"live_deep_warmup_on_start"`
+	DeepV1Model           string    `json:"deep_v1_model"`
+	DeepV2Model           string    `json:"deep_v2_model"`
+	DeepLongModel         string    `json:"deep_long_model"`
+	DeepV2ForceTokens     []string  `json:"deep_v2_force_tokens"`
+	LiveDeepPolicySynced  bool      `json:"live_deep_policy_synced"`
 	// ProviderAdapters / OpenAIModelAliases / DiscoverableModels come from Trim cloud tables via preferences sync (no invent).
-	ProviderAdapters       []ProviderAdapterPref      `json:"provider_adapters"`
-	OpenAIModelAliases     []OpenAIModelAliasPref     `json:"openai_model_aliases"`
-	DiscoverableModels     []DiscoverableModelPref    `json:"provider_discoverable_models"`
-	ProviderAdaptersSynced bool                       `json:"provider_adapters_synced"`
+	ProviderAdapters       []ProviderAdapterPref     `json:"provider_adapters"`
+	OpenAIModelAliases     []OpenAIModelAliasPref    `json:"openai_model_aliases"`
+	DiscoverableModels     []DiscoverableModelPref   `json:"provider_discoverable_models"`
+	ProviderAdaptersSynced bool                      `json:"provider_adapters_synced"`
 }
 
 // ProviderAdapterPref mirrors provider_adapters for local proxy (JSON-stable).
@@ -118,10 +120,10 @@ func BoolPtr(v bool) *bool {
 type PrefsChrome struct {
 	Unavailable    string
 	EngineInvalid  string
-	TargetNonNeg   string
+	RateNonNeg     string
 	TierRequired   string
 	EngineRequired string
-	TargetRequired string
+	RateRequired   string
 }
 
 func (c PrefsChrome) err(msg string) error {
@@ -136,9 +138,9 @@ func (c PrefsChrome) err(msg string) error {
 
 func DefaultPreferences() Preferences {
 	return Preferences{
-		DefaultTier: "",
-		DeepEngine:  "",
-		TargetToken: 0,
+		DefaultTier:     "",
+		DeepEngine:      "",
+		CompressionRate: 0,
 	}
 }
 
@@ -198,8 +200,8 @@ func SavePreferences(p Preferences, chrome PrefsChrome) error {
 	} else {
 		p.DeepEngine = ""
 	}
-	if p.TargetToken < 0 {
-		return chrome.err(chrome.TargetNonNeg)
+	if p.CompressionRate < 0 {
+		return chrome.err(chrome.RateNonNeg)
 	}
 	p.LiveDeepOOMPolicy = NormalizeOOMPolicy(string(p.LiveDeepOOMPolicy))
 	path, err := prefsPath()
@@ -221,18 +223,23 @@ func RequireCompressPrefs(p Preferences, chrome PrefsChrome) error {
 	if p.DeepEngine == "" {
 		return chrome.err(chrome.EngineRequired)
 	}
-	if p.TargetToken <= 0 {
-		return chrome.err(chrome.TargetRequired)
+	if p.CompressionRate <= 0 || p.CompressionRate > 1 {
+		return chrome.err(chrome.RateRequired)
 	}
 	return nil
+}
+
+// RateInBillingBounds reports whether rate is inside synced billing min/max.
+func RateInBillingBounds(rate, min, max float64) bool {
+	if min <= 0 || max < min || max > 1 {
+		return false
+	}
+	return rate >= min && rate <= max
 }
 
 // RequireLiveDeepPolicy fail-closes when billing live-Deep dials were not synced.
 func RequireLiveDeepPolicy(p Preferences) bool {
 	if !p.LiveDeepPolicySynced {
-		return false
-	}
-	if p.LiveDeepMinInputTokens < 0 {
 		return false
 	}
 	if NormalizeOOMPolicy(string(p.LiveDeepOOMPolicy)) == "" {
@@ -244,7 +251,41 @@ func RequireLiveDeepPolicy(p Preferences) bool {
 	if p.DeepV2ForceTokens == nil {
 		return false
 	}
+	if p.CompressionRateMin <= 0 || p.CompressionRateMax < p.CompressionRateMin || p.CompressionRateMax > 1 {
+		return false
+	}
+	if p.CompressionRateStep <= 0 || p.CompressionRateStep > 1 {
+		return false
+	}
+	if p.DefaultCompressionRate <= 0 || p.DefaultCompressionRate > 1 {
+		return false
+	}
 	return true
+}
+
+// ListCompressionRates builds the Microsoft-style rate ladder from synced billing bounds.
+func ListCompressionRates(min, max, step float64) []float64 {
+	if min <= 0 || max < min || max > 1 || step <= 0 {
+		return nil
+	}
+	out := make([]float64, 0, 16)
+	for v := min; v <= max+step/1000; v += step {
+		r := float64(int(v*100+0.5)) / 100
+		if r < min-1e-9 || r > max+1e-9 {
+			continue
+		}
+		if len(out) > 0 && r <= out[len(out)-1]+1e-9 {
+			continue
+		}
+		out = append(out, r)
+	}
+	if len(out) == 0 || out[len(out)-1] < max-1e-9 {
+		last := float64(int(max*100+0.5)) / 100
+		if len(out) == 0 || last > out[len(out)-1]+1e-9 {
+			out = append(out, last)
+		}
+	}
+	return out
 }
 
 // RuntimeFromPreferences builds Deep Runtime from synced billing models (device_map stays local).

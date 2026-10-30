@@ -9,6 +9,9 @@ import (
 )
 
 func TestPrintStartReadyUI_Attached(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home)
 	var buf bytes.Buffer
 	prev := cliout.Writer
 	cliout.Writer = &buf
@@ -41,6 +44,9 @@ func TestPrintStartReadyUI_Attached(t *testing.T) {
 }
 
 func TestPrintStartReadyUI_FreshStart(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home)
 	var buf bytes.Buffer
 	prev := cliout.Writer
 	cliout.Writer = &buf

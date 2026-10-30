@@ -8,22 +8,24 @@ import (
 
 // remotePreferences is the JSON shape of GET /api/v1/me/preferences used by sync paths.
 type remotePreferences struct {
-	CompressionTier        string                            `json:"compression_tier"`
-	DeepEngine              string                            `json:"deep_engine"`
-	DeepTargetToken         int                               `json:"deep_target_token"`
-	AutoStartWithIDE        bool                              `json:"auto_start_with_ide"`
-	LiveDeepMinInputTokens  int                               `json:"live_deep_min_input_tokens"`
-	LiveDeepOOMPolicy       string                            `json:"live_deep_oom_policy"`
-	LiveDeepWarmupOnStart   bool                              `json:"live_deep_warmup_on_start"`
-	LiveDeepSkipOnStream    bool                              `json:"live_deep_skip_on_stream"`
-	DeepV1Model             string                            `json:"deep_v1_model"`
-	DeepV2Model             string                            `json:"deep_v2_model"`
-	DeepLongModel           string                            `json:"deep_long_model"`
-	DeepV2ForceTokens       []string                          `json:"deep_v2_force_tokens"`
-	ProviderAdapters        []deepopt.ProviderAdapterPref     `json:"provider_adapters"`
-	OpenAIModelAliases      []deepopt.OpenAIModelAliasPref    `json:"openai_model_aliases"`
-	DiscoverableModels      []deepopt.DiscoverableModelPref   `json:"provider_discoverable_models"`
-	ProviderAdaptersSynced  bool                              `json:"provider_adapters_synced"`
+	CompressionTier       string                          `json:"compression_tier"`
+	DeepEngine             string                          `json:"deep_engine"`
+	DeepCompressionRate        float64 `json:"deep_compression_rate"`
+	DeepCompressionRateMin     float64 `json:"deep_compression_rate_min"`
+	DeepCompressionRateMax     float64 `json:"deep_compression_rate_max"`
+	DeepCompressionRateStep    float64 `json:"deep_compression_rate_step"`
+	DefaultDeepCompressionRate float64 `json:"default_deep_compression_rate"`
+	AutoStartWithIDE       bool                            `json:"auto_start_with_ide"`
+	LiveDeepOOMPolicy      string                          `json:"live_deep_oom_policy"`
+	LiveDeepWarmupOnStart  bool                            `json:"live_deep_warmup_on_start"`
+	DeepV1Model            string                          `json:"deep_v1_model"`
+	DeepV2Model            string                          `json:"deep_v2_model"`
+	DeepLongModel          string                          `json:"deep_long_model"`
+	DeepV2ForceTokens      []string                        `json:"deep_v2_force_tokens"`
+	ProviderAdapters       []deepopt.ProviderAdapterPref   `json:"provider_adapters"`
+	OpenAIModelAliases     []deepopt.OpenAIModelAliasPref  `json:"openai_model_aliases"`
+	DiscoverableModels     []deepopt.DiscoverableModelPref `json:"provider_discoverable_models"`
+	ProviderAdaptersSynced bool                            `json:"provider_adapters_synced"`
 }
 
 // preferencesFromRemote maps API preferences into local Preferences.
@@ -32,8 +34,14 @@ type remotePreferences struct {
 // when an older API build omits the fields).
 func preferencesFromRemote(remote remotePreferences, cur deepopt.Preferences) deepopt.Preferences {
 	oom := deepopt.NormalizeOOMPolicy(remote.LiveDeepOOMPolicy)
+	rateMin := remote.DeepCompressionRateMin
+	rateMax := remote.DeepCompressionRateMax
+	rateStep := remote.DeepCompressionRateStep
+	rateDefault := remote.DefaultDeepCompressionRate
 	policySynced := oom != "" &&
-		remote.LiveDeepMinInputTokens >= 0 &&
+		rateMin > 0 && rateMax >= rateMin && rateMax <= 1 &&
+		rateStep > 0 && rateStep <= 1 &&
+		rateDefault > 0 && rateDefault <= 1 &&
 		strings.TrimSpace(remote.DeepV1Model) != "" &&
 		strings.TrimSpace(remote.DeepV2Model) != "" &&
 		strings.TrimSpace(remote.DeepLongModel) != "" &&
@@ -54,22 +62,24 @@ func preferencesFromRemote(remote remotePreferences, cur deepopt.Preferences) de
 	}
 
 	return deepopt.Preferences{
-		DefaultTier:            deepopt.NormalizeTier(remote.CompressionTier),
-		DeepEngine:             deepopt.NormalizeEngine(remote.DeepEngine),
-		TargetToken:            remote.DeepTargetToken,
-		AutoStartWithIDE:       deepopt.BoolPtr(remote.AutoStartWithIDE),
-		LiveDeepMinInputTokens: remote.LiveDeepMinInputTokens,
-		LiveDeepOOMPolicy:      oom,
-		LiveDeepWarmupOnStart:  remote.LiveDeepWarmupOnStart,
-		LiveDeepSkipOnStream:   remote.LiveDeepSkipOnStream,
-		DeepV1Model:            strings.TrimSpace(remote.DeepV1Model),
-		DeepV2Model:            strings.TrimSpace(remote.DeepV2Model),
-		DeepLongModel:          strings.TrimSpace(remote.DeepLongModel),
-		DeepV2ForceTokens:      append([]string(nil), remote.DeepV2ForceTokens...),
-		LiveDeepPolicySynced:   policySynced,
-		ProviderAdapters:       adapters,
-		OpenAIModelAliases:     aliases,
-		DiscoverableModels:     disco,
+		DefaultTier:           deepopt.NormalizeTier(remote.CompressionTier),
+		DeepEngine:            deepopt.NormalizeEngine(remote.DeepEngine),
+		CompressionRate:        remote.DeepCompressionRate,
+		CompressionRateMin:     rateMin,
+		CompressionRateMax:     rateMax,
+		CompressionRateStep:    rateStep,
+		DefaultCompressionRate: rateDefault,
+		AutoStartWithIDE:      deepopt.BoolPtr(remote.AutoStartWithIDE),
+		LiveDeepOOMPolicy:     oom,
+		LiveDeepWarmupOnStart: remote.LiveDeepWarmupOnStart,
+		DeepV1Model:           strings.TrimSpace(remote.DeepV1Model),
+		DeepV2Model:           strings.TrimSpace(remote.DeepV2Model),
+		DeepLongModel:         strings.TrimSpace(remote.DeepLongModel),
+		DeepV2ForceTokens:     append([]string(nil), remote.DeepV2ForceTokens...),
+		LiveDeepPolicySynced:  policySynced,
+		ProviderAdapters:      adapters,
+		OpenAIModelAliases:    aliases,
+		DiscoverableModels:    disco,
 		ProviderAdaptersSynced: adaptersSynced,
 	}
 }

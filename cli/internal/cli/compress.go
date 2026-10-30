@@ -23,7 +23,7 @@ var (
 	compressDeepShort bool
 	compressEngine    string
 	compressQuestion  string
-	compressTargetTok int
+	compressRate      float64
 	compressBootstrap bool
 	compressOutFile   string
 )
@@ -51,7 +51,7 @@ var compressCmd = &cobra.Command{
 			PyMissing:           chrome.DeepPyMissing,
 			LLMMissingFmt:       chrome.DeepLLMMissingFmt,
 			PipFailed:           chrome.DeepPipFailed,
-			TargetRequired:      chrome.DeepTargetRequired,
+			RateRequired:        chrome.DeepRateRequired,
 			EngineRequired:      chrome.DeepEngineRequired,
 			QuestionRequired:    chrome.DeepQuestionRequired,
 			OptimizeFmt:         chrome.DeepOptimizeFmt,
@@ -61,10 +61,10 @@ var compressCmd = &cobra.Command{
 		prefsChrome := deepopt.PrefsChrome{
 			Unavailable:    chrome.ChromeUnavailable,
 			EngineInvalid:  chrome.PrefsEngineInvalid,
-			TargetNonNeg:   chrome.PrefsTargetNonNeg,
+			RateNonNeg:     chrome.PrefsRateNonNeg,
 			TierRequired:   chrome.PrefsTierRequired,
 			EngineRequired: chrome.PrefsEngineRequired,
-			TargetRequired: chrome.PrefsTargetRequired,
+			RateRequired:   chrome.PrefsRateRequired,
 		}
 		if compressBootstrap {
 			return deepopt.Bootstrap(ux)
@@ -107,9 +107,9 @@ var compressCmd = &cobra.Command{
 			}
 			return chrome.fail("")
 		}
-		target := compressTargetTok
-		if target <= 0 {
-			target = prefs.TargetToken
+		rate := compressRate
+		if rate <= 0 {
+			rate = prefs.CompressionRate
 		}
 
 		raw, err := os.ReadFile(args[0])
@@ -132,7 +132,7 @@ var compressCmd = &cobra.Command{
 			return writeCompressResult(out, before, after, "fast", string(engine), chrome)
 		}
 
-		if engine == "" || target <= 0 {
+		if engine == "" || rate <= 0 || rate > 1 {
 			if chrome.CompressDeepPrefsRequired != "" {
 				return fmt.Errorf("%s", chrome.CompressDeepPrefsRequired)
 			}
@@ -156,7 +156,7 @@ var compressCmd = &cobra.Command{
 
 		// Chat/request JSON (Claude Messages / OpenAI-compat GPT/Gemini/DeepSeek/Mistral):
 		// never smash the whole body into LLMLingua - last-user-only Deep, same as live proxy.
-		if outJSON, origin, compressed, ok, chatErr := compressDeepChatJSONIfNeeded(raw, engine, target, compressQuestion, ux, cfg, prefs, chrome); ok {
+		if outJSON, origin, compressed, ok, chatErr := compressDeepChatJSONIfNeeded(raw, engine, rate, compressQuestion, ux, cfg, prefs, chrome); ok {
 			if chatErr != nil {
 				return chatErr
 			}
@@ -182,10 +182,10 @@ var compressCmd = &cobra.Command{
 		}
 
 		req := deepopt.Request{
-			Text:        text,
-			Question:    compressQuestion,
-			TargetToken: target,
-			Engine:      string(engine),
+			Text:     text,
+			Question: compressQuestion,
+			Rate:     rate,
+			Engine:   string(engine),
 		}
 		if err := deepopt.RuntimeFromPreferences(prefs, cfg.DeepDeviceMap).ApplyEngine(&req, engine); err != nil {
 			return err
@@ -274,7 +274,7 @@ func proxyLooksLikeAnthropicDatedToolType(typ string) bool {
 
 // compressDeepChatJSONIfNeeded runs structure-preserving Deep when the file is a chat
 // Completions / Messages / Responses body. Plain text / source files fall through (ok=false).
-func compressDeepChatJSONIfNeeded(raw []byte, engine deepopt.Engine, target int, question string, ux deepopt.UXChrome, cfg config.Local, prefs deepopt.Preferences, chrome cliChrome) (out []byte, origin, compressed int, ok bool, err error) {
+func compressDeepChatJSONIfNeeded(raw []byte, engine deepopt.Engine, rate float64, question string, ux deepopt.UXChrome, cfg config.Local, prefs deepopt.Preferences, chrome cliChrome) (out []byte, origin, compressed int, ok bool, err error) {
 	if !gjson.ValidBytes(raw) {
 		return nil, 0, 0, false, nil
 	}
@@ -307,9 +307,9 @@ func compressDeepChatJSONIfNeeded(raw []byte, engine deepopt.Engine, target int,
 	// Both compressors share last-user-only Deep (identical freeze rules for all doors).
 	model := strings.ToLower(gjson.GetBytes(raw, "model").String())
 	if gjson.GetBytes(raw, "system").Exists() || strings.Contains(model, "claude") {
-		out, origin, compressed, err = deepopt.CompressAnthropicMessagesJSON(raw, engine, target, question, ux, timeoutSec, chatChrome, rt)
+		out, origin, compressed, err = deepopt.CompressAnthropicMessagesJSON(raw, engine, rate, question, ux, timeoutSec, chatChrome, rt)
 	} else {
-		out, origin, compressed, err = deepopt.CompressOpenAIChatJSON(raw, engine, target, question, ux, timeoutSec, chatChrome, rt)
+		out, origin, compressed, err = deepopt.CompressOpenAIChatJSON(raw, engine, rate, question, ux, timeoutSec, chatChrome, rt)
 	}
 	if err != nil {
 		return nil, 0, 0, true, err
@@ -440,7 +440,7 @@ func init() {
 	compressCmd.Flags().BoolVarP(&compressDeepShort, "deep", "d", false, "")
 	compressCmd.Flags().StringVar(&compressEngine, "engine", "", "")
 	compressCmd.Flags().StringVar(&compressQuestion, "question", "", "")
-	compressCmd.Flags().IntVar(&compressTargetTok, "target-token", 0, "")
+	compressCmd.Flags().Float64Var(&compressRate, "rate", 0, "")
 	compressCmd.Flags().BoolVar(&compressBootstrap, "bootstrap", false, "")
 	compressCmd.Flags().StringVarP(&compressOutFile, "out", "o", "", "")
 }

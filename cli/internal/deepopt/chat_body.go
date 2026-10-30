@@ -32,8 +32,8 @@ func (c ChatDeepChrome) err(msg string) error {
 // CompressOpenAIChatJSON runs Deep on the last user turn only for every OpenAI-shape
 // door (GPT, Gemini OpenAI-compat, DeepSeek, Mistral, …). Preserves system/developer/
 // assistant/tool messages and top-level tools/tool_choice. Same LLMLingua rules as Anthropic.
-func CompressOpenAIChatJSON(body []byte, engine Engine, targetToken int, question string, ux UXChrome, timeoutSec int, chrome ChatDeepChrome, rt Runtime) ([]byte, int, int, error) {
-	return compressChatMessagesJSON(body, engine, targetToken, question, ux, timeoutSec, chrome, rt)
+func CompressOpenAIChatJSON(body []byte, engine Engine, rate float64, question string, ux UXChrome, timeoutSec int, chrome ChatDeepChrome, rt Runtime) ([]byte, int, int, error) {
+	return compressChatMessagesJSON(body, engine, rate, question, ux, timeoutSec, chrome, rt)
 }
 
 // CompressAnthropicMessagesJSON Deep-compresses Anthropic Messages API bodies.
@@ -44,13 +44,13 @@ func CompressOpenAIChatJSON(body []byte, engine Engine, targetToken int, questio
 //   - User turns may be [tool_result, ..., text]: tool chrome stays; text may Deep-rewrite.
 //   - Preserve all other messages and top-level fields as-is.
 //   - Fail-closed on expansion (return original body).
-func CompressAnthropicMessagesJSON(body []byte, engine Engine, targetToken int, question string, ux UXChrome, timeoutSec int, chrome ChatDeepChrome, rt Runtime) ([]byte, int, int, error) {
-	return compressChatMessagesJSON(body, engine, targetToken, question, ux, timeoutSec, chrome, rt)
+func CompressAnthropicMessagesJSON(body []byte, engine Engine, rate float64, question string, ux UXChrome, timeoutSec int, chrome ChatDeepChrome, rt Runtime) ([]byte, int, int, error) {
+	return compressChatMessagesJSON(body, engine, rate, question, ux, timeoutSec, chrome, rt)
 }
 
 // compressChatMessagesJSON is the shared last-user-only Deep path for Anthropic Messages
 // and OpenAI Chat Completions (GPT / Gemini / DeepSeek / Mistral openai_compat).
-func compressChatMessagesJSON(body []byte, engine Engine, targetToken int, question string, ux UXChrome, timeoutSec int, chrome ChatDeepChrome, rt Runtime) ([]byte, int, int, error) {
+func compressChatMessagesJSON(body []byte, engine Engine, rate float64, question string, ux UXChrome, timeoutSec int, chrome ChatDeepChrome, rt Runtime) ([]byte, int, int, error) {
 	if !gjson.ValidBytes(body) {
 		return nil, 0, 0, chrome.err(chrome.Unavailable)
 	}
@@ -98,10 +98,10 @@ func compressChatMessagesJSON(body []byte, engine Engine, targetToken int, quest
 		q = ctxText
 	}
 	req := Request{
-		Text:        ctxText,
-		Question:    q,
-		TargetToken: targetToken,
-		Engine:      string(engine),
+		Text:     ctxText,
+		Question: q,
+		Rate:     rate,
+		Engine:   string(engine),
 	}
 	if err := rt.ApplyEngine(&req, engine); err != nil {
 		return nil, 0, 0, err

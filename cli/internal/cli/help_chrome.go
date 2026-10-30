@@ -73,7 +73,11 @@ func applyCLIHelpChrome(ch cliChrome) {
 	setFlagUsage(compressCmd, "deep", ch.HelpCompressFlagDeep)
 	setFlagUsage(compressCmd, "engine", ch.HelpCompressFlagEngine)
 	setFlagUsage(compressCmd, "question", ch.HelpCompressFlagQuestion)
-	setFlagUsage(compressCmd, "target-token", ch.HelpCompressFlagTarget)
+	rateHelp := strings.TrimSpace(ch.HelpCompressFlagRate)
+	if rateHelp == "" {
+		rateHelp = strings.TrimSpace(ch.HelpCompressFlagTarget)
+	}
+	setFlagUsage(compressCmd, "rate", rateHelp)
 	setFlagUsage(compressCmd, "bootstrap", ch.HelpCompressFlagBootstrap)
 	setFlagUsage(compressCmd, "out", ch.HelpCompressFlagOut)
 
@@ -92,6 +96,9 @@ func applyCLIHelpChrome(ch cliChrome) {
 	}
 	if s := strings.TrimSpace(ch.HelpConfigSyncShort); s != "" {
 		configSyncCmd.Short = s
+	}
+	if s := strings.TrimSpace(ch.HelpConfigRatesShort); s != "" {
+		configRatesCmd.Short = s
 	}
 
 	// Cursor Link keeps binary defaults when chrome has not synced these keys yet.

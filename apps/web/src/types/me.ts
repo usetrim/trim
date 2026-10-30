@@ -17,22 +17,20 @@ export type QuotaResponse = {
 export type PreferencesResponse = {
   compression_tier: string;
   deep_engine: string;
-  deep_target_token: number;
+  deep_compression_rate: number;
   auto_start_with_ide: boolean;
   fast_tier_id: string;
   deep_tier_id: string;
-  deep_target_token_min: number;
-  deep_target_token_max: number;
-  live_deep_min_input_tokens?: number;
+  deep_compression_rate_min: number;
+  deep_compression_rate_max: number;
+  deep_compression_rate_step: number;
+  default_deep_compression_rate: number;
   live_deep_oom_policy?: string;
   live_deep_warmup_on_start?: boolean;
-  live_deep_skip_on_stream?: boolean;
   deep_v1_model?: string;
   deep_v2_model?: string;
   deep_long_model?: string;
   deep_v2_force_tokens?: string[];
-  live_deep_min_hint?: string;
-  live_deep_stream_hint?: string;
   provider_adapters?: Array<{
     id: string;
     enabled: boolean;
@@ -65,7 +63,7 @@ export type PreferencesResponse = {
   page_description: string;
   deep_hint: string;
   engine_hint?: string;
-  target_hint?: string;
+  rate_hint?: string;
   auto_start_title?: string;
   auto_start_label?: string;
   auto_start_hint?: string;
@@ -79,7 +77,7 @@ export type PreferencesResponse = {
   tier_title: string;
   deep_label: string;
   engine_label: string;
-  target_label: string;
+  rate_label?: string;
   cli_title: string;
   cli_help_lines: string[];
   keys_title: string;
@@ -118,7 +116,7 @@ export type PreferencesResponse = {
 export type PatchPreferencesBody = {
   compression_tier?: string;
   deep_engine?: string;
-  deep_target_token?: number;
+  deep_compression_rate?: number;
   auto_start_with_ide?: boolean;
 };
 

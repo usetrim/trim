@@ -778,7 +778,7 @@ npm uninstall -g @usetrim/trim`,
       { type: "h2", id: "fast", text: "Fast Mode" },
       {
         type: "p",
-        text: "Fast Mode powers the live proxy on every turn. When Dashboard preferences set Deep Mode on (compression_tier=deep), trim start also runs Deep (LLMLingua) after Fast when estimated input tokens meet billing live_deep_min_input_tokens (0 = every turn), unless billing live_deep_skip_on_stream skips Deep for stream=true.",
+        text: "Fast Mode powers the live proxy on every turn. When Dashboard preferences set Deep Mode on (compression_tier=deep), trim start also runs Deep (LLMLingua) after Fast on each request before forwarding upstream.",
       },
       {
         type: "ul",
@@ -794,6 +794,30 @@ npm uninstall -g @usetrim/trim`,
         type: "p",
         text: "Deep Mode runs stronger compression on your machine (LLMLingua). With Deep Mode on in Preferences, the live IDE proxy runs Deep after Fast on each request. trim compress --deep remains available for file/batch jobs. First run may download local dependencies. Trim cloud never loads Deep Mode engines.",
       },
+      { type: "h2", id: "compression-rate", text: "Compression rate" },
+      {
+        type: "p",
+        text: "Deep uses a keep-rate (tokens after / tokens before), the same knob as Microsoft LLMLingua-2 on Hugging Face. Default is 0.7. Drag the Dashboard slider within billing min/max by billing step (usually 0.3 to 1.0 step 0.1). Lower keeps less context; 1.0 keeps almost everything. Trim floors at billing min (typically 0.3) so a demo-style 0.1 wipe is not offered by default.",
+      },
+      {
+        type: "ol",
+        items: [
+          "Open Dashboard → Settings",
+          "Confirm Deep Mode is on (new accounts start on Deep)",
+          "Drag Compression rate left for more savings (for example 0.5) or right toward 1.0 to keep more text; or type the value next to the slider",
+          "Save",
+          "On each machine: trim config sync, then trim start again",
+          "Optional CLI check: trim config rates (shows billing default and selected), trim config get compression-rate",
+        ],
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `trim config rates
+trim config set compression-rate 0.7
+trim config get compression-rate
+trim compress docs.txt --deep --rate 0.7`,
+      },
       { type: "h2", id: "engines", text: "Deep engines (pick one)" },
       {
         type: "ul",
@@ -807,13 +831,13 @@ npm uninstall -g @usetrim/trim`,
         type: "code",
         language: "bash",
         code: `trim compress path/to/file.go --mode fast
-trim compress docs.txt --deep --engine v2
-trim compress docs.txt --deep --engine long --question "Where is auth handled?"
+trim compress docs.txt --deep --engine v2 --rate 0.7
+trim compress docs.txt --deep --engine long --question "Where is auth handled?" --rate 0.7
 trim compress --bootstrap`,
       },
       {
         type: "note",
-        text: "Dashboard Preferences default Deep Mode on and Deep engine LLMLingua-2 (v2) for new accounts. Run trim config sync on each machine after saving. When Deep is on, live IDE proxy (trim start) runs Fast then Deep.",
+        text: "New accounts default to Deep Mode (live proxy runs Fast then Deep). Switch to Fast anytime in Dashboard → Settings or with trim config set default-tier fast. Deep engine defaults to LLMLingua-2 (v2). Run trim config sync on each machine after saving. List keep-rates with trim config rates.",
       },
       { type: "h2", id: "history-window", text: "Optional history window" },
       {
@@ -823,12 +847,12 @@ trim compress --bootstrap`,
       { type: "h2", id: "reading-savings", text: "Reading Saved % on the local meter" },
       {
         type: "p",
-        text: "On http://127.0.0.1:8888/dashboard, whole-request Saved % can look low (even 0%) on Claude Code or Cursor agent turns. That is often normal: system reminders, tools, git status, and other agent chrome stay frozen so the loop stays safe. Open Show savings detail to see Deep status (applied, skipped below min, kept Fast / fail-closed) and Deep stage tokens (compressible text only).",
+        text: "On http://127.0.0.1:8888/dashboard, whole-request Saved % can look low (even 0%) on Claude Code or Cursor agent turns. That is often normal: system reminders, tools, git status, and other agent chrome stay frozen so the loop stays safe. Open Show savings detail to see Deep status (applied, kept Fast / fail-closed) and Deep stage tokens (compressible text only).",
       },
       {
         type: "ul",
         items: [
-          "Deep skipped (below min): estimated compressible input was under billing live_deep_min_input_tokens",
+          "Deep applied: live Deep rewrote compressible last-user text at your compression rate",
           "Deep kept Fast (expansion fail-closed): Deep would have grown or mangled the payload, so Trim kept Fast",
           "Deep stage saved: savings on the text Trim actually rewrote, separate from whole-body %",
         ],
@@ -2183,7 +2207,7 @@ trim stats
       },
       {
         type: "p",
-        text: "trim status is your cloud login/quota check. It does not replace the local meter. After trim start and a chat turn, run trim stats for Deep status (applied, skipped below min, chrome frozen, fail-closed) and Deep stage savings, or open the local dashboard Show savings detail button.",
+        text: "trim status is your cloud login/quota check. It does not replace the local meter. After trim start and a chat turn, run trim stats for Deep status (applied, chrome frozen, fail-closed) and Deep stage savings, or open the local dashboard Show savings detail button.",
       },
       { type: "h2", id: "fields", text: "What trim stats shows" },
       {
@@ -2254,7 +2278,6 @@ trim status
         type: "ul",
         items: [
           "Deep applied + Deep stage A → B with B < A: live Deep savings on compressible text",
-          "Deep skipped (below min): raise input size or lower live_deep_min_input_tokens in Admin billing (tradeoff: CPU/latency)",
           "Deep skipped (nothing compressible / chrome frozen): agent chrome protected; whole-body 0% can still be correct",
           "Deep kept Fast (expansion fail-closed): safety gate refused a bad Deep result",
         ],
@@ -2275,13 +2298,13 @@ trim status
         type: "code",
         language: "bash",
         code: `trim compress path/to/file.go --mode fast
-trim compress notes.txt --deep --engine v2
-trim compress notes.txt --deep --engine long --question "Summarize auth flow"
+trim compress notes.txt --deep --engine v2 --rate 0.7
+trim compress notes.txt --deep --engine long --question "Summarize auth flow" --rate 0.7
 trim compress --bootstrap`,
       },
       {
         type: "p",
-        text: "Use Fast Mode for interactive IDE chat when Deep is off (Fast-only path). With Preferences Deep on, live proxy runs Fast then Deep when input meets billing live_deep_min_input_tokens. Use trim compress --deep for file/batch. Bootstrap may download local Deep dependencies. Deep Mode engines are not loaded in Trim cloud.",
+        text: "Use Fast Mode for interactive IDE chat when Deep is off (Fast-only path). With Preferences Deep on, live proxy runs Fast then Deep on each request using your compression rate (keep after/before; default 0.7). Use trim compress --deep --rate 0.7 for file/batch. Bootstrap may download local Deep dependencies. Deep Mode engines are not loaded in Trim cloud.",
       },
       { type: "h2", id: "engines", text: "Deep engines (pick one)" },
       {
@@ -2292,12 +2315,17 @@ trim compress --bootstrap`,
           "v1 / LLMLingua - classic general compression",
         ],
       },
+      { type: "h2", id: "rate", text: "Compression rate" },
+      {
+        type: "p",
+        text: "Pass --rate as a Microsoft-style keep-rate (after/before), typically 0.3 to 1.0 step 0.1. Omit --rate to use the synced preference (Dashboard slider or trim config set compression-rate).",
+      },
       { type: "h2", id: "when", text: "When to use compress vs start" },
       {
         type: "ul",
         items: [
           "trim start: interactive IDE chat every turn (Fast always; Deep after Fast when Preferences Deep is on)",
-          "trim compress: on-machine file/batch Deep compression (same engines as live proxy Deep)",
+          "trim compress: on-machine file/batch Deep compression (same engines and rate as live proxy Deep)",
           "Deep on live chat is stronger but slower (first turn may load the local model); turn Deep off in Preferences for Fast-only latency",
         ],
       },
@@ -2331,12 +2359,23 @@ active_file_protection=true
         language: "bash",
         code: `trim config get
 trim config get default-tier
+trim config set default-tier fast
 trim config set default-tier deep
+trim config set compression-rate 0.7
 trim config sync`,
       },
       {
         type: "p",
-        text: "get shows local preferences under ~/.config/trim/. set writes one key locally. sync pulls Fast/Deep preferences and provider adapters from your Trim cloud profile (requires trim login).",
+        text: "New accounts default to Deep Mode. get shows local preferences under ~/.config/trim/ (default-tier, deep-engine, compression-rate). rates lists allowed keep-rates and marks billing default plus selected. set writes one key locally (when logged in, default-tier and compression-rate also update your Trim cloud profile). sync pulls Fast/Deep preferences and provider adapters from your Trim cloud profile (requires trim login).",
+      },
+      {
+        type: "ul",
+        items: [
+          "fast: live IDE proxy runs Fast Mode only",
+          "deep: live IDE proxy runs Fast then Deep (LLMLingua) at your compression rate",
+          "compression-rate: keep-rate after/before (Microsoft-aligned; default 0.7; typically 0.3 to 1.0 step 0.1)",
+          "After Dashboard → Settings changes (including dragging the rate slider): trim config sync, then trim start again",
+        ],
       },
       { type: "h2", id: "sync", text: "Config sync" },
       {
@@ -2346,7 +2385,7 @@ trim config sync`,
       },
       {
         type: "p",
-        text: "After changing Compression defaults in the dashboard, sync so the local proxy picks up preferences. When Deep is on, live proxy runs Fast then Deep; when off, Fast only.",
+        text: "After changing Compression defaults in the dashboard (Deep on/off, engine, compression rate), sync so the local proxy picks up preferences. New accounts default to Deep (live proxy runs Fast then Deep). Switch to Fast anytime for Fast-only turns.",
       },
       {
         type: "note",
@@ -4961,11 +5000,15 @@ gpt-4o-mini`,
       {
         type: "ol",
         items: [
-          "Deep Mode is on by default for new accounts (live proxy runs Fast then Deep when on)",
+          "Deep Mode is on by default for new accounts (live proxy runs Fast then Deep); switch to Fast in Settings or with trim config set default-tier fast",
           "Deep engine defaults to LLMLingua-2 (v2); switch to long (needs a question) or v1 if you prefer",
-          "Turn Deep Mode off when you want Fast only on the live proxy and for compress defaults",
-          "Set target tokens, Save, then on each machine: trim config sync",
+          "Drag Compression rate (keep after/before; default 0.7; typically 0.3 to 1.0 step 0.1), Save, then on each machine: trim config sync (or trim config set compression-rate 0.7 while logged in)",
+          "Or list and set rates from CLI: trim config rates → trim config set compression-rate 0.7 → trim config sync",
         ],
+      },
+      {
+        type: "p",
+        text: "The rate control matches Microsoft LLMLingua demos: lower keeps less of the prompt; 1.0 keeps almost everything. Bounds and step come from Admin billing (deep_compression_rate_min / max / step).",
       },
       {
         type: "callout",
@@ -5149,7 +5192,7 @@ gpt-4o-mini`,
         items: [
           "Tabs: pricing, deep, lists, policy (labels from chrome)",
           "Pricing - annual_discount_percent, currency, proration / upgrade dials, default_seat_quantity, min_seat_quantity, default_plan_interval when returned",
-          "Deep - Deep Mode economics / related operator dials",
+          "Deep - default/min/max compression rate (keep after/before), OOM policy, warm on start, v1/v2/long model ids, force_tokens JSON",
           "Lists - pagination page sizes and chart dials (TTL / days / top-N / date_range_months) - not email/IP denylist (see Denylist)",
           "Policy - cancel / downgrade and related policy dials",
         ],
@@ -5173,7 +5216,7 @@ gpt-4o-mini`,
     [
       {
         type: "p",
-        text: "Product settings align new-account defaults with customer Preferences (Deep Mode on, engine v2) without inventing client fallbacks.",
+        text: "Product settings align new-account defaults with customer Preferences (Deep Mode by default = Fast then Deep; Deep engine v2) without inventing client fallbacks.",
       },
       { type: "h2", id: "tabs", text: "Config tabs" },
       {
@@ -5872,7 +5915,7 @@ Optional build features: follow README flags for native parsers`,
         type: "ul",
         items: [
           "Open http://127.0.0.1:8888/dashboard → Show savings detail",
-          "Check Deep status: skipped below min, chrome frozen / nothing compressible, or fail-closed kept Fast",
+          "Check Deep status: applied, chrome frozen / nothing compressible, or fail-closed kept Fast",
           "Compare Deep stage tokens to whole-request Saved - agent chrome stays frozen on purpose",
           "0% whole-request Saved with a correct Claude Code / Cursor answer is often normal, not a broken install",
         ],
@@ -5916,12 +5959,12 @@ Optional build features: follow README flags for native parsers`,
       },
       {
         type: "p",
-        text: "Fast Mode compression runs in the local proxy on your machine. The hosted Service stores account, billing, and metering data. Full prompt bodies are not required in Trim cloud for the default Fast Mode path. Upstream model providers still receive the slim prompt you forward.",
+        text: "Compression runs in the local proxy on your machine (Fast only, or Fast then Deep when Deep Mode is on). The hosted Service stores account, billing, and metering data. Full prompt bodies are not required in Trim cloud for the local proxy path. Upstream model providers still receive the slim prompt you forward.",
       },
       { type: "h2", id: "fast-vs-deep", text: "When should I use Deep Mode?" },
       {
         type: "p",
-        text: "Use Fast Mode for interactive IDE chat when Deep Mode is off. When Deep Mode is on in Preferences, trim start runs Fast then Deep on each request. trim compress --deep remains for file/batch jobs. Engines are not loaded in Trim cloud.",
+        text: "Use Fast Mode for interactive IDE chat when Deep Mode is off. When Deep Mode is on in Preferences, trim start runs Fast then Deep on each request at your compression rate (default 0.7). Set the rate in Dashboard → Settings or with trim config set compression-rate / trim compress --deep --rate. Engines are not loaded in Trim cloud.",
       },
       {
         type: "h2",

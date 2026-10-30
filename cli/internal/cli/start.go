@@ -583,8 +583,7 @@ func printStartLiveStatusBanners(cfg config.Local, chrome cliChrome) {
 		deepopt.RequireCompressPrefs(prefs, prefsChromeFrom(chrome)) == nil &&
 		deepopt.RequireLiveDeepPolicy(prefs) {
 		fmt.Printf(chrome.ProxyLiveDeepEnabledFmt+"\n",
-			prefs.DeepEngine, prefs.TargetToken, prefs.LiveDeepMinInputTokens,
-			prefs.LiveDeepOOMPolicy, prefs.LiveDeepSkipOnStream)
+			prefs.DeepEngine, prefs.CompressionRate, prefs.LiveDeepOOMPolicy)
 	}
 	adapterReg, _ := loadProviderAdapterRegistry(chrome)
 	if adapterReg != nil && chrome.ProxyAdapterEnabledFmt != "" {

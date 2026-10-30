@@ -1174,7 +1174,7 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 			taxTotalL := op.cells[4]
 			taxTotalV := op.right
 			taxRight := pdfMarginL + 240
-			// Full tax breakdown (headers + row + total) must stay intact — never clip mid-table.
+			// Full tax breakdown (headers + row + total) must stay intact - never clip mid-table.
 			taxNeed := float64(th) + 8 + 8 + float64(body) + 8
 			if strings.TrimSpace(taxTotalL) != "" {
 				taxNeed += 10 + float64(body)
@@ -1214,7 +1214,7 @@ func writeReceiptPDF(ops []pdfOp) ([]byte, error) {
 			if len(stack) == 0 {
 				stack = []string{op.cells[0]}
 			}
-			// py-3.5; sublines text-[12px] mt-0.5 — keep the whole row on one page.
+			// py-3.5; sublines text-[12px] mt-0.5 - keep the whole row on one page.
 			rowNeed := 12 + float64(size)
 			if len(stack) > 1 {
 				rowNeed += float64(len(stack)-1) * (float64(pdfPtTableH) + 2)

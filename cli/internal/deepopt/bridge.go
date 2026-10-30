@@ -15,16 +15,16 @@ import (
 )
 
 // Request is the JSON stdin payload for optimizer.py.
+// Rate is Microsoft keep-rate (after/before), same as LLMLingua-2 Space.
 type Request struct {
-	Text         string   `json:"text"`
-	Question     string   `json:"question,omitempty"`
-	TargetToken  int      `json:"target_token"`
-	Engine       string   `json:"engine"`
-	Rate         *float64 `json:"rate,omitempty"`
-	ModelName    string   `json:"model_name,omitempty"`
-	DeviceMap    string   `json:"device_map,omitempty"`
-	ForceTokens  []string `json:"force_tokens,omitempty"`
-	UseLLMLingua2 bool    `json:"use_llmlingua2,omitempty"`
+	Text          string   `json:"text"`
+	Question      string   `json:"question,omitempty"`
+	Rate          float64  `json:"rate"`
+	Engine        string   `json:"engine"`
+	ModelName     string   `json:"model_name,omitempty"`
+	DeviceMap     string   `json:"device_map,omitempty"`
+	ForceTokens   []string `json:"force_tokens,omitempty"`
+	UseLLMLingua2 bool     `json:"use_llmlingua2,omitempty"`
 }
 
 // Runtime holds fail-closed Deep engine knobs from CLI env (no invent model ids).
@@ -113,7 +113,7 @@ type UXChrome struct {
 	PyMissing           string
 	LLMMissingFmt       string
 	PipFailed           string
-	TargetRequired      string
+	RateRequired        string
 	EngineRequired      string
 	QuestionRequired    string
 	OptimizeFmt         string
@@ -236,6 +236,7 @@ func Available(ux UXChrome) error {
 		return err
 	}
 	cmd := exec.Command(pythonBin(), "-c", "import llmlingua")
+	configureHiddenChildProc(cmd)
 	if out, err := cmd.CombinedOutput(); err != nil {
 		return ux.errFmt(ux.LLMMissingFmt, err, strings.TrimSpace(string(out)))
 	}
@@ -282,6 +283,7 @@ func Bootstrap(ux UXChrome) error {
 		args = append([]string{"-3"}, args...)
 	}
 	cmd := exec.Command(pythonBin(), args...)
+	configureHiddenChildProc(cmd)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
@@ -296,8 +298,8 @@ func Bootstrap(ux UXChrome) error {
 // Compress runs Microsoft Deep Mode via frozen binary (preferred) or local Python bridge.
 // timeoutSec is the wall-clock kill from TRIM_DEEP_TIMEOUT_SEC (no invent 600s).
 func Compress(req Request, ux UXChrome, timeoutSec int) (*Response, error) {
-	if req.TargetToken <= 0 {
-		return nil, ux.err(ux.TargetRequired)
+	if req.Rate <= 0 || req.Rate > 1 {
+		return nil, ux.err(ux.RateRequired)
 	}
 	if strings.TrimSpace(req.Engine) == "" {
 		return nil, ux.err(ux.EngineRequired)
@@ -338,6 +340,7 @@ func runOptimizerCmd(cmd *exec.Cmd, req Request, ux UXChrome, timeoutSec int) (*
 	if err != nil {
 		return nil, err
 	}
+	configureHiddenChildProc(cmd)
 	cmd.Stdin = bytes.NewReader(body)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout

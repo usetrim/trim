@@ -14,7 +14,7 @@ func TestApplyEngineMergesForceTokensAllEngines(t *testing.T) {
 		V2ForceTokens: []string{"KEEPME", "/"},
 	}
 	for _, eng := range []Engine{EngineV1, EngineV2, EngineLong} {
-		req := &Request{Text: "x", TargetToken: 10, Engine: string(eng)}
+		req := &Request{Text: "x", Rate: 0.7, Engine: string(eng)}
 		if err := rt.ApplyEngine(req, eng); err != nil {
 			t.Fatalf("%s: %v", eng, err)
 		}

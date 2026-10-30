@@ -36,76 +36,78 @@ type Settings struct {
 	AllowCancelAtPeriodEnd bool   `json:"allow_cancel_at_period_end"`
 	UpgradeProrationMode   string `json:"upgrade_proration_mode"`
 	// UI messages are backend-owned toast and form copy (no client invent).
-	AuthRequiredPlanMessage        string `json:"auth_required_plan_message"`
-	AuthRequiredEnterpriseMessage  string `json:"auth_required_enterprise_message"`
-	EnterpriseMessageRequired      string `json:"enterprise_message_required"`
-	PaddleJSNotReadyMessage        string `json:"paddle_js_not_ready_message"`
-	CheckoutPriceMissingMessage    string `json:"checkout_price_missing_message"`
-	UpgradeMissingAPIMessage       string `json:"upgrade_missing_api_message"`
-	InquiryMissingConfirmMessage   string `json:"inquiry_missing_confirm_message"`
-	ChangeBlockedDefaultMessage    string `json:"change_blocked_default_message"`
-	CheckoutUnavailableMessage     string `json:"checkout_unavailable_message"`
-	UpgradeNotAppliedMessage       string `json:"upgrade_not_applied_message"`
-	CheckoutRequestFailedMessage   string `json:"checkout_request_failed_message"`
-	UpgradeRequestFailedMessage    string `json:"upgrade_request_failed_message"`
-	EnterpriseInquiryFailedMessage string `json:"enterprise_inquiry_failed_message"`
-	PlansDialogDescription         string `json:"plans_dialog_description"`
-	PlansDialogUpgradesOnlyNote    string `json:"plans_dialog_upgrades_only_note"`
-	TopupDialogTitle               string `json:"topup_dialog_title"`
-	TopupDialogDescription         string `json:"topup_dialog_description"`
-	TopupDialogEmpty               string `json:"topup_dialog_empty"`
-	AnnualToggleLabel              string `json:"annual_toggle_label"`
-	MonthlyToggleLabel             string `json:"monthly_toggle_label"`
-	EnterpriseDialogTitle          string `json:"enterprise_dialog_title"`
-	EnterpriseDialogDescription    string `json:"enterprise_dialog_description"`
-	EnterpriseEmailFallback        string `json:"enterprise_email_fallback"`
-	EnterpriseCompanyLabel         string `json:"enterprise_company_label"`
-	EnterpriseSeatsLabel           string `json:"enterprise_seats_label"`
-	EnterpriseMessageLabel         string `json:"enterprise_message_label"`
-	EnterpriseCompanyPlaceholder   string `json:"enterprise_company_placeholder"`
-	EnterpriseSeatsPlaceholder     string `json:"enterprise_seats_placeholder"`
-	EnterpriseMessagePlaceholder   string `json:"enterprise_message_placeholder"`
-	EnterpriseCompanyDescription   string `json:"enterprise_company_description"`
-	EnterpriseMessageDescription   string `json:"enterprise_message_description"`
-	EnterpriseCancelLabel          string `json:"enterprise_cancel_label"`
-	EnterpriseSendLabel            string `json:"enterprise_send_label"`
-	EnterpriseSendPendingLabel     string `json:"enterprise_send_pending_label"`
-	PlansLoadFailedMessage         string `json:"plans_load_failed_message"`
-	ProrationReviewHint            string `json:"proration_review_hint"`
-	SeatQuantityHint               string `json:"seat_quantity_hint"`
-	SeatQuantityLabel              string `json:"seat_quantity_label"`
-	PerSeatOneFmt                  string `json:"per_seat_one_fmt"`
-	PerSeatManyFmt                 string `json:"per_seat_many_fmt"`
-	MetaSep                        string `json:"meta_sep"`
-	MaxSeatQuantity                int    `json:"max_seat_quantity"`
-	MinSeatQuantity                int    `json:"min_seat_quantity"`
-	DefaultSeatQuantity            int    `json:"default_seat_quantity"`
-	DefaultCheckoutQuantity        int    `json:"default_checkout_quantity"`
-	EnterpriseMessageRows          int    `json:"enterprise_message_rows"`
-	DateRangeMonths                int    `json:"date_range_months"`
-	DeepTargetTokenMin             int    `json:"deep_target_token_min"`
-	DeepTargetTokenMax             int    `json:"deep_target_token_max"`
-	DefaultPlanInterval            string `json:"default_plan_interval"`
-	DefaultPageSize                int    `json:"default_page_size"`
-	MaxPageSize                    int    `json:"max_page_size"`
-	PeriodYearLabel                string `json:"period_year_label"`
-	PeriodMonthLabel               string `json:"period_month_label"`
-	UpgradeConfirmTitle            string `json:"upgrade_confirm_title"`
-	UpgradeProrationModeFmt        string `json:"upgrade_proration_mode_fmt"`
-	UpgradePlanPrefix              string `json:"upgrade_plan_prefix"`
-	PlansDialogTitle               string `json:"plans_dialog_title"`
-	ActivePlanPrefix               string `json:"active_plan_prefix"`
-	ActivePlanExpiresFmt           string `json:"active_plan_expires_fmt"`
-	ProrationPrefix                string `json:"proration_prefix"`
-	UpgradeSeatsFmt                string `json:"upgrade_seats_fmt"`
-	UpgradeCreditPrefix            string `json:"upgrade_credit_prefix"`
-	UpgradeSubtotalPrefix          string `json:"upgrade_subtotal_prefix"`
-	UpgradeTaxPrefix               string `json:"upgrade_tax_prefix"`
-	UpgradeDuePrefix               string `json:"upgrade_due_prefix"`
-	UpgradePreviewEmpty            string `json:"upgrade_preview_empty"`
-	UpgradeCancelLabel             string `json:"upgrade_cancel_label"`
-	DialogCloseLabel               string `json:"dialog_close_label"`
-	UnlimitedFeatureLabel          string `json:"unlimited_feature_label"`
+	AuthRequiredPlanMessage        string  `json:"auth_required_plan_message"`
+	AuthRequiredEnterpriseMessage  string  `json:"auth_required_enterprise_message"`
+	EnterpriseMessageRequired      string  `json:"enterprise_message_required"`
+	PaddleJSNotReadyMessage        string  `json:"paddle_js_not_ready_message"`
+	CheckoutPriceMissingMessage    string  `json:"checkout_price_missing_message"`
+	UpgradeMissingAPIMessage       string  `json:"upgrade_missing_api_message"`
+	InquiryMissingConfirmMessage   string  `json:"inquiry_missing_confirm_message"`
+	ChangeBlockedDefaultMessage    string  `json:"change_blocked_default_message"`
+	CheckoutUnavailableMessage     string  `json:"checkout_unavailable_message"`
+	UpgradeNotAppliedMessage       string  `json:"upgrade_not_applied_message"`
+	CheckoutRequestFailedMessage   string  `json:"checkout_request_failed_message"`
+	UpgradeRequestFailedMessage    string  `json:"upgrade_request_failed_message"`
+	EnterpriseInquiryFailedMessage string  `json:"enterprise_inquiry_failed_message"`
+	PlansDialogDescription         string  `json:"plans_dialog_description"`
+	PlansDialogUpgradesOnlyNote    string  `json:"plans_dialog_upgrades_only_note"`
+	TopupDialogTitle               string  `json:"topup_dialog_title"`
+	TopupDialogDescription         string  `json:"topup_dialog_description"`
+	TopupDialogEmpty               string  `json:"topup_dialog_empty"`
+	AnnualToggleLabel              string  `json:"annual_toggle_label"`
+	MonthlyToggleLabel             string  `json:"monthly_toggle_label"`
+	EnterpriseDialogTitle          string  `json:"enterprise_dialog_title"`
+	EnterpriseDialogDescription    string  `json:"enterprise_dialog_description"`
+	EnterpriseEmailFallback        string  `json:"enterprise_email_fallback"`
+	EnterpriseCompanyLabel         string  `json:"enterprise_company_label"`
+	EnterpriseSeatsLabel           string  `json:"enterprise_seats_label"`
+	EnterpriseMessageLabel         string  `json:"enterprise_message_label"`
+	EnterpriseCompanyPlaceholder   string  `json:"enterprise_company_placeholder"`
+	EnterpriseSeatsPlaceholder     string  `json:"enterprise_seats_placeholder"`
+	EnterpriseMessagePlaceholder   string  `json:"enterprise_message_placeholder"`
+	EnterpriseCompanyDescription   string  `json:"enterprise_company_description"`
+	EnterpriseMessageDescription   string  `json:"enterprise_message_description"`
+	EnterpriseCancelLabel          string  `json:"enterprise_cancel_label"`
+	EnterpriseSendLabel            string  `json:"enterprise_send_label"`
+	EnterpriseSendPendingLabel     string  `json:"enterprise_send_pending_label"`
+	PlansLoadFailedMessage         string  `json:"plans_load_failed_message"`
+	ProrationReviewHint            string  `json:"proration_review_hint"`
+	SeatQuantityHint               string  `json:"seat_quantity_hint"`
+	SeatQuantityLabel              string  `json:"seat_quantity_label"`
+	PerSeatOneFmt                  string  `json:"per_seat_one_fmt"`
+	PerSeatManyFmt                 string  `json:"per_seat_many_fmt"`
+	MetaSep                        string  `json:"meta_sep"`
+	MaxSeatQuantity                int     `json:"max_seat_quantity"`
+	MinSeatQuantity                int     `json:"min_seat_quantity"`
+	DefaultSeatQuantity            int     `json:"default_seat_quantity"`
+	DefaultCheckoutQuantity        int     `json:"default_checkout_quantity"`
+	EnterpriseMessageRows          int     `json:"enterprise_message_rows"`
+	DateRangeMonths                int     `json:"date_range_months"`
+	DeepCompressionRateMin         float64 `json:"deep_compression_rate_min"`
+	DeepCompressionRateMax         float64 `json:"deep_compression_rate_max"`
+	DeepCompressionRateStep        float64 `json:"deep_compression_rate_step"`
+	DefaultDeepCompressionRate     float64 `json:"default_deep_compression_rate"`
+	DefaultPlanInterval            string  `json:"default_plan_interval"`
+	DefaultPageSize                int     `json:"default_page_size"`
+	MaxPageSize                    int     `json:"max_page_size"`
+	PeriodYearLabel                string  `json:"period_year_label"`
+	PeriodMonthLabel               string  `json:"period_month_label"`
+	UpgradeConfirmTitle            string  `json:"upgrade_confirm_title"`
+	UpgradeProrationModeFmt        string  `json:"upgrade_proration_mode_fmt"`
+	UpgradePlanPrefix              string  `json:"upgrade_plan_prefix"`
+	PlansDialogTitle               string  `json:"plans_dialog_title"`
+	ActivePlanPrefix               string  `json:"active_plan_prefix"`
+	ActivePlanExpiresFmt           string  `json:"active_plan_expires_fmt"`
+	ProrationPrefix                string  `json:"proration_prefix"`
+	UpgradeSeatsFmt                string  `json:"upgrade_seats_fmt"`
+	UpgradeCreditPrefix            string  `json:"upgrade_credit_prefix"`
+	UpgradeSubtotalPrefix          string  `json:"upgrade_subtotal_prefix"`
+	UpgradeTaxPrefix               string  `json:"upgrade_tax_prefix"`
+	UpgradeDuePrefix               string  `json:"upgrade_due_prefix"`
+	UpgradePreviewEmpty            string  `json:"upgrade_preview_empty"`
+	UpgradeCancelLabel             string  `json:"upgrade_cancel_label"`
+	DialogCloseLabel               string  `json:"dialog_close_label"`
+	UnlimitedFeatureLabel          string  `json:"unlimited_feature_label"`
 }
 
 type Plan struct {
@@ -1606,7 +1608,8 @@ func (h *Handler) loadSettings(ctx context.Context) (Settings, error) {
 		       coalesce(enterprise_message_rows, 0), coalesce(default_plan_interval, ''),
 		       coalesce(max_page_size, 0),
 		       coalesce(date_range_months, 0),
-		       coalesce(deep_target_token_min, 0), coalesce(deep_target_token_max, 0)
+		       coalesce(deep_compression_rate_min, 0), coalesce(deep_compression_rate_max, 0),
+		       coalesce(deep_compression_rate_step, 0), coalesce(default_deep_compression_rate, 0)
 		from public.billing_settings
 		where id = 'default'
 	`).Scan(
@@ -1628,8 +1631,10 @@ func (h *Handler) loadSettings(ctx context.Context) (Settings, error) {
 		&s.DefaultPlanInterval,
 		&s.MaxPageSize,
 		&s.DateRangeMonths,
-		&s.DeepTargetTokenMin,
-		&s.DeepTargetTokenMax,
+		&s.DeepCompressionRateMin,
+		&s.DeepCompressionRateMax,
+		&s.DeepCompressionRateStep,
+		&s.DefaultDeepCompressionRate,
 	)
 	if err != nil {
 		return Settings{}, fmt.Errorf("billing_settings not found: %w", err)
@@ -1669,8 +1674,14 @@ func (h *Handler) loadSettings(ctx context.Context) (Settings, error) {
 	if s.DateRangeMonths < 1 {
 		return Settings{}, fmt.Errorf("billing_settings.date_range_months invalid")
 	}
-	if s.DeepTargetTokenMin < 1 || s.DeepTargetTokenMax < s.DeepTargetTokenMin {
-		return Settings{}, fmt.Errorf("billing_settings.deep_target_token bounds invalid")
+	if s.DeepCompressionRateMin <= 0 || s.DeepCompressionRateMax < s.DeepCompressionRateMin || s.DeepCompressionRateMax > 1 {
+		return Settings{}, fmt.Errorf("billing_settings.deep_compression_rate bounds invalid")
+	}
+	if s.DeepCompressionRateStep <= 0 || s.DeepCompressionRateStep > 1 {
+		return Settings{}, fmt.Errorf("billing_settings.deep_compression_rate_step invalid")
+	}
+	if s.DefaultDeepCompressionRate < s.DeepCompressionRateMin || s.DefaultDeepCompressionRate > s.DeepCompressionRateMax {
+		return Settings{}, fmt.Errorf("billing_settings.default_deep_compression_rate invalid")
 	}
 	if s.DefaultPageSize < 1 {
 		return Settings{}, fmt.Errorf("billing_settings.default_page_size invalid")

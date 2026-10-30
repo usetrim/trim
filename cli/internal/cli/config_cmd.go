@@ -36,8 +36,8 @@ var configGetCmd = &cobra.Command{
 			if chrome.ConfigGetEngineFmt != "" {
 				fmt.Printf(chrome.ConfigGetEngineFmt+"\n", p.DeepEngine)
 			}
-			if chrome.ConfigGetTargetFmt != "" {
-				fmt.Printf(chrome.ConfigGetTargetFmt+"\n", p.TargetToken)
+			if chrome.ConfigGetRateFmt != "" {
+				fmt.Printf(chrome.ConfigGetRateFmt+"\n", p.CompressionRate)
 			}
 			if chrome.ConfigGetAutostartFmt != "" {
 				if !p.AutoStartSet() {
@@ -55,8 +55,14 @@ var configGetCmd = &cobra.Command{
 			fmt.Println(p.DefaultTier)
 		case "deep-engine", "engine":
 			fmt.Println(p.DeepEngine)
-		case "target-token":
-			fmt.Println(p.TargetToken)
+		case "compression-rate", "rate":
+			if chrome.ConfigGetRateFmt != "" {
+				fmt.Printf(chrome.ConfigGetRateFmt+"\n", p.CompressionRate)
+			} else {
+				fmt.Println(p.CompressionRate)
+			}
+		case "rates":
+			return printCompressionRatesFlow(p, chrome)
 		case "auto-start-with-ide", "autostart", "auto-start":
 			if !p.AutoStartSet() {
 				if chrome.ConfigGetAutostartUnset != "" {
@@ -87,6 +93,7 @@ var configSetCmd = &cobra.Command{
 		}
 		key := strings.ToLower(args[0])
 		val := args[1]
+		showRatesAfter := false
 		switch key {
 		case "default-tier", "default-mode", "tier", "mode":
 			tier := deepopt.NormalizeTier(val)
@@ -106,15 +113,22 @@ var configSetCmd = &cobra.Command{
 				return chrome.fail("")
 			}
 			p.DeepEngine = eng
-		case "target-token":
-			n, err := strconv.Atoi(val)
-			if err != nil || n <= 0 {
-				if chrome.ConfigTargetPositive != "" {
-					return fmt.Errorf("%s", chrome.ConfigTargetPositive)
+		case "compression-rate", "rate":
+			n, err := strconv.ParseFloat(val, 64)
+			if err != nil || n <= 0 || n > 1 {
+				if chrome.ConfigRateRange != "" {
+					return fmt.Errorf("%s", chrome.ConfigRateRange)
 				}
 				return chrome.fail("")
 			}
-			p.TargetToken = n
+			if p.LiveDeepPolicySynced && !deepopt.RateInBillingBounds(n, p.CompressionRateMin, p.CompressionRateMax) {
+				if chrome.ConfigRateRange != "" {
+					return fmt.Errorf("%s", chrome.ConfigRateRange)
+				}
+				return chrome.fail("")
+			}
+			p.CompressionRate = n
+			showRatesAfter = true
 		case "auto-start-with-ide", "autostart", "auto-start":
 			switch strings.ToLower(strings.TrimSpace(val)) {
 			case "true", "1", "on", "yes", "enable", "enabled":
@@ -136,10 +150,10 @@ var configSetCmd = &cobra.Command{
 		prefsChrome := deepopt.PrefsChrome{
 			Unavailable:    chrome.ChromeUnavailable,
 			EngineInvalid:  chrome.PrefsEngineInvalid,
-			TargetNonNeg:   chrome.PrefsTargetNonNeg,
+			RateNonNeg:     chrome.PrefsRateNonNeg,
 			TierRequired:   chrome.PrefsTierRequired,
 			EngineRequired: chrome.PrefsEngineRequired,
-			TargetRequired: chrome.PrefsTargetRequired,
+			RateRequired:   chrome.PrefsRateRequired,
 		}
 		if err := deepopt.SavePreferences(p, prefsChrome); err != nil {
 			return err
@@ -147,13 +161,16 @@ var configSetCmd = &cobra.Command{
 		// Push Fast/Deep dials to cloud so trim start refresh does not overwrite local set.
 		switch key {
 		case "default-tier", "default-mode", "tier", "mode",
-			"deep-engine", "engine", "target-token":
+			"deep-engine", "engine", "compression-rate", "rate":
 			if err := pushCompressPreferences(p, chrome); err != nil {
 				return err
 			}
 		}
 		if chrome.ConfigSavedFmt != "" {
 			fmt.Printf(chrome.ConfigSavedFmt+"\n", key)
+		}
+		if showRatesAfter {
+			_ = printCompressionRatesFlow(p, chrome)
 		}
 		return nil
 	},
@@ -170,9 +187,9 @@ func pushCompressPreferences(p deepopt.Preferences, chrome cliChrome) error {
 		return nil // local-only until login
 	}
 	body, err := json.Marshal(map[string]any{
-		"compression_tier":  string(p.DefaultTier),
-		"deep_engine":       string(p.DeepEngine),
-		"deep_target_token": p.TargetToken,
+		"compression_tier":       string(p.DefaultTier),
+		"deep_engine":            string(p.DeepEngine),
+		"deep_compression_rate":  p.CompressionRate,
 	})
 	if err != nil {
 		return err
@@ -244,10 +261,10 @@ var configSyncCmd = &cobra.Command{
 		prefsChrome := deepopt.PrefsChrome{
 			Unavailable:    chrome.ChromeUnavailable,
 			EngineInvalid:  chrome.PrefsEngineInvalid,
-			TargetNonNeg:   chrome.PrefsTargetNonNeg,
+			RateNonNeg:     chrome.PrefsRateNonNeg,
 			TierRequired:   chrome.PrefsTierRequired,
 			EngineRequired: chrome.PrefsEngineRequired,
-			TargetRequired: chrome.PrefsTargetRequired,
+			RateRequired:   chrome.PrefsRateRequired,
 		}
 		if err := deepopt.SavePreferences(p, prefsChrome); err != nil {
 			return err
@@ -273,7 +290,7 @@ var configSyncCmd = &cobra.Command{
 			fmt.Println(chrome.AutostartSyncDaemonOk)
 		}
 		if chrome.ConfigSyncedFmt != "" {
-			fmt.Printf(chrome.ConfigSyncedFmt+"\n", p.DefaultTier, p.DeepEngine, p.TargetToken)
+			fmt.Printf(chrome.ConfigSyncedFmt+"\n", p.DefaultTier, p.DeepEngine, p.CompressionRate)
 		}
 		return nil
 	},
