@@ -41,8 +41,13 @@ var uninstallCmd = &cobra.Command{
 			fmt.Println(chrome.UninstallStopped)
 		}
 
-		// 2) Remove OS login daemon.
+		// 2) Unregister OS login daemon + stop daemon process.
+		// Always preserve the durable Windows binary here: wiping %LOCALAPPDATA%\Trim
+		// happens in removeCLIInstall after the running image is renamed/unlinked
+		// (Windows cannot delete a mapped exe). keep-data skips that later wipe.
+		daemonUninstallPreserveBinary = true
 		_ = daemonUninstallCmd.RunE(daemonUninstallCmd, nil)
+		daemonUninstallPreserveBinary = false
 		if chrome.UninstallDaemonOk != "" {
 			fmt.Println(chrome.UninstallDaemonOk)
 		}
@@ -72,8 +77,12 @@ var uninstallCmd = &cobra.Command{
 			}
 		}
 
-		// 5) Full purge by default (Windows Apps & features / curl install one-shot).
+		// 5) Full purge by default (Windows Apps & features / curl / npm / scoop / brew / winget).
+		// keep-data: skip killing other processes and skip deleting data/binary/packages.
+		var handledPkgs map[string]bool
+		var detectedPkgs []installChannel
 		if !uninstallKeepData {
+			stopOtherTrimProcesses(chrome)
 			if err := purgeLocalData(chrome); err != nil {
 				return err
 			}
@@ -81,29 +90,44 @@ var uninstallCmd = &cobra.Command{
 				return err
 			}
 			purgeSidecars(chrome)
-			purgeBinaryAndPath(chrome)
+			handledPkgs, detectedPkgs = purgeBinaryAndPath(chrome)
 			removeWindowsARP(chrome)
 		}
 
 		if chrome.UninstallDone != "" {
 			fmt.Println(chrome.UninstallDone)
 		}
-		printUninstallNextSteps(chrome)
+		printUninstallNextSteps(chrome, handledPkgs, detectedPkgs)
 		return nil
 	},
 }
 
-func printUninstallNextSteps(chrome cliChrome) {
-	for _, line := range []string{
-		chrome.UninstallNextExt,
-		chrome.UninstallNextPkgBrew,
-		chrome.UninstallNextPkgScoop,
-		chrome.UninstallNextPkgWinget,
-		chrome.UninstallNextPkgNpm,
-	} {
-		if strings.TrimSpace(line) != "" {
-			fmt.Println(line)
-		}
+func printUninstallNextSteps(chrome cliChrome, handledPkgs map[string]bool, detectedPkgs []installChannel) {
+	if handledPkgs == nil {
+		handledPkgs = map[string]bool{}
+	}
+	if chrome.UninstallNextExt != "" {
+		fmt.Println(chrome.UninstallNextExt)
+	}
+	// Fallbacks for every detected package channel. Schedule is optimistic; these
+	// lines say "if not auto-removed" so users still have the exact command if
+	// the post-exit helper or package manager fails. Clean standalone → none.
+	_ = handledPkgs
+	want := map[installChannel]bool{}
+	for _, ch := range detectedPkgs {
+		want[ch] = true
+	}
+	if want[channelBrew] && chrome.UninstallNextPkgBrew != "" {
+		fmt.Println(chrome.UninstallNextPkgBrew)
+	}
+	if want[channelScoop] && chrome.UninstallNextPkgScoop != "" {
+		fmt.Println(chrome.UninstallNextPkgScoop)
+	}
+	if want[channelWinget] && chrome.UninstallNextPkgWinget != "" {
+		fmt.Println(chrome.UninstallNextPkgWinget)
+	}
+	if want[channelNPM] && chrome.UninstallNextPkgNpm != "" {
+		fmt.Println(chrome.UninstallNextPkgNpm)
 	}
 }
 
@@ -269,32 +293,8 @@ func purgeSidecars(chrome cliChrome) {
 	}
 }
 
-func purgeBinaryAndPath(chrome cliChrome) {
-	exe, err := os.Executable()
-	if err != nil {
-		return
-	}
-	exe, err = filepath.Abs(exe)
-	if err != nil {
-		return
-	}
-	installDir := filepath.Dir(exe)
-
-	if err := os.Remove(exe); err != nil {
-		if chrome.UninstallBinaryManualFmt != "" {
-			fmt.Printf(chrome.UninstallBinaryManualFmt+"\n", exe)
-		}
-	} else if chrome.UninstallBinaryRemovedFmt != "" {
-		fmt.Printf(chrome.UninstallBinaryRemovedFmt+"\n", exe)
-	}
-
-	if runtime.GOOS == "windows" {
-		if removeWindowsUserPathEntry(installDir) && chrome.UninstallPathRemoved != "" {
-			fmt.Println(chrome.UninstallPathRemoved)
-		}
-		// Best-effort: remove empty install dir after binary gone.
-		_ = os.Remove(installDir)
-	}
+func purgeBinaryAndPath(chrome cliChrome) (handled map[string]bool, detected []installChannel) {
+	return removeCLIInstall(chrome)
 }
 
 func removeWindowsUserPathEntry(dir string) bool {

@@ -679,6 +679,9 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 			UninstallSidecarRemovedFmt         string `json:"uninstall_sidecar_removed_fmt"`
 			UninstallBinaryRemovedFmt          string `json:"uninstall_binary_removed_fmt"`
 			UninstallBinaryManualFmt           string `json:"uninstall_binary_manual_fmt"`
+			UninstallBinaryScheduledFmt        string `json:"uninstall_binary_scheduled_fmt"`
+			UninstallProcessesStopped          string `json:"uninstall_processes_stopped"`
+			UninstallPkgScheduledFmt           string `json:"uninstall_pkg_scheduled_fmt"`
 			UninstallPathRemoved               string `json:"uninstall_path_removed"`
 			UninstallDone                      string `json:"uninstall_done"`
 			UninstallNextExt                   string `json:"uninstall_next_ext"`
@@ -1043,6 +1046,9 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 		UninstallSidecarRemovedFmt:         body.CLI.UninstallSidecarRemovedFmt,
 		UninstallBinaryRemovedFmt:          body.CLI.UninstallBinaryRemovedFmt,
 		UninstallBinaryManualFmt:           body.CLI.UninstallBinaryManualFmt,
+		UninstallBinaryScheduledFmt:        body.CLI.UninstallBinaryScheduledFmt,
+		UninstallProcessesStopped:          body.CLI.UninstallProcessesStopped,
+		UninstallPkgScheduledFmt:           body.CLI.UninstallPkgScheduledFmt,
 		UninstallPathRemoved:               body.CLI.UninstallPathRemoved,
 		UninstallDone:                      body.CLI.UninstallDone,
 		UninstallNextExt:                   body.CLI.UninstallNextExt,
@@ -1442,6 +1448,9 @@ type cliChrome struct {
 	UninstallSidecarRemovedFmt         string
 	UninstallBinaryRemovedFmt          string
 	UninstallBinaryManualFmt           string
+	UninstallBinaryScheduledFmt        string
+	UninstallProcessesStopped          string
+	UninstallPkgScheduledFmt           string
 	UninstallPathRemoved               string
 	UninstallDone                      string
 	UninstallNextExt                   string

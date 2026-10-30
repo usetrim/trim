@@ -50,16 +50,23 @@ Same assets as `https://use-trim.com/install.sh` (default CGO-free build).
 
 ## Uninstall
 
-Prefer the product uninstall first (stops proxy + OS logon, then you can remove the package):
+One shot (preferred):
 
 ```bash
 trim uninstall
+```
+
+That stops Trim processes, deletes local data/Deep caches, renames the locked `vendor/trim.exe` on Windows, and a detached post-exit helper deletes it then runs `npm uninstall -g @usetrim/trim`. A package-local `.trim-uninstalling` marker blocks this shim from re-downloading the binary mid-uninstall.
+
+Fallback only if `trim` still resolves afterward:
+
+```bash
 npm uninstall -g @usetrim/trim
 ```
 
-On Windows, Always-on registers **Startup Run → `%LOCALAPPDATA%\Trim\bin\trim.exe`** (a stable copy outside this package). That means a running OS-logon daemon does **not** lock `vendor\trim.exe`, so `npm uninstall` / upgrades no longer hit `EPERM` on the npm tree.
+On Windows, Always-on registers **Startup Run → `%LOCALAPPDATA%\Trim\bin\trim.exe`** (a stable copy outside this package). `trim uninstall` also removes that tree.
 
-`preuninstall` still best-effort runs `daemon uninstall` + `stop` and clears any leftover process that might still hold this package’s `vendor\trim.exe` (legacy installs that ran the daemon from `node_modules`).
+`preuninstall` always unlocks this package’s `vendor\trim.exe`. On a real `npm uninstall` (not upgrade) it writes `.trim-uninstalling`, best-effort runs `daemon uninstall` + `stop`, then deletes or renames a locked vendor binary (reboot-pending delete on Windows). Prefer `trim uninstall` for a full machine purge (data dirs, Deep caches, ARP, scheduled binary delete); plain `npm uninstall -g` is not the same as `trim uninstall`.
 
 ## License
 

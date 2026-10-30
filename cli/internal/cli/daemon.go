@@ -128,6 +128,12 @@ var daemonInstallCmd = &cobra.Command{
 	},
 }
 
+// daemonUninstallPreserveBinary is set during `trim uninstall` so Windows
+// unregisters Always-on and stops the daemon without deleting
+// %LOCALAPPDATA%\Trim\bin here (wipe happens after the running image is renamed;
+// `--keep-data` skips that later wipe entirely).
+var daemonUninstallPreserveBinary bool
+
 var daemonUninstallCmd = &cobra.Command{
 	Use:   "uninstall",
 	Short: "",
