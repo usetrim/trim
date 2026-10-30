@@ -97,6 +97,7 @@ export function SettingsClient({ accessToken }: { accessToken?: string }) {
   const [tier, setTier] = useState("");
   const [engine, setEngine] = useState("");
   const [rate, setRate] = useState<number | null>(null);
+  const [backbone, setBackbone] = useState<string>("");
   const [autoStart, setAutoStart] = useState<boolean | null>(null);
   const [dirty, setDirty] = useState(false);
   const [freshKey, setFreshKey] = useState<string | null>(null);
@@ -128,6 +129,7 @@ export function SettingsClient({ accessToken }: { accessToken?: string }) {
     setTier(prefs.data.compression_tier);
     setEngine(prefs.data.deep_engine);
     setRate(prefs.data.deep_compression_rate);
+    setBackbone(prefs.data.deep_v2_backbone || "");
     setAutoStart(Boolean(prefs.data.auto_start_with_ide));
     setDirty(false);
   }, [prefs.data]);
@@ -208,6 +210,17 @@ export function SettingsClient({ accessToken }: { accessToken?: string }) {
     rateStep !== null &&
     rate >= rateMin &&
     rate <= rateMax;
+  const backboneLabel = prefs.data?.backbone_label?.trim() || "";
+  const backboneHint = prefs.data?.backbone_hint?.trim() || undefined;
+  const backboneOptions = Array.isArray(prefs.data?.deep_v2_backbone_options)
+    ? prefs.data.deep_v2_backbone_options.filter(
+        (o) => o && typeof o.id === "string" && o.id.trim() && typeof o.label === "string",
+      )
+    : [];
+  // Base Model picker is v2-only; do not block Save for v1/long when catalog UI is hidden.
+  const backboneValid =
+    engine !== "v2" ||
+    (backboneOptions.length > 0 && backboneOptions.some((o) => o.id === backbone));
 
   const identityColumns = useMemo<ColumnDef<LinkedIdentity>[]>(
     () => [
@@ -775,6 +788,35 @@ export function SettingsClient({ accessToken }: { accessToken?: string }) {
                 ) : null}
               </div>
 
+              <div className="space-y-2">
+                {backboneLabel &&
+                backboneOptions.length > 0 &&
+                engine === "v2" &&
+                prefs.data?.deep_tier_id &&
+                tier === prefs.data.deep_tier_id ? (
+                  <Field id="deep-v2-backbone" label={backboneLabel} description={backboneHint}>
+                    <Select
+                      value={backboneValid ? backbone : undefined}
+                      onValueChange={(v) => {
+                        setBackbone(v);
+                        setDirty(true);
+                      }}
+                    >
+                      <SelectTrigger id="deep-v2-backbone">
+                        <SelectValue placeholder={backboneLabel} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {backboneOptions.map((opt) => (
+                          <SelectItem key={opt.id} value={opt.id}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                ) : null}
+              </div>
+
               <Button
                 disabled={
                   !dirty ||
@@ -783,22 +825,31 @@ export function SettingsClient({ accessToken }: { accessToken?: string }) {
                   !tier ||
                   !engine ||
                   !rateValid ||
+                  !backboneValid ||
                   autoStart === null
                 }
                 isLoading={patch.isPending}
                 pendingLabel={prefs.data?.save_pending_label || undefined}
                 onClick={() => {
                   if (!rateValid || rate === null) return;
+                  if (engine === "v2" && !backboneValid) return;
                   if (autoStart === null) return;
-                  patch.mutate(
-                    {
-                      compression_tier: tier,
-                      deep_engine: engine,
-                      deep_compression_rate: rate,
-                      auto_start_with_ide: autoStart,
-                    },
-                    { onSuccess: () => setDirty(false) },
-                  );
+                  const body: {
+                    compression_tier: string;
+                    deep_engine: string;
+                    deep_compression_rate: number;
+                    deep_v2_backbone?: string;
+                    auto_start_with_ide: boolean;
+                  } = {
+                    compression_tier: tier,
+                    deep_engine: engine,
+                    deep_compression_rate: rate,
+                    auto_start_with_ide: autoStart,
+                  };
+                  if (engine === "v2") {
+                    body.deep_v2_backbone = backbone;
+                  }
+                  patch.mutate(body, { onSuccess: () => setDirty(false) });
                 }}
               >
                 {prefs.data?.save_action_label}

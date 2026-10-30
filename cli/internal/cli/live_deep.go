@@ -177,7 +177,7 @@ func prepareLiveDeep(cfg config.Local, chrome cliChrome) (liveModeLabel string, 
 
 	// Detached worker: parent prints this after /health so the shell can return cleanly.
 	if chrome.ProxyLiveDeepEnabledFmt != "" && !isTrimStartWorker() {
-		fmt.Printf(chrome.ProxyLiveDeepEnabledFmt+"\n", prefs.DeepEngine, prefs.CompressionRate, prefs.LiveDeepOOMPolicy)
+		fmt.Printf(chrome.ProxyLiveDeepEnabledFmt+"\n", prefs.DeepEngine, prefs.DeepV2Backbone, prefs.CompressionRate, prefs.LiveDeepOOMPolicy)
 	}
 
 	if prefs.LiveDeepWarmupOnStart {

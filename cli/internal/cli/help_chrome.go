@@ -100,6 +100,9 @@ func applyCLIHelpChrome(ch cliChrome) {
 	if s := strings.TrimSpace(ch.HelpConfigRatesShort); s != "" {
 		configRatesCmd.Short = s
 	}
+	if s := strings.TrimSpace(ch.HelpConfigModelsShort); s != "" {
+		configModelsCmd.Short = s
+	}
 
 	// Cursor Link keeps binary defaults when chrome has not synced these keys yet.
 	if s := strings.TrimSpace(ch.HelpCursorLinkShort); s != "" {

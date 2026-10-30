@@ -650,6 +650,7 @@ npm uninstall -g @usetrim/trim`,
           "On-device IDE or Claude Code POSTs to the local Trim URL from trim start (example http://127.0.0.1:8888/v1/chat/completions or /v1/messages). Cursor Agent POSTs to trim cursor-link url (HTTPS …/cl/<token>/v1)",
           "Trim captures workspace context and classifies vendor vs product signal",
           "Fast Mode drops vendor dumps, lockfiles, and log spam; keeps active files and stacks",
+          "When Preferences Deep is on and engine is v2, Deep runs LLMLingua-2 with the synced Base Model (catalog id such as mbert-base or xlm-roberta-large from trim config sync)",
           "If the OpenAI-door model matches an enabled provider_adapters prefix, Trim applies that dialect (anthropic_messages translate, or openai_compat host route via upstream_base_url), then calls that upstream",
           "Otherwise, if provider adapters are synced and no prefix matches: clear Trim error (no silent host invent). If adapters are not synced: same-shape forward to UPSTREAM_OPENAI_URL (OpenAI door) or UPSTREAM_ANTHROPIC_URL (Anthropic door)",
           "When logged in, usage is metered against your plan quotas",
@@ -766,7 +767,7 @@ npm uninstall -g @usetrim/trim`,
       },
       {
         type: "note",
-        text: "Always-on starts the local proxy with your IDE. Deep Mode still only runs when Preferences set Deep on (Fast then Deep per request). Everyday loop = open IDE (or trim start).",
+        text: "Always-on starts the local proxy with your IDE. Deep Mode still only runs when Preferences set Deep on (Fast then Deep per request). After changing compression rate or Base model, run trim config sync on each machine. Everyday loop = open IDE (or trim start).",
       },
     ],
   ),
@@ -792,7 +793,7 @@ npm uninstall -g @usetrim/trim`,
       { type: "h2", id: "deep", text: "Deep Mode" },
       {
         type: "p",
-        text: "Deep Mode runs stronger compression on your machine (LLMLingua). With Deep Mode on in Preferences, the live IDE proxy runs Deep after Fast on each request. trim compress --deep remains available for file/batch jobs. First run may download local dependencies. Trim cloud never loads Deep Mode engines.",
+        text: "Deep Mode runs stronger compression on your machine (LLMLingua). With Deep Mode on in Preferences, the live IDE proxy runs Deep after Fast on each request. New accounts default to engine v2 (LLMLingua-2); choose Base model in Settings (see Base Model). trim compress --deep remains available for file/batch jobs. First run may download local dependencies (mbert-base is smaller; xlm-roberta-large is larger). Trim cloud never loads Deep Mode engines.",
       },
       { type: "h2", id: "compression-rate", text: "Compression rate" },
       {
@@ -805,6 +806,7 @@ npm uninstall -g @usetrim/trim`,
           "Open Dashboard → Settings",
           "Confirm Deep Mode is on (new accounts start on Deep)",
           "Drag Compression rate left for more savings (for example 0.5) or right toward 1.0 to keep more text; or type the value next to the slider",
+          "If engine is v2, confirm Base model (Dashboard or trim config models)",
           "Save",
           "On each machine: trim config sync, then trim start again",
           "Optional CLI check: trim config rates (shows billing default and selected), trim config get compression-rate",
@@ -818,11 +820,36 @@ trim config set compression-rate 0.7
 trim config get compression-rate
 trim compress docs.txt --deep --rate 0.7`,
       },
+      { type: "h2", id: "base-model", text: "Base Model (LLMLingua-2)" },
+      {
+        type: "p",
+        text: "When Deep engine is v2, Trim uses the Microsoft LLMLingua-2 Base Model catalog from Admin billing (same idea as the Hugging Face Space Base Model radio: mbert-base and xlm-roberta-large). Catalog rows live in billing deep_v2_backbone_options as {id,label,model}; billing default_deep_v2_backbone stores the default catalog id (seeded mbert-base, matching the Space). xlm-roberta-large is larger, uses more RAM, and is slower. Pick in Dashboard → Settings or with trim config models. Live Deep and trim compress --deep --engine v2 use the synced Base Model (resolved Hugging Face id from the catalog), not a free-text model box.",
+      },
+      {
+        type: "ol",
+        items: [
+          "Open Dashboard → Settings",
+          "Confirm Deep Mode is on and engine is LLMLingua-2 (v2)",
+          "Choose Base model from the Admin catalog (ids such as mbert-base or xlm-roberta-large when enabled)",
+          "Save",
+          "On each machine: trim config sync, then trim start again",
+          "Optional CLI: trim config models, trim config set deep-v2-backbone <id>, trim config get deep-v2-backbone",
+        ],
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `trim config models
+trim config set deep-v2-backbone mbert-base
+trim config set deep-v2-backbone xlm-roberta-large
+trim config get deep-v2-backbone
+trim compress docs.txt --deep --engine v2 --rate 0.7`,
+      },
       { type: "h2", id: "engines", text: "Deep engines (pick one)" },
       {
         type: "ul",
         items: [
-          "LLMLingua-2 (v2) · recommended - default selected for new accounts; usually faster and lighter for most Deep jobs",
+          "LLMLingua-2 (v2) · recommended - default selected for new accounts; usually faster and lighter for most Deep jobs; Base Model picker applies here",
           "LongLLMLingua (long) - question-aware for long documents; requires --question",
           "LLMLingua (v1) - classic engine for strong general compression",
         ],
@@ -837,7 +864,7 @@ trim compress --bootstrap`,
       },
       {
         type: "note",
-        text: "New accounts default to Deep Mode (live proxy runs Fast then Deep). Switch to Fast anytime in Dashboard → Settings or with trim config set default-tier fast. Deep engine defaults to LLMLingua-2 (v2). Run trim config sync on each machine after saving. List keep-rates with trim config rates.",
+        text: "New accounts default to Deep Mode (live proxy runs Fast then Deep). Switch to Fast anytime in Dashboard → Settings or with trim config set default-tier fast. Deep engine defaults to LLMLingua-2 (v2) with Base Model mbert-base. Run trim config sync on each machine after saving. List keep-rates with trim config rates; list Base Models with trim config models.",
       },
       { type: "h2", id: "history-window", text: "Optional history window" },
       {
@@ -956,7 +983,10 @@ trim compress --bootstrap`,
           ["Start / stop the local helper", "trim start"],
           ["Cursor Agent public HTTPS link", "Trim Cursor Link"],
           ["Survive reboot", "trim autostart"],
-          ["Sync cloud Fast/Deep prefs", "trim config sync"],
+          [
+            "Sync cloud Fast/Deep prefs (rates + v2 Base Models)",
+            "trim config sync / rates / models",
+          ],
           ["Sign in again", "trim login"],
           ["Fully remove Trim", "Uninstall"],
         ],
@@ -1179,8 +1209,8 @@ Reply back → Trim → Claude Code → your terminal`,
           [
             "Deep Mode toggle (optional)",
             "Browser: use-trim.com/dashboard → Preferences",
-            "Deep on/off",
-            "Extra compression when enabled",
+            "Deep on/off; v2 Base model (mbert-base default)",
+            "Extra compression when enabled; change Base model under Settings when engine is v2",
           ],
         ],
       },
@@ -1853,7 +1883,7 @@ Cursor Agent: trim cursor-link enable → trim cursor-link url (HTTPS …/v1; no
         items: [
           "Stop with trim stop (localhost control endpoint)",
           "If the port is busy with a healthy Trim, attach is the expected path",
-          "After changing dashboard Preferences, run trim config sync; enforcers re-read the auto-start preference on their poll interval",
+          "After changing dashboard Preferences (rate, engine, or v2 Base model), run trim config sync; list Base Models with trim config models; enforcers re-read the auto-start preference on their poll interval",
           "After traffic: trim stats (Deep status + Deep stage) or open /dashboard → Show savings detail",
         ],
       },
@@ -2304,13 +2334,13 @@ trim compress --bootstrap`,
       },
       {
         type: "p",
-        text: "Use Fast Mode for interactive IDE chat when Deep is off (Fast-only path). With Preferences Deep on, live proxy runs Fast then Deep on each request using your compression rate (keep after/before; default 0.7). Use trim compress --deep --rate 0.7 for file/batch. Bootstrap may download local Deep dependencies. Deep Mode engines are not loaded in Trim cloud.",
+        text: "Use Fast Mode for interactive IDE chat when Deep is off (Fast-only path). With Preferences Deep on, live proxy runs Fast then Deep on each request using your compression rate (keep after/before; default 0.7) and, for engine v2, your synced Base Model. Use trim compress --deep --rate 0.7 for file/batch. Bootstrap may download local Deep dependencies (mbert-base is smaller; xlm-roberta-large is larger and slower). Deep Mode engines are not loaded in Trim cloud.",
       },
       { type: "h2", id: "engines", text: "Deep engines (pick one)" },
       {
         type: "ul",
         items: [
-          "v2 / LLMLingua-2 (recommended) - default selected for new accounts; usually faster and lighter",
+          "v2 / LLMLingua-2 (recommended) - default for new accounts; Base Model catalog applies (trim config models)",
           "long / LongLLMLingua - question-aware; pass --question",
           "v1 / LLMLingua - classic general compression",
         ],
@@ -2320,12 +2350,25 @@ trim compress --bootstrap`,
         type: "p",
         text: "Pass --rate as a Microsoft-style keep-rate (after/before), typically 0.3 to 1.0 step 0.1. Omit --rate to use the synced preference (Dashboard slider or trim config set compression-rate).",
       },
+      { type: "h2", id: "base-model", text: "Base Model (LLMLingua-2 v2)" },
+      {
+        type: "p",
+        text: "When engine is v2, trim compress and live Deep use the Base Model from trim config sync (Microsoft Space radio: mbert-base default, optional xlm-roberta-large). There is no --backbone flag; set the catalog id with Dashboard → Settings or trim config set deep-v2-backbone, then sync. List options with trim config models.",
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `trim config models
+trim config set deep-v2-backbone mbert-base
+trim config set deep-v2-backbone xlm-roberta-large
+trim compress notes.txt --deep --engine v2 --rate 0.7`,
+      },
       { type: "h2", id: "when", text: "When to use compress vs start" },
       {
         type: "ul",
         items: [
           "trim start: interactive IDE chat every turn (Fast always; Deep after Fast when Preferences Deep is on)",
-          "trim compress: on-machine file/batch Deep compression (same engines and rate as live proxy Deep)",
+          "trim compress: on-machine file/batch Deep compression (same engines, rate, and v2 Base Model as live proxy Deep)",
           "Deep on live chat is stronger but slower (first turn may load the local model); turn Deep off in Preferences for Fast-only latency",
         ],
       },
@@ -2361,20 +2404,24 @@ active_file_protection=true
 trim config get default-tier
 trim config set default-tier fast
 trim config set default-tier deep
+trim config rates
 trim config set compression-rate 0.7
+trim config models
+trim config set deep-v2-backbone mbert-base
 trim config sync`,
       },
       {
         type: "p",
-        text: "New accounts default to Deep Mode. get shows local preferences under ~/.config/trim/ (default-tier, deep-engine, compression-rate). rates lists allowed keep-rates and marks billing default plus selected. set writes one key locally (when logged in, default-tier and compression-rate also update your Trim cloud profile). sync pulls Fast/Deep preferences and provider adapters from your Trim cloud profile (requires trim login).",
+        text: "New accounts default to Deep Mode. get shows local preferences under ~/.config/trim/ (default-tier, deep-engine, deep-v2-backbone, compression-rate). rates lists allowed keep-rates and marks billing default plus selected. models lists Microsoft LLMLingua-2 Base Models and marks billing default plus selected. set writes one key locally (when logged in, default-tier, compression-rate, and deep-v2-backbone also update your Trim cloud profile). sync pulls Fast/Deep preferences and provider adapters from your Trim cloud profile (requires trim login).",
       },
       {
         type: "ul",
         items: [
           "fast: live IDE proxy runs Fast Mode only",
-          "deep: live IDE proxy runs Fast then Deep (LLMLingua) at your compression rate",
+          "deep: live IDE proxy runs Fast then Deep (LLMLingua-2) at your compression rate and Base Model",
           "compression-rate: keep-rate after/before (Microsoft-aligned; default 0.7; typically 0.3 to 1.0 step 0.1)",
-          "After Dashboard → Settings changes (including dragging the rate slider): trim config sync, then trim start again",
+          "deep-v2-backbone: Microsoft Base Model id from Admin catalog (default mbert-base; optional xlm-roberta-large)",
+          "After Dashboard → Settings changes (rate slider or Base model): trim config sync, then trim start again",
         ],
       },
       { type: "h2", id: "sync", text: "Config sync" },
@@ -2385,7 +2432,7 @@ trim config sync`,
       },
       {
         type: "p",
-        text: "After changing Compression defaults in the dashboard (Deep on/off, engine, compression rate), sync so the local proxy picks up preferences. New accounts default to Deep (live proxy runs Fast then Deep). Switch to Fast anytime for Fast-only turns.",
+        text: "After changing Compression defaults in the dashboard (Deep on/off, engine, compression rate, Base model), sync so the local proxy picks up preferences. New accounts default to Deep (live proxy runs Fast then Deep). Switch to Fast anytime for Fast-only turns.",
       },
       {
         type: "note",
@@ -2493,7 +2540,7 @@ export TRIM_HISTORY_KEEP_TURNS=8
         items: [
           "Fast Mode: always runs; can also shorten compressible text without stubbing whole turns",
           "history_keep_turns: optional Fast-path sliding window that stubs older eligible turns",
-          "Deep Mode: optional; compresses last-user plain text only (does not smash system/tools into LLMLingua)",
+          "Deep Mode: optional; compresses last-user plain text only (does not smash system/tools into LLMLingua). For engine v2, uses your synced Base Model and keep-rate (separate from history_keep_turns stubbing)",
         ],
       },
       {
@@ -4689,7 +4736,7 @@ gpt-4o-mini`,
           "Leave Start Trim with your IDE checked under Settings (default on; toggles save immediately)",
           "Issue or register a device-bound API key under Settings",
           "Open Team to create a workspace and invite seats",
-          "Save compression Preferences, then run trim config sync on each machine",
+          "Save compression Preferences (Deep on/off, engine, compression rate, Base model when engine is v2), then run trim config sync on each machine",
         ],
       },
       { type: "h2", id: "leave", text: "Leaving Trim" },
@@ -5003,12 +5050,13 @@ gpt-4o-mini`,
           "Deep Mode is on by default for new accounts (live proxy runs Fast then Deep); switch to Fast in Settings or with trim config set default-tier fast",
           "Deep engine defaults to LLMLingua-2 (v2); switch to long (needs a question) or v1 if you prefer",
           "Drag Compression rate (keep after/before; default 0.7; typically 0.3 to 1.0 step 0.1), Save, then on each machine: trim config sync (or trim config set compression-rate 0.7 while logged in)",
-          "Or list and set rates from CLI: trim config rates → trim config set compression-rate 0.7 → trim config sync",
+          "Choose Base model (Microsoft LLMLingua-2: mbert-base default, optional xlm-roberta-large), Save, then trim config sync",
+          "Or list and set from CLI: trim config rates / models → trim config set compression-rate 0.7 → trim config set deep-v2-backbone mbert-base → trim config sync",
         ],
       },
       {
         type: "p",
-        text: "The rate control matches Microsoft LLMLingua demos: lower keeps less of the prompt; 1.0 keeps almost everything. Bounds and step come from Admin billing (deep_compression_rate_min / max / step).",
+        text: "The rate control matches Microsoft LLMLingua demos: lower keeps less of the prompt; 1.0 keeps almost everything. Bounds and step come from Admin billing (deep_compression_rate_min / max / step). The Base model control matches the Hugging Face Space Base Model radio (mbert-base default, optional xlm-roberta-large); catalog and default come from Admin billing (deep_v2_backbone_options / default_deep_v2_backbone). Each catalog row stores the official Hugging Face id (meetingbank checkpoints).",
       },
       {
         type: "callout",
@@ -5192,7 +5240,7 @@ gpt-4o-mini`,
         items: [
           "Tabs: pricing, deep, lists, policy (labels from chrome)",
           "Pricing - annual_discount_percent, currency, proration / upgrade dials, default_seat_quantity, min_seat_quantity, default_plan_interval when returned",
-          "Deep - default/min/max compression rate (keep after/before), OOM policy, warm on start, v1/v2/long model ids, force_tokens JSON",
+          "Deep - default/min/max/step compression rate (keep after/before), OOM policy, warm on start, LLMLingua-2 Base Model catalog (deep_v2_backbone_options + default_deep_v2_backbone; seeded mbert-base / optional xlm-roberta-large), read-only deep_v2_model (resolved HF id for the billing default backbone), editable deep_v1_model / deep_long_model, force_tokens JSON",
           "Lists - pagination page sizes and chart dials (TTL / days / top-N / date_range_months) - not email/IP denylist (see Denylist)",
           "Policy - cancel / downgrade and related policy dials",
         ],
@@ -5216,7 +5264,7 @@ gpt-4o-mini`,
     [
       {
         type: "p",
-        text: "Product settings align new-account defaults with customer Preferences (Deep Mode by default = Fast then Deep; Deep engine v2) without inventing client fallbacks.",
+        text: "Product settings align new-account defaults with customer Preferences (Deep Mode by default = Fast then Deep; Deep engine v2) without inventing client fallbacks. LLMLingua-2 Base Model catalog and default (mbert-base / optional xlm-roberta-large) live under Admin → Billing → Settings → Deep, not Product tabs.",
       },
       { type: "h2", id: "tabs", text: "Config tabs" },
       {
@@ -5904,7 +5952,8 @@ Optional build features: follow README flags for native parsers`,
         type: "ul",
         items: [
           "Confirm active files and stacks you need are kept (check Fast Mode activity)",
-          "Adjust compression preferences in the dashboard",
+          "Raise Compression rate toward 1.0 (less drop) in Dashboard → Settings, Save, then trim config sync",
+          "If Deep engine is v2, try Base model mbert-base first (faster) or xlm-roberta-large when quality needs the heavier backbone (more RAM/slower); list with trim config models",
           "Try Deep Mode: turn Preferences Deep on (live proxy) and/or trim compress --deep for file/batch jobs",
           "If history_keep_turns is set, try 0 temporarily - stubbing old turns can hide details the model still needs",
           "Compare tokens in vs out on trim status or the usage table",
@@ -5925,7 +5974,7 @@ Optional build features: follow README flags for native parsers`,
         type: "ul",
         items: [
           "Run trim uninstall (full purge by default), or curl -fsSL https://use-trim.com/uninstall.sh | sh / irm https://use-trim.com/uninstall.ps1 | iex",
-          "On Windows, Settings → Apps → Trim runs the same full purge including %USERPROFILE%\\.trim and Deep caches from site_messages",
+          "On Windows, Settings → Apps → Trim runs the same full purge including %USERPROFILE%\\.trim and Deep Hugging Face hub dirs from site_messages (CLI_UNINSTALL_HF_HUB_DIRS covers both mbert and xlm-roberta-large meetingbank caches when configured)",
           "Clear the IDE key and uninstall the Trim IDE extension in the editor",
           "If you used brew/scoop/winget, run trim uninstall first, then the package-manager uninstall",
           "Deleting a cloud account does not wipe local machines-uninstall on each device",
@@ -5964,7 +6013,7 @@ Optional build features: follow README flags for native parsers`,
       { type: "h2", id: "fast-vs-deep", text: "When should I use Deep Mode?" },
       {
         type: "p",
-        text: "Use Fast Mode for interactive IDE chat when Deep Mode is off. When Deep Mode is on in Preferences, trim start runs Fast then Deep on each request at your compression rate (default 0.7). Set the rate in Dashboard → Settings or with trim config set compression-rate / trim compress --deep --rate. Engines are not loaded in Trim cloud.",
+        text: "Use Fast Mode for interactive IDE chat when Deep Mode is off. When Deep Mode is on in Preferences, trim start runs Fast then Deep on each request at your compression rate (default 0.7) and, for LLMLingua-2 (v2), your Base Model (default mbert-base; optional xlm-roberta-large). Set rate and Base model in Dashboard → Settings, or with trim config rates / models and trim config set compression-rate / deep-v2-backbone, then trim config sync. File/batch: trim compress --deep --rate. Engines are not loaded in Trim cloud.",
       },
       {
         type: "h2",
