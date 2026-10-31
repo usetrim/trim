@@ -15,7 +15,7 @@ Point Cursor, Continue, VS Code Chat, Claude Code, and similar clients at a loca
 
 - **OpenAI-compatible local proxy** - one Base URL (`http://127.0.0.1:8888/v1`) for coding IDEs and CLIs
 - **Fast Mode** - AST / heuristic compression on the hot path (`trim start`)
-- **Deep Mode** - stronger local compression (LLMLingua family); stays on-device
+- **Deep Mode** - Segmented Allowlist Deep on the live proxy when Preferences Deep is on (freeze tools/paths; compress each last-user prose island in place, order preserved); LLMLingua stays on-device
 - **Cloud control plane** (optional) - Google / GitHub / GitLab login, credits, Paddle billing, receipts, workspaces
 - **Operator console** - `apps/admin` for plans, billing settings, provider adapters, compliance
 

@@ -17,6 +17,7 @@ const cloudflaredDownloadsDocs = "https://developers.cloudflare.com/cloudflare-o
 
 // ensureCloudflared returns a usable cloudflared path, downloading into ~/.trim/bin when missing.
 func ensureCloudflared() (string, error) {
+	chrome := loadCLIChrome()
 	if p, err := findCloudflared(); err == nil {
 		return p, nil
 	}
@@ -37,21 +38,35 @@ func ensureCloudflared() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	fmt.Fprintln(os.Stderr, "Cursor Link: downloading cloudflared to "+dest)
+	if fmtStr := strings.TrimSpace(chrome.CursorLinkDownloadingFmt); fmtStr != "" {
+		fmt.Fprintf(os.Stderr, fmtStr+"\n", dest)
+	}
 	client := &http.Client{Timeout: 3 * time.Minute}
 	res, err := client.Get(url)
 	if err != nil {
-		return "", fmt.Errorf("download cloudflared: %w\nInstall manually: %s\nOr set TRIM_CLOUDFLARED to a cloudflared binary", err, cloudflaredInstallHint())
+		fmtStr := strings.TrimSpace(chrome.CursorLinkDownloadErrFmt)
+		if fmtStr == "" {
+			return "", chrome.fail("")
+		}
+		return "", fmt.Errorf(fmtStr, err, cloudflaredInstallHint(chrome))
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("download cloudflared: HTTP %s\nInstall manually: %s\nOr set TRIM_CLOUDFLARED", res.Status, cloudflaredInstallHint())
+		fmtStr := strings.TrimSpace(chrome.CursorLinkDownloadHTTPFmt)
+		if fmtStr == "" {
+			return "", chrome.fail("")
+		}
+		return "", fmt.Errorf(fmtStr, res.Status, cloudflaredInstallHint(chrome))
 	}
 	tmp := dest + ".tmp"
 	if strings.HasSuffix(url, ".tgz") {
 		if err := extractCloudflaredFromTGZ(res.Body, tmp); err != nil {
 			_ = os.Remove(tmp)
-			return "", fmt.Errorf("extract cloudflared: %w\nRun trim cursor-link enable && trim start again, or brew install cloudflared if Homebrew exists, or set TRIM_CLOUDFLARED", err)
+			fmtStr := strings.TrimSpace(chrome.CursorLinkExtractErrFmt)
+			if fmtStr == "" {
+				return "", chrome.fail("")
+			}
+			return "", fmt.Errorf(fmtStr, err)
 		}
 	} else {
 		f, err := os.OpenFile(tmp, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o755)
@@ -77,6 +92,7 @@ func ensureCloudflared() (string, error) {
 }
 
 func extractCloudflaredFromTGZ(r io.Reader, dest string) error {
+	chrome := loadCLIChrome()
 	gz, err := gzip.NewReader(r)
 	if err != nil {
 		return err
@@ -108,10 +124,15 @@ func extractCloudflaredFromTGZ(r io.Reader, dest string) error {
 		}
 		return f.Close()
 	}
-	return fmt.Errorf("cloudflared binary not found inside archive")
+	msg := strings.TrimSpace(chrome.CursorLinkArchiveBinMissing)
+	if msg == "" {
+		return chrome.fail("")
+	}
+	return fmt.Errorf("%s", msg)
 }
 
 func cloudflaredDownloadURL() (string, error) {
+	chrome := loadCLIChrome()
 	// Cloudflare GitHub release asset names (best-effort auto-install into ~/.trim/bin).
 	const base = "https://github.com/cloudflare/cloudflared/releases/latest/download/"
 	switch runtime.GOOS + "/" + runtime.GOARCH {
@@ -134,34 +155,47 @@ func cloudflaredDownloadURL() (string, error) {
 	case "linux/arm":
 		return base + "cloudflared-linux-arm", nil
 	default:
-		return "", fmt.Errorf("unsupported platform %s/%s for auto-download; %s; or set TRIM_CLOUDFLARED", runtime.GOOS, runtime.GOARCH, cloudflaredInstallHint())
+		fmtStr := strings.TrimSpace(chrome.CursorLinkUnsupportedPlatformFmt)
+		if fmtStr == "" {
+			return "", chrome.fail("")
+		}
+		return "", fmt.Errorf(fmtStr, runtime.GOOS, runtime.GOARCH, cloudflaredInstallHint(chrome))
 	}
 }
 
-func cloudflaredInstallHint() string {
+func cloudflaredInstallHint(chrome cliChrome) string {
 	switch runtime.GOOS {
 	case "windows":
-		return "Windows: run trim cursor-link enable && trim start (auto-download), or download cloudflared-windows-amd64.exe into %USERPROFILE%\\.trim\\bin, or winget install --id Cloudflare.cloudflared if winget exists"
+		return strings.TrimSpace(chrome.CursorLinkHintWindows)
 	case "darwin":
-		return "macOS: run trim cursor-link enable && trim start (auto-download), or brew install cloudflared if Homebrew exists, or set TRIM_CLOUDFLARED"
+		return strings.TrimSpace(chrome.CursorLinkHintDarwin)
 	case "linux":
-		return "Linux: run trim cursor-link enable && trim start (auto-download), or install from " + cloudflaredDownloadsDocs + ", or set TRIM_CLOUDFLARED"
+		return strings.TrimSpace(chrome.CursorLinkHintLinux)
 	default:
-		return "install cloudflared from " + cloudflaredDownloadsDocs + " or set TRIM_CLOUDFLARED"
+		return strings.TrimSpace(chrome.CursorLinkHintOther)
 	}
 }
 
 func findOrInstallCloudflared() (string, error) {
+	chrome := loadCLIChrome()
 	p, err := findCloudflared()
 	if err == nil {
 		return p, nil
 	}
+	hint := cloudflaredInstallHint(chrome)
+	combine := strings.TrimSpace(chrome.CursorLinkCombineErrHintFmt)
 	if _, uerr := cloudflaredDownloadURL(); uerr != nil {
-		return "", fmt.Errorf("%v\n%s", err, cloudflaredInstallHint())
+		if combine == "" || hint == "" {
+			return "", chrome.fail("")
+		}
+		return "", fmt.Errorf(combine, err, hint)
 	}
 	dest, derr := ensureCloudflared()
 	if derr != nil {
-		return "", fmt.Errorf("%v\n%s", derr, cloudflaredInstallHint())
+		if combine == "" || hint == "" {
+			return "", chrome.fail("")
+		}
+		return "", fmt.Errorf(combine, derr, hint)
 	}
 	return dest, nil
 }

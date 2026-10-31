@@ -7,6 +7,7 @@ import (
 
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
+	"github.com/usetrim/trim/cli/internal/clierr"
 )
 
 // compressFn is the Deep engine entrypoint (swapped in unit tests).
@@ -26,7 +27,7 @@ func (c ChatDeepChrome) err(msg string) error {
 	if c.Unavailable != "" {
 		return fmt.Errorf("%s", c.Unavailable)
 	}
-	return fmt.Errorf("deep chat chrome unavailable")
+	return clierr.ErrChromeUnavailable
 }
 
 // CompressOpenAIChatJSON runs Deep on the last user turn only for every OpenAI-shape
@@ -81,20 +82,132 @@ func compressChatMessagesJSON(body []byte, engine Engine, rate float64, question
 		n := estimateTokens(body)
 		return body, n, n, nil
 	}
-	// Coding-agent fail-closed: LLMLingua is lossy and can mangle paths/URLs/fenced code
-	// even when system/tools are frozen (same symptom class as “garbled” for GPT/Claude/Gemini).
-	if LastUserUnsafeForDeepLLMLingua(blob) {
+	// Segmented Allowlist Deep: freeze paths/URLs/fences/JSON forever; compress each
+	// prose island in place (order preserved). Never ban the whole turn for one path.
+	spans := segmentUserTextForDeep(blob)
+	if DeepProseFromUserText(blob) == "" {
 		n := estimateTokens(body)
 		return body, n, n, nil
 	}
 
-	// Microsoft LLMLingua: keep the question high-sensitivity; compress filler/context only.
-	ctxText, qText := splitDeepContextQuestion(blob)
-	q := strings.TrimSpace(question)
-	if q == "" {
-		q = qText
+	rewritten, origin, compressed, applied, err := applySegmentedAllowlistDeep(
+		spans, engine, rate, question, ux, timeoutSec, rt,
+	)
+	if err != nil {
+		return nil, 0, 0, err
 	}
-	if q == "" {
+	if !applied {
+		n := estimateTokens(body)
+		return body, n, n, nil
+	}
+
+	newContent := rewriteLastUserContent(arr[lastUser], rewritten)
+	path := fmt.Sprintf("messages.%d.content", lastUser)
+	out, err := sjson.SetBytes(body, path, newContent)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+	// Phase D: JSON/tools/prior turns intact; else fail-closed Fast (original body).
+	if !DeepControlWireIntact(body, out) {
+		n := estimateTokens(body)
+		return body, n, n, nil
+	}
+	if os.Getenv("TRIM_DEEP_DEBUG") != "" {
+		fmt.Fprintf(os.Stderr, "trim-deep-debug: origin=%d compressed=%d body_in=%d body_out=%d\n",
+			origin, compressed, len(body), len(out))
+	}
+	return out, origin, compressed, nil
+}
+
+// applySegmentedAllowlistDeep compresses each prose island independently and keeps
+// protected spans byte-stable in original order (Microsoft granular + CompressAgent).
+// Per-island fail-closed: expansion/garble on one island keeps that island verbatim.
+// applied=false when no island shrank (caller keeps Fast body).
+func applySegmentedAllowlistDeep(
+	spans []deepTextSpan,
+	engine Engine,
+	rate float64,
+	question string,
+	ux UXChrome,
+	timeoutSec int,
+	rt Runtime,
+) (rewritten string, origin, compressed int, applied bool, err error) {
+	var proseIdx []int
+	for i, s := range spans {
+		if s.protected || strings.TrimSpace(s.text) == "" {
+			continue
+		}
+		proseIdx = append(proseIdx, i)
+	}
+	if len(proseIdx) == 0 {
+		return "", 0, 0, false, nil
+	}
+
+	out := make([]string, len(spans))
+	for i, s := range spans {
+		out[i] = s.text
+	}
+
+	var totalOrigin, totalCompressed int
+	anyApplied := false
+	for n, idx := range proseIdx {
+		island := spans[idx].text
+		isLast := n == len(proseIdx)-1
+		compressedIsland, oTok, cTok, ok, cErr := compressOneProseIsland(
+			island, isLast, engine, rate, question, ux, timeoutSec, rt,
+		)
+		if cErr != nil {
+			return "", 0, 0, false, cErr
+		}
+		if !ok {
+			continue
+		}
+		out[idx] = compressedIsland
+		totalOrigin += oTok
+		totalCompressed += cTok
+		anyApplied = true
+	}
+	if !anyApplied || totalCompressed >= totalOrigin {
+		return "", 0, 0, false, nil
+	}
+	return strings.Join(out, ""), totalOrigin, totalCompressed, true, nil
+}
+
+// compressOneProseIsland runs LLMLingua on one prose span.
+// Last island keeps Microsoft instruction/context/question split; earlier islands
+// are context-only. ok=false means fail-closed keep original span text.
+// Leading/trailing whitespace on the island stays byte-stable so path separators
+// beside protected spans are not glued (e.g. "open " + path).
+func compressOneProseIsland(
+	island string,
+	isLast bool,
+	engine Engine,
+	rate float64,
+	question string,
+	ux UXChrome,
+	timeoutSec int,
+	rt Runtime,
+) (compressedPrompt string, origin, compressed int, ok bool, err error) {
+	lead, core, trail := splitEdgeWhitespace(island)
+	if core == "" {
+		return "", 0, 0, false, nil
+	}
+	prose := core
+	ctxText := prose
+	qText := ""
+	q := ""
+	if isLast {
+		ctxText, qText = splitDeepContextQuestion(prose)
+		q = strings.TrimSpace(question)
+		if q == "" {
+			q = qText
+		}
+		if q == "" {
+			q = ctxText
+		}
+	} else {
+		// Non-trailing islands are context-only; never inject the caller's trailing
+		// question into every island. Long engine still needs a question field.
 		q = ctxText
 	}
 	req := Request{
@@ -104,68 +217,69 @@ func compressChatMessagesJSON(body []byte, engine Engine, rate float64, question
 		Engine:   string(engine),
 	}
 	if err := rt.ApplyEngine(&req, engine); err != nil {
-		return nil, 0, 0, err
+		return "", 0, 0, false, err
 	}
 	res, err := compressFn(req, ux, timeoutSec)
 	if err != nil {
-		return nil, 0, 0, err
+		return "", 0, 0, false, err
 	}
 
-	origin := res.OriginTokens
-	compressed := res.CompressedTokens
+	origin = res.OriginTokens
+	compressed = res.CompressedTokens
 	if origin <= 0 {
-		origin = estimateTokens([]byte(blob))
+		origin = estimateTokens([]byte(prose))
 	}
 	if compressed <= 0 {
 		compressed = estimateTokens([]byte(res.CompressedPrompt))
 	}
 
-	compressedPrompt := res.CompressedPrompt
+	compressedPrompt = res.CompressedPrompt
 	appendedQuestion := false
-	if ctxText != blob && strings.TrimSpace(qText) != "" &&
+	// Only append preserved question when Microsoft split actually separated
+	// context from a trailing question line (multiline island).
+	if isLast && ctxText != prose && strings.TrimSpace(qText) != "" &&
 		!strings.Contains(compressedPrompt, qText) {
 		compressedPrompt = strings.TrimSpace(compressedPrompt) + "\n" + qText
 		appendedQuestion = true
 	}
 
-	// Fail-closed with comparable units. If we appended the preserved question,
-	// engine compressed_tokens no longer cover the full last-user text - re-estimate
-	// both sides with the same estimator (byte/4). Mixing engine tokens with
-	// estimateTokens(appendedPrompt) falsely rejected every Deep result (live 0% Saved).
 	if appendedQuestion {
-		origin = estimateTokens([]byte(blob))
+		origin = estimateTokens([]byte(prose))
 		compressed = estimateTokens([]byte(compressedPrompt))
 	}
 	if compressed >= origin {
 		if os.Getenv("TRIM_DEEP_DEBUG") != "" {
-			fmt.Fprintf(os.Stderr, "trim-deep-debug: reject compressed>=origin origin=%d compressed=%d appended=%v blob_len=%d prompt_len=%d\n",
-				origin, compressed, appendedQuestion, len(blob), len(compressedPrompt))
+			fmt.Fprintf(os.Stderr, "trim-deep-debug: island reject compressed>=origin origin=%d compressed=%d\n",
+				origin, compressed)
 		}
-		n := estimateTokens(body)
-		return body, n, n, nil
+		return "", 0, 0, false, nil
 	}
-	// Byte-length guard when engine counts were missing, or after question append.
 	if (res.OriginTokens <= 0 && res.CompressedTokens <= 0) || appendedQuestion {
-		if len(compressedPrompt) >= len(blob) {
+		if len(compressedPrompt) >= len(prose) {
 			if os.Getenv("TRIM_DEEP_DEBUG") != "" {
-				fmt.Fprintf(os.Stderr, "trim-deep-debug: reject byte-guard blob_len=%d prompt_len=%d\n", len(blob), len(compressedPrompt))
+				fmt.Fprintf(os.Stderr, "trim-deep-debug: island reject byte-guard prose_len=%d prompt_len=%d\n",
+					len(prose), len(compressedPrompt))
 			}
-			n := estimateTokens(body)
-			return body, n, n, nil
+			return "", 0, 0, false, nil
 		}
 	}
+	return lead + compressedPrompt + trail, origin, compressed, true, nil
+}
 
-	newContent := rewriteLastUserContent(arr[lastUser], compressedPrompt)
-	path := fmt.Sprintf("messages.%d.content", lastUser)
-	out, err := sjson.SetBytes(body, path, newContent)
-	if err != nil {
-		return nil, 0, 0, err
+func splitEdgeWhitespace(s string) (lead, core, trail string) {
+	if s == "" {
+		return "", "", ""
 	}
-	if os.Getenv("TRIM_DEEP_DEBUG") != "" {
-		fmt.Fprintf(os.Stderr, "trim-deep-debug: appended=%v origin=%d compressed=%d blob_len=%d prompt_len=%d body_in=%d body_out=%d\n",
-			appendedQuestion, origin, compressed, len(blob), len(compressedPrompt), len(body), len(out))
+	core = strings.TrimSpace(s)
+	if core == "" {
+		return s, "", ""
 	}
-	return out, origin, compressed, nil
+	start := strings.Index(s, core)
+	if start < 0 {
+		return "", s, ""
+	}
+	end := start + len(core)
+	return s[:start], core, s[end:]
 }
 
 // splitDeepContextQuestion separates noisy user filler (context) from the trailing
@@ -562,8 +676,9 @@ func SkipLiveDeepForRequestPath(path string) bool {
 }
 
 // EstimateLiveDeepInputTokens estimates compressible chat text tokens for live when-to-invoke.
-// Uses trailing-user plain text only (not system/assistant/developer/tool, not <system-reminder>).
-// Matches Compress* so agent chrome cannot falsely trigger Deep; prior tool history alone does not block.
+// Uses trailing-user prose islands only (not system/assistant/developer/tool, not
+// <system-reminder>, not path/URL/fence/JSON spans). Matches Compress* Segmented
+// Allowlist Deep so Cursor/Claude mixed turns still invoke Deep on eligible prose.
 func EstimateLiveDeepInputTokens(body []byte, path string) int {
 	_ = path
 	if !gjson.ValidBytes(body) {
@@ -578,24 +693,24 @@ func EstimateLiveDeepInputTokens(body []byte, path string) int {
 		return 0
 	}
 	last := arr[len(arr)-1]
-	// Gate must match Compress*: only last-user plain text (not frozen signatures/reminders).
-	// Using messageCompressibleText here historically counted Gemini/Anthropic chrome and
-	// falsely triggered Deep - same class as the Claude Code system-token gate bug.
+	// Gate must match Compress*: last-user prose islands only (not frozen signatures/
+	// reminders/paths). Using messageCompressibleText here historically counted
+	// Gemini/Anthropic chrome and falsely triggered Deep.
 	plain := strings.TrimSpace(lastUserDeepPlainText(last))
 	if plain == "" {
 		return 0
 	}
-	if LastUserUnsafeForDeepLLMLingua(plain) {
+	prose := DeepProseFromUserText(plain)
+	if prose == "" {
 		return 0
 	}
-	return estimateTokens([]byte(plain))
+	return estimateTokens([]byte(prose))
 }
 
-// LastUserUnsafeForDeepLLMLingua reports last-user text that must not enter LLMLingua.
-// Microsoft LLMLingua removes tokens by design; on coding-agent turns that can corrupt
-// file paths, URLs, fenced code, or dense JSON - producing “garbled” behavior even when
-// system/tools chrome is correctly frozen (Claude Code / Cursor / GPT / Gemini / DeepSeek).
-// Fail-closed to Fast-only for every door.
+// LastUserUnsafeForDeepLLMLingua reports last-user text that contains spans which must
+// never enter LLMLingua (paths, URLs, fenced code, dense JSON). Segmented Allowlist
+// Deep still compresses prose islands beside those spans; Compress* / Estimate* use
+// DeepProseFromUserText. This helper remains for classifiers and tests.
 func LastUserUnsafeForDeepLLMLingua(blob string) bool {
 	blob = strings.TrimSpace(blob)
 	if blob == "" {
@@ -689,6 +804,65 @@ func lastUserHasRelativeCodePath(blob string) bool {
 	return false
 }
 
+// DeepControlWireIntact is Phase D structural integrity: valid JSON, tools/system/tool_choice
+// byte-stable, prior messages verbatim, last-user role + cache/signature chrome preserved.
+func DeepControlWireIntact(in, out []byte) bool {
+	if len(out) == 0 || !gjson.ValidBytes(out) {
+		return false
+	}
+	if !gjson.ValidBytes(in) {
+		return false
+	}
+	inMsgs := gjson.GetBytes(in, "messages")
+	outMsgs := gjson.GetBytes(out, "messages")
+	// Non-chat bodies: chat wire checks N/A (size/expansion gates still apply).
+	if !inMsgs.Exists() && !outMsgs.Exists() {
+		return true
+	}
+	if !inMsgs.IsArray() || !outMsgs.IsArray() {
+		return false
+	}
+	inArr := inMsgs.Array()
+	outArr := outMsgs.Array()
+	if len(inArr) != len(outArr) {
+		return false
+	}
+	for i := 0; i < len(inArr)-1; i++ {
+		if inArr[i].Raw != outArr[i].Raw {
+			return false
+		}
+	}
+	for _, key := range []string{"tools", "tool_choice", "system"} {
+		inV := gjson.GetBytes(in, key)
+		outV := gjson.GetBytes(out, key)
+		if inV.Exists() != outV.Exists() {
+			return false
+		}
+		if inV.Exists() && inV.Raw != outV.Raw {
+			return false
+		}
+	}
+	if len(inArr) == 0 {
+		return true
+	}
+	last := len(inArr) - 1
+	if !strings.EqualFold(inArr[last].Get("role").String(), outArr[last].Get("role").String()) {
+		return false
+	}
+	inRaw := inArr[last].Raw
+	outRaw := outArr[last].Raw
+	if strings.Contains(inRaw, "thought_signature") && !strings.Contains(outRaw, "thought_signature") {
+		return false
+	}
+	if strings.Contains(inRaw, "cache_control") && !strings.Contains(outRaw, "cache_control") {
+		return false
+	}
+	if strings.Contains(inRaw, "prompt_cache_breakpoint") && !strings.Contains(outRaw, "prompt_cache_breakpoint") {
+		return false
+	}
+	return true
+}
+
 // DeepExpanded reports whether Deep grew the payload vs Fast-only input (fail-closed gate).
 // Must stay the logical inverse of proxy.shouldAcceptDeepResult (same checks / order).
 func DeepExpanded(fastBody, deepBody []byte, originTokens, compressedTokens int) bool {
@@ -702,6 +876,9 @@ func DeepExpanded(fastBody, deepBody []byte, originTokens, compressedTokens int)
 		return true
 	}
 	if estimateTokens(deepBody) > estimateTokens(fastBody) {
+		return true
+	}
+	if !DeepControlWireIntact(fastBody, deepBody) {
 		return true
 	}
 	return false

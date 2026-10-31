@@ -39,6 +39,9 @@ type Config struct {
 	CustomQueries []string
 	// HistoryKeepTurns: last N non-system chat turns kept; older turns stubbed. 0 = off.
 	HistoryKeepTurns int
+	// ToolResultClearKeepRecent: keep last N tool_result / role=tool payloads; older cleared
+	// via site_messages chrome. 0 = off (default). Requires synced ToolResultClearedFmt.
+	ToolResultClearKeepRecent int
 }
 
 // Load walks from startDir upward looking for .trimrc and .tokenignore.
@@ -145,6 +148,10 @@ func parseTrimrc(raw string, cfg *Config) {
 		case "history_keep_turns", "keep_turns", "history_turns":
 			if n, err := strconv.Atoi(val); err == nil && n >= 0 {
 				cfg.HistoryKeepTurns = n
+			}
+		case "tool_result_clear_keep_recent", "tool_result_keep_recent":
+			if n, err := strconv.Atoi(val); err == nil && n >= 0 {
+				cfg.ToolResultClearKeepRecent = n
 			}
 		}
 	}

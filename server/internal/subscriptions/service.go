@@ -1084,7 +1084,7 @@ func builtinMessageForCode(code string) string {
 	case "LANDING_FLOW_3_TITLE":
 		return "Every request hits Trim first"
 	case "LANDING_FLOW_3_BODY":
-		return "Chat and agents POST through the local proxy. Fast Mode drops vendor dumps, lockfiles, and log spam; it keeps the files and stacks you are actually editing."
+		return "Chat and agents POST through the local proxy. Fast Mode always runs. When Preferences Deep is on, Segmented Allowlist Deep also compresses each last-user prose island in place (order preserved beside paths); tools and paths stay frozen. Fast Mode drops vendor dumps, lockfiles, and log spam while keeping the files and stacks you are editing."
 	case "LANDING_FLOW_4_TITLE":
 		return "The model sees less. You see the savings."
 	case "LANDING_FLOW_4_BODY":
@@ -1112,7 +1112,7 @@ func builtinMessageForCode(code string) string {
 	case "LANDING_WHY_1_TITLE":
 		return "Your context stays local"
 	case "LANDING_WHY_1_BODY":
-		return "Fast Mode compresses on your machine before anything is forwarded. Trim cloud meters the account; it does not need the raw pack."
+		return "Fast Mode compresses on your machine before anything is forwarded. When Deep Mode is on, Segmented Allowlist Deep runs after Fast on eligible last-user prose (order preserved beside paths). Trim cloud meters the account; it does not need the raw pack."
 	case "LANDING_WHY_2_TITLE":
 		return "Works with the tools you already use"
 	case "LANDING_WHY_2_BODY":
@@ -1124,7 +1124,7 @@ func builtinMessageForCode(code string) string {
 	case "LANDING_WHY_4_TITLE":
 		return "Fast Mode and Deep Mode"
 	case "LANDING_WHY_4_BODY":
-		return "Start with Fast Mode on the live proxy. Turn Deep Mode on in Preferences (then trim config sync) so trim start also runs Deep after Fast. Or use trim compress --deep for file/batch jobs."
+		return "Start with Fast Mode on the live proxy. Turn Deep Mode on in Preferences (then trim config sync) so trim start runs Segmented Allowlist Deep after Fast (each last-user prose island in place, order preserved beside paths). Or use trim compress --deep for file/batch jobs."
 	case "LANDING_WHY_5_TITLE":
 		return "Quotas and receipts in one place"
 	case "LANDING_WHY_5_BODY":
@@ -1248,17 +1248,19 @@ func builtinMessageForCode(code string) string {
 	case "EVENTS_EMPTY":
 		return "No traces yet. Run trim start while logged in, or route Cursor through the cloud gateway."
 	case "PREFERENCES_NOTE":
-		return "Deep Mode runs on your machine for live IDE proxy (trim start) and trim compress. Engines are not loaded in Trim cloud; auth and quotas still use Trim cloud when licensed."
+		return "Deep Mode runs on your machine for live IDE proxy (trim start: Segmented Allowlist Deep, each last-user prose island in place, order preserved beside paths) and trim compress. Engines are not loaded in Trim cloud; auth and quotas still use Trim cloud when licensed."
 	case "PREFERENCES_SAVED":
 		return "Saved. On your machine run: trim config sync"
 	case "PREFERENCES_PAGE_TITLE":
 		return "Compression defaults"
 	case "PREFERENCES_PAGE_DESCRIPTION":
-		return "Live proxy runs Fast Mode on every turn. When account preferences set compression_tier=deep, the local proxy also runs Deep Mode (LLMLingua) after Fast using your compression rate. Models and OOM policy come from billing settings via trim config sync."
+		return "Live proxy runs Fast Mode on every turn. When account preferences set compression_tier=deep, the local proxy also runs Segmented Allowlist Deep after Fast: freeze tools/system/paths/code/JSON, compress each last-user prose island in place (order preserved beside paths) at your compression rate, validate, else fail-closed Fast. Models and OOM policy come from billing settings via trim config sync."
 	case "DOCS_FAST_VS_DEEP_LIVE":
-		return "Live proxy runs Fast Mode on every turn. When account preferences set compression_tier=deep, the local proxy also runs Deep Mode (LLMLingua) after Fast using your compression rate. Models and OOM policy come from billing settings via trim config sync."
+		return "Live proxy runs Fast Mode on every turn. When account preferences set compression_tier=deep, the local proxy also runs Segmented Allowlist Deep after Fast: freeze tools/system/paths/code/JSON, compress each last-user prose island in place (order preserved beside paths) at your compression rate, validate, else fail-closed Fast. Models and OOM policy come from billing settings via trim config sync."
+	case "DOCS_FAST_VS_DEEP_SUMMARY":
+		return "Start with Fast Mode on the live proxy. Turn Deep Mode on in Preferences (then trim config sync) so trim start runs Segmented Allowlist Deep after Fast (each last-user prose island in place, order preserved beside paths). Or use trim compress --deep for file/batch jobs."
 	case "PREFERENCES_DEEP_HINT":
-		return "When Deep Mode is on, the live IDE proxy (trim start) runs Fast then Deep (LLMLingua) using your engine and compression rate from this page. Off = Fast only. Trim cloud never loads Deep engines; auth, quotas, and billing still use Trim cloud."
+		return "When Deep Mode is on, the live IDE proxy (trim start) runs Fast then Segmented Allowlist Deep (each last-user prose island in place, order preserved beside paths; tools/paths frozen) using your engine and compression rate from this page. Off = Fast only. Trim cloud never loads Deep engines; auth, quotas, and billing still use Trim cloud."
 	case "PREFERENCES_ENGINE_HINT":
 		return "Default selected: LLMLingua-2 (v2). Pick long (needs a question) or v1 if you prefer. Applies to live proxy Deep and trim compress when Deep Mode is on."
 	case "PREFERENCES_RATE_HINT":
@@ -2025,6 +2027,8 @@ func builtinMessageForCode(code string) string {
 		return "Dashboard"
 	case "CLI_STATUS_LABEL_UPGRADE":
 		return "Upgrade"
+	case "CLI_STATUS_UPGRADE_CMD":
+		return "trim upgrade"
 	case "CLI_STATUS_REMAINING_FMT":
 		return "%d / %d"
 	case "CLI_STATUS_CHECKING":
@@ -2254,7 +2258,7 @@ func builtinMessageForCode(code string) string {
 	case "CLI_STATS_DEEP_STATUS_FMT":
 		return "Deep: %s"
 	case "CLI_STATS_DEEP_STAGE_FMT":
-		return "Deep stage: %s (%.1f%% saved)"
+		return "Deep stage (prose islands): %s (%.1f%% saved)"
 	case "CLI_STATS_LAST_REQUEST_FMT":
 		return "Last request (whole body): %s (%.1f%% saved)"
 	case "CLI_STATS_DOOR_FMT":
@@ -2305,7 +2309,11 @@ func builtinMessageForCode(code string) string {
 	case "CLI_PROXY_LIVE_DEEP_ENABLED_FMT":
 		return "Live Deep Mode on (engine %s, backbone %s, compression_rate %g, oom=%s). Synced from account preferences / billing settings."
 	case "CLI_PROXY_DEEP_COMPACT_STUB":
-		return "(prior turns compacted by Deep Mode)"
+		return "[trim] Segmented Allowlist Deep chrome ready"
+	case "CLI_PROXY_TOOL_RESULT_CLEARED_FMT":
+		return "[trim] prior tool output cleared (%d bytes; re-fetch if needed)"
+	case "CLI_PROXY_HISTORY_COMPACTED_STUB":
+		return "[trim] earlier conversation turns compacted; recent turns retained"
 	case "CLI_PROXY_DEEP_CHROME_REQUIRED":
 		return "Live Deep Mode chrome missing from Trim cloud (CLI_PROXY_LIVE_DEEP_MODE_FMT / CLI_PROXY_DEEP_COMPACT_STUB). Sync site_messages and retry."
 	case "CLI_PROXY_DEEP_PREFS_REQUIRED":
@@ -2438,6 +2446,18 @@ func builtinMessageForCode(code string) string {
 		return "Deep long model id"
 	case "ADMIN_BILLING_DEEP_V2_FORCE_TOKENS":
 		return "Deep v2 force_tokens JSON"
+	case "ADMIN_BILLING_DEEP_FORCE_RESERVE_DIGIT":
+		return "Deep force_reserve_digit (LLMLingua coding safety)"
+	case "ADMIN_BILLING_DEEP_FORCE_RESERVE_DIGIT_DESC":
+		return "When on, pass force_reserve_digit into LLMLingua (Microsoft coding safety). Independent of force_tokens. Synced to CLI from billing_settings; not inventable in the optimizer."
+	case "ADMIN_BILLING_DEEP_DROP_CONSECUTIVE":
+		return "Deep drop_consecutive (LLMLingua)"
+	case "ADMIN_BILLING_DEEP_DROP_CONSECUTIVE_DESC":
+		return "When on, pass drop_consecutive into LLMLingua. Independent of force_tokens. Synced to CLI from billing_settings; not inventable in the optimizer."
+	case "ADMIN_BILLING_DEEP_USE_SENTENCE_LEVEL_FILTER":
+		return "Deep use_sentence_level_filter (LLMLingua)"
+	case "ADMIN_BILLING_DEEP_USE_SENTENCE_LEVEL_FILTER_DESC":
+		return "When on, pass use_sentence_level_filter into LLMLingua. Keep off for coding agents (Microsoft coding safety). Independent of force_tokens. Synced to CLI from billing_settings; not inventable in the optimizer."
 	case "CLI_PREFS_ENGINE_INVALID":
 		return "deep_engine must be v1, long, or v2"
 	case "CLI_PREFS_RATE_NONNEG":
@@ -2464,6 +2484,12 @@ func builtinMessageForCode(code string) string {
 		return "selected"
 	case "CLI_CONFIG_RATES_SELECTED_MARK":
 		return "selected"
+	case "CLI_CONFIG_RATES_MIN_LABEL":
+		return "min"
+	case "CLI_CONFIG_RATES_MAX_LABEL":
+		return "max"
+	case "CLI_CONFIG_RATES_STEP_LABEL":
+		return "step"
 	case "CLI_CONFIG_RATES_SYNC_HINT":
 		return "Bounds and step come from Admin billing via trim config sync. Set with: trim config set compression-rate <rate>"
 	case "CLI_CONFIG_RATES_UNSYNCED":
@@ -2506,12 +2532,20 @@ func builtinMessageForCode(code string) string {
 		return "not logged in. Run: trim login"
 	case "CLI_CONFIG_SYNC_FAILED_FMT":
 		return "preferences sync failed (%s): %s"
+	case "CLI_CONFIG_SYNC_ACTION_AUTO_START":
+		return "patch auto_start_with_ide"
+	case "CLI_CONFIG_SYNC_ACTION_COMPRESSION":
+		return "patch compression preferences"
+	case "CLI_CHROME_TIMEOUT_INVALID_FMT":
+		return "%s missing or invalid"
+	case "CLI_DAEMON_WINDOWS_ONLY":
+		return "windows autostart is only available on Windows"
 	case "CLI_CONFIG_SYNCED_FMT":
 		return "Synced preferences: tier=%s engine=%s backbone=%s compression-rate=%g"
 	case "CLI_HELP_ROOT_SHORT":
 		return "Local Fast Mode proxy for AI coding tools"
 	case "CLI_HELP_ROOT_LONG":
-		return "Trim keeps a local Fast Mode proxy on your machine so IDE traffic uses less noisy context.\n\nEveryday: start, stop, status, stats, upgrade, autostart, cursor-link, login, logout, uninstall, setup, version\nAdvanced: tui, compress, daemon, telemetry, config (get | set | sync | rates | models)\n\nFast vs Deep (new accounts default to Deep = Fast then Deep):\n  trim config get default-tier\n  trim config set default-tier deep\n  trim config set default-tier fast\n  trim config rates\n  trim config set compression-rate 0.7\n  trim config models\n  trim config set deep-v2-backbone mbert-base\n  trim config sync\n\nDeep keep-rate (after/before, Microsoft LLMLingua): Dashboard slider or trim config rates / set compression-rate (billing min/max/step).\nDeep Base Model (Microsoft LLMLingua-2): Dashboard picker or trim config models / set deep-v2-backbone (billing catalog; default mbert-base, optional xlm-roberta-large).\n\nCursor Agent: trim cursor-link enable → trim start → trim cursor-link url (paste HTTPS …/v1; not 127.0.0.1).\n\nSimple savings check after trim start:\n  trim stats\n  open http://127.0.0.1:<port>/dashboard → Show savings detail\n\ntrim status = cloud quota. trim stats = local Deep status / savings meter.\n\nFull remove: trim uninstall (then brew/scoop/winget/npm uninstall if you installed that way).\n\nRun \"trim help <command>\" for details. Prefer trim start / autostart for daily use (new accounts default Deep = Fast then Deep on the live proxy). Use trim compress --deep for file/batch."
+		return "Trim keeps a local Fast Mode proxy on your machine so IDE traffic uses less noisy context.\n\nEveryday: start, stop, status, stats, upgrade, autostart, cursor-link, login, logout, uninstall, setup, version\nAdvanced: tui, compress, daemon, telemetry, config (get | set | sync | rates | models)\n\nFast vs Deep (new accounts default to Deep = Fast then Segmented Allowlist Deep on each last-user prose island in place, order preserved beside paths):\n  trim config get default-tier\n  trim config set default-tier deep\n  trim config set default-tier fast\n  trim config rates\n  trim config set compression-rate 0.7\n  trim config models\n  trim config set deep-v2-backbone mbert-base\n  trim config sync\n\nDeep keep-rate (after/before, Microsoft LLMLingua): Dashboard slider or trim config rates / set compression-rate (billing min/max/step).\nDeep Base Model (Microsoft LLMLingua-2): Dashboard picker or trim config models / set deep-v2-backbone (billing catalog; default mbert-base, optional xlm-roberta-large).\n\nCursor Agent: trim cursor-link enable → trim start → trim cursor-link url (paste HTTPS …/v1; not 127.0.0.1).\n\nSimple savings check after trim start:\n  trim stats\n  open http://127.0.0.1:<port>/dashboard → Show savings detail\n\ntrim status = cloud quota. trim stats = local Deep status / savings meter.\n\nFull remove: trim uninstall (then brew/scoop/winget/npm uninstall if you installed that way).\n\nRun \"trim help <command>\" for details. Prefer trim start / autostart for daily use (new accounts default Deep = Fast then Segmented Allowlist Deep on the live proxy). Use trim compress --deep for file/batch."
 	case "CLI_HELP_GROUP_EVERYDAY":
 		return "Everyday Commands:"
 	case "CLI_HELP_GROUP_ADVANCED":
@@ -2519,9 +2553,97 @@ func builtinMessageForCode(code string) string {
 	case "CLI_HELP_START_SHORT":
 		return "Start the local Trim Fast Mode proxy"
 	case "CLI_HELP_START_LONG":
-		return "Starts the local proxy for IDE traffic, then returns your shell (proxy keeps running in the background). Stop with: trim stop. Use --foreground to keep this terminal attached (Ctrl+C stops).\n\nFast Mode always runs. When account preferences set Deep Mode on, each request also runs Deep (LLMLingua) after Fast before forwarding upstream.\n\nLocal Base URL (127.0.0.1) is for on-device clients (Continue, VS Code Chat, Claude Code). Cursor Agent needs Trim Cursor Link: trim cursor-link enable → trim cursor-link url (HTTPS …/v1; not 127.0.0.1).\n\nAfter traffic flows, check savings with:\n  trim stats\n  http://127.0.0.1:<port>/dashboard → Show savings detail"
+		return "Starts the local proxy for IDE traffic, then returns your shell (proxy keeps running in the background). Stop with: trim stop. Use --foreground to keep this terminal attached (Ctrl+C stops).\n\nFast Mode always runs. When account preferences set Deep Mode on, each request also runs Segmented Allowlist Deep after Fast: freeze tools/system/paths/code/JSON, compress each last-user prose island in place (order preserved beside paths), validate, else fail-closed Fast.\n\nLocal Base URL (127.0.0.1) is for on-device clients (Continue, VS Code Chat, Claude Code). Cursor Agent needs Trim Cursor Link: trim cursor-link enable → trim cursor-link url (HTTPS …/v1; not 127.0.0.1).\n\nAfter traffic flows, check savings with:\n  trim stats\n  http://127.0.0.1:<port>/dashboard → Show savings detail\n\nWho this is for: Continue, VS Code Chat, Claude Code (local Base URL), and Cursor Agent via Trim Cursor Link (trim cursor-link url). Whole-body Saved % can look low on agent chrome; Deep stage (prose) and Deep status explain why."
 	case "CLI_HELP_START_FLAG_PORT":
 		return "Override TRIM_PORT for this process"
+	case "CLI_HELP_START_FLAG_FOREGROUND":
+		return "Keep the proxy in this terminal (Ctrl+C to stop); default detaches and returns the shell"
+	case "CLI_CURSOR_LINK_ENABLED_OK":
+		return "Cursor Link enabled"
+	case "CLI_CURSOR_LINK_DISABLED_OK":
+		return "Cursor Link disabled (tunnel stopped if it was running)"
+	case "CLI_CURSOR_LINK_ROTATED_OK":
+		return "Cursor Link token rotated"
+	case "CLI_CURSOR_LINK_ENABLE_NEXT":
+		return "Next: trim start  →  then trim cursor-link url  →  paste into Cursor Override OpenAI Base URL (…/v1)"
+	case "CLI_CURSOR_LINK_DISABLED_MUTED":
+		return "Cursor Agent will not get a public Trim URL until you enable again. Local 127.0.0.1 still works for on-device clients."
+	case "CLI_CURSOR_LINK_STATUS_PASTE":
+		return "Paste Public Base URL into Cursor → Settings → Models → Override OpenAI Base URL"
+	case "CLI_CURSOR_LINK_STATUS_PRIVACY":
+		return "Privacy: URL is public; Fast/Deep compression stays on this PC"
+	case "CLI_CURSOR_LINK_STATUS_ENABLE_HINT":
+		return "Enable with: trim cursor-link enable"
+	case "CLI_CURSOR_LINK_ROTATE_MUTED":
+		return "Old public path is revoked immediately (Trim reads the new token live). Update Cursor Override OpenAI Base URL."
+	case "CLI_CURSOR_LINK_DISABLED_ERR":
+		return "Cursor Link is disabled - run: trim cursor-link enable"
+	case "CLI_CURSOR_LINK_DISABLED_START_ERR":
+		return "Cursor Link is disabled - run: trim cursor-link enable && trim start"
+	case "CLI_CURSOR_LINK_NO_URL_FMT":
+		return "no public URL yet (%v) - is Trim running? trim start"
+	case "CLI_CURSOR_LINK_LABEL_STATE":
+		return "Cursor Link"
+	case "CLI_CURSOR_LINK_STATE_ON":
+		return "on"
+	case "CLI_CURSOR_LINK_STATE_OFF":
+		return "off"
+	case "CLI_CURSOR_LINK_LABEL_PUBLIC_URL":
+		return "Public Base URL"
+	case "CLI_CURSOR_LINK_PUBLIC_URL_PENDING":
+		return "(not up - run trim start)"
+	case "CLI_CURSOR_LINK_LABEL_LOCAL_PORT":
+		return "Local port"
+	case "CLI_CURSOR_LINK_LABEL_TUNNEL_PID":
+		return "Tunnel PID"
+	case "CLI_CURSOR_LINK_LABEL_NEW_URL":
+		return "New Cursor Agent Base URL"
+	case "CLI_CURSOR_LINK_WARN_FMT":
+		return "Cursor Link: %v"
+	case "CLI_CURSOR_LINK_TUNNEL_NOT_READY_FMT":
+		return "Trim is up but tunnel not ready yet: %v"
+	case "CLI_CURSOR_LINK_TUNNEL_RETRY":
+		return "Run trim start again (Trim auto-downloads cloudflared when needed), or: trim cursor-link status"
+	case "CLI_PROXY_DEEP_EXPANSION_FAIL_CLOSED_FMT":
+		return "expansion fail-closed (%d->%d stage tokens; kept Fast)"
+	case "CLI_PROXY_WORKER_START_FMT":
+		return "start proxy worker: %v"
+	case "CLI_PROXY_WORKER_EXITED_EARLY_FMT":
+		return "proxy worker exited early: %v"
+	case "CLI_PROXY_NOT_HEALTHY":
+		return "proxy did not become healthy in time"
+	case "CLI_CURSOR_LINK_DOWNLOADING_FMT":
+		return "Cursor Link: downloading cloudflared to %s"
+	case "CLI_CURSOR_LINK_DOWNLOAD_ERR_FMT":
+		return "download cloudflared: %v\nInstall manually: %s\nOr set TRIM_CLOUDFLARED to a cloudflared binary"
+	case "CLI_CURSOR_LINK_DOWNLOAD_HTTP_FMT":
+		return "download cloudflared: HTTP %s\nInstall manually: %s\nOr set TRIM_CLOUDFLARED"
+	case "CLI_CURSOR_LINK_EXTRACT_ERR_FMT":
+		return "extract cloudflared: %v\nRun trim cursor-link enable && trim start again, or brew install cloudflared if Homebrew exists, or set TRIM_CLOUDFLARED"
+	case "CLI_CURSOR_LINK_ARCHIVE_BIN_MISSING":
+		return "cloudflared binary not found inside archive"
+	case "CLI_CURSOR_LINK_UNSUPPORTED_PLATFORM_FMT":
+		return "unsupported platform %s/%s for auto-download; %s; or set TRIM_CLOUDFLARED"
+	case "CLI_CURSOR_LINK_HINT_WINDOWS":
+		return "Windows: run trim cursor-link enable && trim start (auto-download), or download cloudflared-windows-amd64.exe into %USERPROFILE%\\.trim\\bin, or winget install --id Cloudflare.cloudflared if winget exists"
+	case "CLI_CURSOR_LINK_HINT_DARWIN":
+		return "macOS: run trim cursor-link enable && trim start (auto-download), or brew install cloudflared if Homebrew exists, or set TRIM_CLOUDFLARED"
+	case "CLI_CURSOR_LINK_HINT_LINUX":
+		return "Linux: run trim cursor-link enable && trim start (auto-download), or install from https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/, or set TRIM_CLOUDFLARED"
+	case "CLI_CURSOR_LINK_HINT_OTHER":
+		return "install cloudflared from https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/ or set TRIM_CLOUDFLARED"
+	case "CLI_CURSOR_LINK_NOT_FOUND_FMT":
+		return "cloudflared not found (Trim can auto-download on Windows/macOS/Linux, or install from %s, or set TRIM_CLOUDFLARED)"
+	case "CLI_CURSOR_LINK_PORT_REQUIRED":
+		return "local Trim port is required for Cursor Link"
+	case "CLI_CURSOR_LINK_START_CLOUDFLARED_FMT":
+		return "start cloudflared: %v"
+	case "CLI_CURSOR_LINK_TUNNEL_TIMEOUT":
+		return "cloudflared did not publish a trycloudflare.com URL in time"
+	case "CLI_CURSOR_LINK_COMBINE_ERR_HINT_FMT":
+		return "%v\n%s"
+	case "CLI_CURSOR_LINK_ENV_MISSING_FMT":
+		return "TRIM_CLOUDFLARED points to a missing binary: %s"
 	case "CLI_HELP_LOGIN_SHORT":
 		return "Sign in via browser"
 	case "CLI_HELP_LOGOUT_SHORT":
@@ -2617,7 +2739,7 @@ func builtinMessageForCode(code string) string {
 	case "CLI_HELP_STATS_SHORT":
 		return "Show local proxy savings and Deep status"
 	case "CLI_HELP_STATS_LONG":
-		return "Reads the live local proxy (/v1/stats) and prints clear Deep status + Deep stage savings, then the raw JSON.\n\nUseful when Claude Code / Cursor shows 0% whole-body Saved: check Deep status (skipped below min, chrome frozen, fail-closed) and Deep stage tokens.\n\nEveryday:\n  trim start\n  trim stats\n  open http://127.0.0.1:<TRIM_PORT>/dashboard → Show savings detail\n\nUse --tui for the Bubble Tea live dashboard (same as trim tui)."
+		return "Reads the live local proxy (/v1/stats) and prints clear Deep status + Deep stage savings, then the raw JSON.\n\nUseful when Claude Code / Cursor shows 0% whole-body Saved: check Deep status and Deep stage (Segmented Allowlist Deep = each prose island in place, order preserved beside paths; tools/paths/schemas stay frozen).\n\nEveryday:\n  trim start\n  trim stats\n  open http://127.0.0.1:<TRIM_PORT>/dashboard → Show savings detail\n\nUse --tui for the Bubble Tea live dashboard (same as trim tui)."
 	case "CLI_HELP_STATS_FLAG_TUI":
 		return "Open Bubble Tea live dashboard (same as trim tui)"
 	case "CLI_HELP_SETUP_SHORT":
@@ -2655,9 +2777,9 @@ func builtinMessageForCode(code string) string {
 	case "CLI_HELP_TUI_LONG":
 		return "Live local proxy metrics. Keep trim start running in another terminal (or via trim daemon)."
 	case "CLI_HELP_COMPRESS_SHORT":
-		return "Compress a file (Fast or Deep). Live IDE proxy also runs Deep when Preferences Deep is on (v2 uses synced Base Model)."
+		return "Compress a file (Fast or Deep). Live IDE proxy also runs Segmented Allowlist Deep when Preferences Deep is on (v2 uses synced Base Model)."
 	case "CLI_HELP_COMPRESS_LONG":
-		return "Fast Mode is low-latency local compression (live proxy and files). Deep Mode is stronger on-machine LLMLingua: live proxy when Preferences Deep is on, and trim compress --deep for file/batch. Engines are not loaded in Trim cloud.\n\nDeep engines (pick one): v2 LLMLingua-2 (recommended; uses synced Base Model from trim config models), long LongLLMLingua (question-aware; requires --question), v1 LLMLingua (classic).\n\nKeep-rate: --rate or synced compression-rate (Dashboard / trim config rates).\nBase Model (v2 only): Dashboard picker or trim config models / set deep-v2-backbone (billing catalog; default mbert-base, optional xlm-roberta-large). No free-text Hugging Face box.\n\nLicensed use still requires Trim login and network."
+		return "Fast Mode is low-latency local compression (live proxy and files). Deep Mode is stronger on-machine LLMLingua: live proxy runs Segmented Allowlist Deep when Preferences Deep is on (each last-user prose island in place, order preserved beside paths; tools/paths/schemas frozen), and trim compress --deep for file/batch. Engines are not loaded in Trim cloud.\n\nDeep engines (pick one): v2 LLMLingua-2 (recommended; uses synced Base Model from trim config models), long LongLLMLingua (question-aware; requires --question), v1 LLMLingua (classic).\n\nKeep-rate: --rate or synced compression-rate (Dashboard / trim config rates).\nBase Model (v2 only): Dashboard picker or trim config models / set deep-v2-backbone (billing catalog; default mbert-base, optional xlm-roberta-large). No free-text Hugging Face box.\n\nLicensed use still requires Trim login and network."
 	case "CLI_HELP_COMPRESS_FLAG_MODE":
 		return "fast | deep (required unless prefs default-tier or --deep)"
 	case "CLI_HELP_COMPRESS_FLAG_DEEP":
@@ -2677,7 +2799,7 @@ func builtinMessageForCode(code string) string {
 	case "CLI_HELP_CONFIG_SHORT":
 		return "Local Fast/Deep preferences (get | set | sync | rates | models)"
 	case "CLI_HELP_CONFIG_LONG":
-		return "Manage local Fast/Deep preferences under ~/.config/trim/.\n\nNew accounts default to Deep Mode (live proxy runs Fast then Deep). Switch to Fast anytime.\n\n  trim config get\n  trim config get default-tier\n  trim config get compression-rate\n  trim config get deep-v2-backbone\n  trim config rates\n  trim config models\n  trim config set default-tier deep\n  trim config set default-tier fast\n  trim config set compression-rate 0.7\n  trim config set deep-v2-backbone mbert-base\n  trim config set deep-v2-backbone xlm-roberta-large\n  trim config sync\n\nget - show local preferences\nrates - list allowed keep-rates; mark billing default and selected\nmodels - list allowed LLMLingua-2 Base Models; mark billing default and selected\nset - write a local preference key (when logged in, default-tier / deep-engine / compression-rate / deep-v2-backbone also update your Trim cloud profile)\nsync - pull Fast/Deep preferences and provider adapters from your Trim cloud profile (requires trim login)\n\nFast = live proxy Fast only. Deep = live proxy runs Fast then Deep (LLMLingua-2) at your compression rate and Base Model.\nAfter Dashboard → Settings changes: trim config sync, then restart with trim start."
+		return "Manage local Fast/Deep preferences under ~/.config/trim/.\n\nNew accounts default to Deep Mode (live proxy runs Fast then Segmented Allowlist Deep on each last-user prose island in place, order preserved beside paths). Switch to Fast anytime.\n\n  trim config get\n  trim config get default-tier\n  trim config get compression-rate\n  trim config get deep-v2-backbone\n  trim config rates\n  trim config models\n  trim config set default-tier deep\n  trim config set default-tier fast\n  trim config set compression-rate 0.7\n  trim config set deep-v2-backbone mbert-base\n  trim config set deep-v2-backbone xlm-roberta-large\n  trim config sync\n\nget - show local preferences\nrates - list allowed keep-rates; mark billing default and selected\nmodels - list allowed LLMLingua-2 Base Models; mark billing default and selected\nset - write a local preference key (when logged in, default-tier / deep-engine / compression-rate / deep-v2-backbone also update your Trim cloud profile)\nsync - pull Fast/Deep preferences and provider adapters from your Trim cloud profile (requires trim login)\n\nFast = live proxy Fast only. Deep = live proxy runs Fast then Segmented Allowlist Deep (LLMLingua-2 on each last-user prose island in place, order preserved beside paths; tools/paths frozen) at your compression rate and Base Model.\nAfter Dashboard → Settings changes: trim config sync, then restart with trim start."
 	case "CLI_HELP_CONFIG_GET_SHORT":
 		return "Show preferences (default-tier, deep-engine, deep-v2-backbone, compression-rate)"
 	case "CLI_HELP_CONFIG_SET_SHORT":

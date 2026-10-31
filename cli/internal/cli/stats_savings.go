@@ -43,15 +43,19 @@ func printLiveSavingsClarity(chrome cliChrome, port string, body []byte) {
 	}
 	if chrome.StatsDeepStageFmt != "" && (st.LastDeepStageBefore > 0 || st.LastDeepStageAfter > 0 || statusCode != "") {
 		stagePair := formatTokenPair(st.Chrome.LastRequestValueFmt, st.LastDeepStageBefore, st.LastDeepStageAfter)
-		fmt.Printf(chrome.StatsDeepStageFmt+"\n", stagePair, st.LastDeepStageSaved)
+		if stagePair != "" {
+			fmt.Printf(chrome.StatsDeepStageFmt+"\n", stagePair, st.LastDeepStageSaved)
+		}
 	}
 	if chrome.StatsLastRequestFmt != "" && (st.LastBeforeTokens > 0 || st.LastAfterTokens > 0) {
 		wirePair := formatTokenPair(st.Chrome.LastRequestValueFmt, st.LastBeforeTokens, st.LastAfterTokens)
-		wirePct := 0.0
-		if st.LastBeforeTokens > 0 {
-			wirePct = float64(st.LastBeforeTokens-st.LastAfterTokens) / float64(st.LastBeforeTokens) * 100
+		if wirePair != "" {
+			wirePct := 0.0
+			if st.LastBeforeTokens > 0 {
+				wirePct = float64(st.LastBeforeTokens-st.LastAfterTokens) / float64(st.LastBeforeTokens) * 100
+			}
+			fmt.Printf(chrome.StatsLastRequestFmt+"\n", wirePair, wirePct)
 		}
-		fmt.Printf(chrome.StatsLastRequestFmt+"\n", wirePair, wirePct)
 	}
 	if chrome.StatsDoorFmt != "" && strings.TrimSpace(st.LastDoor) != "" {
 		fmt.Printf(chrome.StatsDoorFmt+"\n", strings.TrimSpace(st.LastDoor))
@@ -69,5 +73,6 @@ func formatTokenPair(valueFmt string, before, after int) string {
 	if valueFmt != "" && strings.Count(valueFmt, "%d") >= 2 {
 		return fmt.Sprintf(valueFmt, before, after)
 	}
-	return fmt.Sprintf("%d -> %d", before, after)
+	// Fail-closed: LOCAL_LAST_REQUEST_VALUE_FMT must come from synced site_messages (no invent joiner).
+	return ""
 }

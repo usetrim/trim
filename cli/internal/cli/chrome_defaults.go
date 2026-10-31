@@ -20,106 +20,115 @@ func applyHumanChromeFallbacks(ch *cliChrome) {
 	set(&ch.StatusLabelRemaining, "Remaining")
 	set(&ch.StatusLabelDashboard, "Dashboard")
 	set(&ch.StatusLabelUpgrade, "Upgrade")
+	set(&ch.StatusUpgradeCmd, "trim upgrade")
 	set(&ch.StatusRemainingFmt, "%d / %d")
+	set(&ch.ConfigSyncActionAutoStart, "patch auto_start_with_ide")
+	set(&ch.ConfigSyncActionCompression, "patch compression preferences")
+	set(&ch.ChromeTimeoutInvalidFmt, "%s missing or invalid")
+	set(&ch.DaemonWindowsOnly, "windows autostart is only available on Windows")
 	set(&ch.StatusChecking, "Checking account…")
 	set(&ch.StatusHTTPErrorFmt, "Could not reach Trim Cloud (%s). Check your network and try again.")
 	set(&ch.LoginURLLabel, "Sign-in URL")
 	set(&ch.StatusNotLoggedIn, "Not logged in. Run: trim login")
-	// Always refresh start banners so attach / cold-start never print a blank line worldwide.
-	// Same palette as status/autostart/daemon: Success ● · Table accent/ok · Muted tip.
-	ch.StartRunningFmt = "Trim proxy running on %s://127.0.0.1:%s"
-	ch.StartAttachedOkFmt = "Trim is already running on %s://127.0.0.1:%s"
-	ch.StartAttachedHint = "Attached to the existing local proxy - no second process started."
-	ch.StartDashboardLabel = "Dashboard"
-	ch.StartDashboardFmt = "Local dashboard: %s://127.0.0.1:%s/dashboard"
-	ch.StartBaseURLLabel = "Local Base URL"
-	ch.StartPointIDEFmt = "On-device clients: Continue apiBase / VS Code Chat Custom Endpoint / Claude Code origin use %s://127.0.0.1:%s (Continue and most SDKs need …/v1; VS Code Chat needs …/v1/chat/completions; Claude Code needs origin only, no /v1)."
-	ch.StartCursorAgentLabel = "Cursor Agent Base URL"
-	ch.StartCursorAgentHintOff = "Cursor Agent: do not paste 127.0.0.1 (private networks forbidden). Run: trim cursor-link enable → trim cursor-link url → paste HTTPS …/v1 into Cursor Override OpenAI Base URL. Docs: https://use-trim.com/docs/cli/cursor-link"
-	ch.StartCursorAgentTipOn = "Cursor Agent: paste Cursor Agent Base URL into Override OpenAI Base URL (HTTPS …/v1, not 127.0.0.1)."
-	ch.StartCursorAgentLocalTip = "Local tools / Claude Code: keep using http://127.0.0.1:%s as documented."
-	ch.StartCursorAgentCloudflaredTip = "Trim auto-downloads cloudflared to ~/.trim/bin when missing (all OS). Optional: brew/winget only if installed. Or set TRIM_CLOUDFLARED, then: trim cursor-link status"
-	ch.SetupCursorAgentHeader = "Cursor Agent (cloud) - use Trim Cursor Link, not localhost:"
-	ch.SetupCursorAgentBlock = "  trim cursor-link enable\n  trim start\n  trim cursor-link url\n  # paste HTTPS …/cl/<token>/v1 into Cursor → Settings → Models → Override OpenAI Base URL\n  # do not paste http://127.0.0.1:…/v1 for Cursor Agent\n  Docs: https://use-trim.com/docs/cli/cursor-link"
-	ch.SetupStepCursorLink = "Cursor Agent: trim cursor-link enable && trim start && trim cursor-link url (paste HTTPS …/v1; not 127.0.0.1)"
-	ch.SetupCursorSkipped = "Cursor settings.json: skipped writing localhost Base URL (Cursor Agent needs Trim Cursor Link). Continue / VS Code / Windsurf / Zed still use local …/v1 when present."
-	ch.HelpStartLong = "Starts the local proxy for IDE traffic, then returns your shell (proxy keeps running in the background). Stop with: trim stop. Use --foreground to keep this terminal attached (Ctrl+C stops).\n\nFast Mode always runs. When account preferences set Deep Mode on, each request also runs Deep (LLMLingua) after Fast before forwarding upstream.\n\nLocal Base URL (127.0.0.1) is for on-device clients (Continue, VS Code Chat, Claude Code). Cursor Agent needs Trim Cursor Link: trim cursor-link enable → trim cursor-link url (HTTPS …/v1; not 127.0.0.1).\n\nAfter traffic flows, check savings with:\n  trim stats\n  http://127.0.0.1:<port>/dashboard → Show savings detail"
+	// Prefer site_messages for start/setup banners so Admin DB wins after sync.
+	set(&ch.StartRunningFmt, "Trim proxy running on %s://127.0.0.1:%s")
+	set(&ch.StartAttachedOkFmt, "Trim is already running on %s://127.0.0.1:%s")
+	set(&ch.StartAttachedHint, "Attached to the existing local proxy - no second process started.")
+	set(&ch.StartDashboardLabel, "Dashboard")
+	set(&ch.StartDashboardFmt, "Local dashboard: %s://127.0.0.1:%s/dashboard")
+	set(&ch.StartBaseURLLabel, "Local Base URL")
+	set(&ch.StartPointIDEFmt, "On-device clients: Continue apiBase / VS Code Chat Custom Endpoint / Claude Code origin use %s://127.0.0.1:%s (Continue and most SDKs need …/v1; VS Code Chat needs …/v1/chat/completions; Claude Code needs origin only, no /v1).")
+	set(&ch.StartCursorAgentLabel, "Cursor Agent Base URL")
+	set(&ch.StartCursorAgentHintOff, "Cursor Agent: do not paste 127.0.0.1 (private networks forbidden). Run: trim cursor-link enable → trim cursor-link url → paste HTTPS …/v1 into Cursor Override OpenAI Base URL. Docs: https://use-trim.com/docs/cli/cursor-link")
+	set(&ch.StartCursorAgentTipOn, "Cursor Agent: paste Cursor Agent Base URL into Override OpenAI Base URL (HTTPS …/v1, not 127.0.0.1).")
+	set(&ch.StartCursorAgentLocalTip, "Local tools / Claude Code: keep using http://127.0.0.1:%s as documented.")
+	set(&ch.StartCursorAgentCloudflaredTip, "Trim auto-downloads cloudflared to ~/.trim/bin when missing (all OS). Optional: brew/winget only if installed. Or set TRIM_CLOUDFLARED, then: trim cursor-link status")
+	set(&ch.SetupCursorAgentHeader, "Cursor Agent (cloud) - use Trim Cursor Link, not localhost:")
+	set(&ch.SetupCursorAgentBlock, "  trim cursor-link enable\n  trim start\n  trim cursor-link url\n  # paste HTTPS …/cl/<token>/v1 into Cursor → Settings → Models → Override OpenAI Base URL\n  # do not paste http://127.0.0.1:…/v1 for Cursor Agent\n  Docs: https://use-trim.com/docs/cli/cursor-link")
+	set(&ch.SetupStepCursorLink, "Cursor Agent: trim cursor-link enable && trim start && trim cursor-link url (paste HTTPS …/v1; not 127.0.0.1)")
+	set(&ch.SetupCursorSkipped, "Cursor settings.json: skipped writing localhost Base URL (Cursor Agent needs Trim Cursor Link). Continue / VS Code / Windsurf / Zed still use local …/v1 when present.")
+	// Prefer site_messages (Admin / trim config sync). Fill only when empty so DB wins.
+	set(&ch.HelpStartLong, "Starts the local proxy for IDE traffic, then returns your shell (proxy keeps running in the background). Stop with: trim stop. Use --foreground to keep this terminal attached (Ctrl+C stops).\n\nFast Mode always runs. When account preferences set Deep Mode on, each request also runs Segmented Allowlist Deep after Fast: freeze tools/system/paths/code/JSON, compress each last-user prose island in place (order preserved beside paths), validate, else fail-closed Fast.\n\nLocal Base URL (127.0.0.1) is for on-device clients (Continue, VS Code Chat, Claude Code). Cursor Agent needs Trim Cursor Link: trim cursor-link enable → trim cursor-link url (HTTPS …/v1; not 127.0.0.1).\n\nAfter traffic flows, check savings with:\n  trim stats\n  http://127.0.0.1:<port>/dashboard → Show savings detail\n\nWho this is for: Continue, VS Code Chat, Claude Code (local Base URL), and Cursor Agent via Trim Cursor Link (trim cursor-link url). Whole-body Saved % can look low on agent chrome; Deep stage (prose) and Deep status explain why.")
+	set(&ch.HelpStartFlagForeground, "Keep the proxy in this terminal (Ctrl+C to stop); default detaches and returns the shell")
 
-	// Always refresh Windows / OS-hook copy: HKCU Run → stable LocalAppData binary
-	// (never node_modules). Ensures worldwide CLIs show correct guidance before API catch-up.
-	ch.DaemonWindowsOk = "Windows logon autostart registered (Startup Run → %LOCALAPPDATA%\\Trim\\bin - no admin)"
-	ch.DaemonWindowsRemoved = "Windows logon autostart removed"
-	ch.DaemonWindowsMissing = "Windows logon autostart is not installed. Run: trim autostart enable"
-	ch.DaemonWindowsRunLabel = "Run command"
-	ch.AutostartEnabledOk = "Auto-start with IDE enabled"
-	ch.AutostartDisabledOk = "Auto-start with IDE disabled"
-	ch.AutostartDaemonHint = "OS logon starts Trim for your user account. The Trim IDE extension also attaches to a healthy local proxy."
-	ch.AutostartOSHookFailedTitle = "Preference saved, but OS logon autostart could not be registered"
-	ch.AutostartOSHookFailedBody = "Your Trim preference is on. IDE auto-start can still work. Fix OS logon registration below, or start manually."
-	ch.AutostartOSHookAccessDeniedBody = "Windows blocked the logon registration (Access denied). Trim uses a per-user Startup entry pointing at %LOCALAPPDATA%\\Trim\\bin\\trim.exe (no Administrator on a normal PC). Retry: trim autostart enable. If it still fails, your organization may block Startup programs - use trim start or the Trim IDE extension."
-	ch.AutostartOSHookNextStartLabel = "Manual start"
-	ch.AutostartOSHookNextIDELabel = "With IDE"
-	ch.AutostartOSHookNextIDEValue = "Keep “Start Trim with your IDE” on in the dashboard / extension"
-	ch.AutostartOSHookDetailLabel = "Details"
-	// Always refresh help so trim help autostart / trim help daemon match stable Windows path + soft-fail UX.
-	ch.HelpDaemonShort = "OS logon autostart (launchd / systemd user / Windows Startup Run)"
-	ch.HelpDaemonLong = "Advanced OS logon entrypoint (same hook as trim autostart enable).\n\n  trim daemon status\n  trim daemon install\n  trim daemon uninstall\n  trim daemon run\n\nPlatforms:\n  macOS: launchd LaunchAgent (per-user)\n  Linux: systemd --user (per-user)\n  Windows: HKCU Startup Run → %LOCALAPPDATA%\\Trim\\bin\\trim.exe (stable copy outside npm/Scoop; no Administrator on a normal PC)\n\ndaemon run only starts when auto-start is on, and attaches if a healthy proxy is already listening.\nPrefer trim autostart enable for everyday Always-on.\nDocs: https://use-trim.com/docs/cli/autostart"
-	ch.HelpDaemonInstallShort = "Install Trim proxy to start on login (launchd / systemd --user / Windows Startup Run)"
-	ch.HelpDaemonUninstallShort = "Remove OS logon autostart (Startup Run / launchd / systemd user)"
-	ch.HelpDaemonStatusShort = "Show whether OS logon autostart is installed"
-	ch.HelpAutostartShort = "Auto-start proxy with your IDE (synced preference)"
-	ch.HelpAutostartLong = "Synced Always-on preference (Start Trim with your IDE).\n\n  trim autostart status\n  trim autostart enable\n  trim autostart disable\n\nenable turns the preference on and best-effort registers OS logon:\n  macOS launchd · Linux systemd --user · Windows Startup Run → %LOCALAPPDATA%\\Trim\\bin (no Administrator on a normal PC)\n\nIf OS registration fails, your preference stays on. The CLI prints a yellow warning, muted guidance, and next steps (trim start / IDE). Use -v for raw OS detail.\n\nPrefer this over trim daemon for everyday use.\nDocs: https://use-trim.com/docs/cli/autostart"
-	ch.HelpAutostartEnableShort = "Enable auto-start and best-effort OS logon (Windows Startup Run → LocalAppData, no admin)"
-	ch.HelpAutostartDisableShort = "Disable auto-start and uninstall OS logon when supported"
+	// Prefer site_messages for Windows/OS-hook chrome so Admin DB wins after sync.
+	set(&ch.DaemonWindowsOk, "Windows logon autostart registered (Startup Run → %LOCALAPPDATA%\\Trim\\bin - no admin)")
+	set(&ch.DaemonWindowsRemoved, "Windows logon autostart removed")
+	set(&ch.DaemonWindowsMissing, "Windows logon autostart is not installed. Run: trim autostart enable")
+	set(&ch.DaemonWindowsRunLabel, "Run command")
+	set(&ch.AutostartEnabledOk, "Auto-start with IDE enabled")
+	set(&ch.AutostartDisabledOk, "Auto-start with IDE disabled")
+	set(&ch.AutostartDaemonHint, "OS logon starts Trim for your user account. The Trim IDE extension also attaches to a healthy local proxy.")
+	set(&ch.AutostartOSHookFailedTitle, "Preference saved, but OS logon autostart could not be registered")
+	set(&ch.AutostartOSHookFailedBody, "Your Trim preference is on. IDE auto-start can still work. Fix OS logon registration below, or start manually.")
+	set(&ch.AutostartOSHookAccessDeniedBody, "Windows blocked the logon registration (Access denied). Trim uses a per-user Startup entry pointing at %LOCALAPPDATA%\\Trim\\bin\\trim.exe (no Administrator on a normal PC). Retry: trim autostart enable. If it still fails, your organization may block Startup programs - use trim start or the Trim IDE extension.")
+	set(&ch.AutostartOSHookNextStartLabel, "Manual start")
+	set(&ch.AutostartOSHookNextIDELabel, "With IDE")
+	set(&ch.AutostartOSHookNextIDEValue, "Keep “Start Trim with your IDE” on in the dashboard / extension")
+	set(&ch.AutostartOSHookDetailLabel, "Details")
+	// Prefer site_messages for daemon/autostart help so Admin DB wins after sync.
+	set(&ch.HelpDaemonShort, "OS logon autostart (launchd / systemd user / Windows Startup Run)")
+	set(&ch.HelpDaemonLong, "Advanced OS logon entrypoint (same hook as trim autostart enable).\n\n  trim daemon status\n  trim daemon install\n  trim daemon uninstall\n  trim daemon run\n\nPlatforms:\n  macOS: launchd LaunchAgent (per-user)\n  Linux: systemd --user (per-user)\n  Windows: HKCU Startup Run → %LOCALAPPDATA%\\Trim\\bin\\trim.exe (stable copy outside npm/Scoop; no Administrator on a normal PC)\n\ndaemon run only starts when auto-start is on, and attaches if a healthy proxy is already listening.\nPrefer trim autostart enable for everyday Always-on.\nDocs: https://use-trim.com/docs/cli/autostart")
+	set(&ch.HelpDaemonInstallShort, "Install Trim proxy to start on login (launchd / systemd --user / Windows Startup Run)")
+	set(&ch.HelpDaemonUninstallShort, "Remove OS logon autostart (Startup Run / launchd / systemd user)")
+	set(&ch.HelpDaemonStatusShort, "Show whether OS logon autostart is installed")
+	set(&ch.HelpAutostartShort, "Auto-start proxy with your IDE (synced preference)")
+	set(&ch.HelpAutostartLong, "Synced Always-on preference (Start Trim with your IDE).\n\n  trim autostart status\n  trim autostart enable\n  trim autostart disable\n\nenable turns the preference on and best-effort registers OS logon:\n  macOS launchd · Linux systemd --user · Windows Startup Run → %LOCALAPPDATA%\\Trim\\bin (no Administrator on a normal PC)\n\nIf OS registration fails, your preference stays on. The CLI prints a yellow warning, muted guidance, and next steps (trim start / IDE). Use -v for raw OS detail.\n\nPrefer this over trim daemon for everyday use.\nDocs: https://use-trim.com/docs/cli/autostart")
+	set(&ch.HelpAutostartEnableShort, "Enable auto-start and best-effort OS logon (Windows Startup Run → LocalAppData, no admin)")
+	set(&ch.HelpAutostartDisableShort, "Disable auto-start and uninstall OS logon when supported")
 
-	// Always refresh root / config / uninstall / Cursor Link help so a CLI newer than
-	// the deployed site_messages catalog still lists cursor-link, config sync, and
-	// package-manager uninstall (npm -g) correctly worldwide.
-	ch.HelpRootLong = "Trim keeps a local Fast Mode proxy on your machine so IDE traffic uses less noisy context.\n\nEveryday: start, stop, status, stats, upgrade, autostart, cursor-link, login, logout, uninstall, setup, version\nAdvanced: tui, compress, daemon, telemetry, config (get | set | sync | rates | models)\n\nFast vs Deep (new accounts default to Deep = Fast then Deep):\n  trim config get default-tier\n  trim config set default-tier deep\n  trim config set default-tier fast\n  trim config rates\n  trim config set compression-rate 0.7\n  trim config models\n  trim config set deep-v2-backbone mbert-base\n  trim config sync\n\nDeep keep-rate (after/before, Microsoft LLMLingua): Dashboard slider or trim config rates / set compression-rate (billing min/max/step).\nDeep Base Model (Microsoft LLMLingua-2): Dashboard picker or trim config models / set deep-v2-backbone (billing catalog; default mbert-base, optional xlm-roberta-large).\n\nCursor Agent: trim cursor-link enable → trim start → trim cursor-link url (paste HTTPS …/v1; not 127.0.0.1).\n\nSimple savings check after trim start:\n  trim stats\n  open http://127.0.0.1:<port>/dashboard → Show savings detail\n\ntrim status = cloud quota. trim stats = local Deep status / savings meter.\n\nFull remove: trim uninstall (stops Trim processes, deletes local data/binary, and auto-removes npm/Scoop/Homebrew/winget installs when detected).\n\nRun \"trim help <command>\" for details. Prefer trim start / autostart for daily use (new accounts default Deep = Fast then Deep on the live proxy). Use trim compress --deep for file/batch."
-	ch.HelpConfigShort = "Local Fast/Deep preferences (get | set | sync | rates | models)"
-	ch.HelpConfigLong = "Manage local Fast/Deep preferences under ~/.config/trim/.\n\nNew accounts default to Deep Mode (live proxy runs Fast then Deep). Switch to Fast anytime.\n\n  trim config get\n  trim config get default-tier\n  trim config get compression-rate\n  trim config get deep-v2-backbone\n  trim config rates\n  trim config models\n  trim config set default-tier deep\n  trim config set default-tier fast\n  trim config set compression-rate 0.7\n  trim config set deep-v2-backbone mbert-base\n  trim config set deep-v2-backbone xlm-roberta-large\n  trim config sync\n\nget - show local preferences\nrates - list allowed keep-rates; mark billing default and selected\nmodels - list allowed LLMLingua-2 Base Models; mark billing default and selected\nset - write a local preference key (when logged in, default-tier / deep-engine / compression-rate / deep-v2-backbone also update your Trim cloud profile)\nsync - pull Fast/Deep preferences and provider adapters from your Trim cloud profile (requires trim login)\n\nFast = live proxy Fast only. Deep = live proxy runs Fast then Deep (LLMLingua-2) at your compression rate and Base Model.\nAfter Dashboard → Settings changes: trim config sync, then restart with trim start."
-	ch.HelpConfigGetShort = "Show preferences (default-tier, deep-engine, deep-v2-backbone, compression-rate)"
-	ch.HelpConfigSetShort = "Set a preference (example: trim config set deep-v2-backbone mbert-base)"
-	ch.HelpConfigSyncShort = "Pull Fast/Deep preferences and provider adapters from your Trim cloud profile into ~/.config/trim/"
-	ch.HelpConfigRatesShort = "List allowed Deep compression rates; mark billing default and selected"
-	ch.HelpConfigModelsShort = "List allowed Deep v2 Base Models; mark billing default and selected"
-	ch.HelpCompressFlagRate = "Deep keep-rate after/before (Microsoft LLMLingua); omit to use synced preferences"
-	ch.HelpCompressFlagTarget = ch.HelpCompressFlagRate
-	ch.ConfigGetRateFmt = "compression-rate: %g"
-	ch.ConfigGetBackboneFmt = "deep-v2-backbone: %s"
-	ch.ConfigUnknownKeyFmt = "unknown key %q (default-tier|deep-engine|compression-rate|deep-v2-backbone)"
-	ch.ConfigRateRange = "compression-rate must be within billing deep_compression_rate_min..max (typically 0.3 to 1.0)"
-	ch.ConfigBackboneInvalid = "deep-v2-backbone must be an id from the synced Base Model catalog (trim config models)"
-	ch.ConfigSyncedFmt = "Synced preferences: tier=%s engine=%s backbone=%s compression-rate=%g"
-	ch.ConfigRatesTitle = "Compression rates (after / before)"
-	ch.ConfigRatesDefaultLabel = "billing default"
-	ch.ConfigRatesSelectedLabel = "selected"
-	ch.ConfigRatesSelectedMark = "selected"
-	ch.ConfigRatesSyncHint = "Bounds and step come from Admin billing via trim config sync. Set with: trim config set compression-rate <rate>"
-	ch.ConfigRatesUnsynced = "Rate bounds not synced. Run: trim config sync"
-	ch.ConfigModelsTitle = "Deep v2 Base Models (LLMLingua-2)"
-	ch.ConfigModelsDefaultLabel = "billing default"
-	ch.ConfigModelsSelectedLabel = "selected"
-	ch.ConfigModelsSelectedMark = "selected"
-	ch.ConfigModelsSyncHint = "Catalog comes from Admin billing via trim config sync. Set with: trim config set deep-v2-backbone <id>"
-	ch.ConfigModelsUnsynced = "Base Model catalog not synced. Run: trim config sync"
-	ch.ConfigModelsHfLabel = "hf-model"
+	// Prefer site_messages for root/config help so Admin DB edits win after sync.
+	// Offline empty chrome still gets Segmented Allowlist Deep + cursor-link guidance.
+	set(&ch.HelpRootLong, "Trim keeps a local Fast Mode proxy on your machine so IDE traffic uses less noisy context.\n\nEveryday: start, stop, status, stats, upgrade, autostart, cursor-link, login, logout, uninstall, setup, version\nAdvanced: tui, compress, daemon, telemetry, config (get | set | sync | rates | models)\n\nFast vs Deep (new accounts default to Deep = Fast then Segmented Allowlist Deep on each last-user prose island in place, order preserved beside paths):\n  trim config get default-tier\n  trim config set default-tier deep\n  trim config set default-tier fast\n  trim config rates\n  trim config set compression-rate 0.7\n  trim config models\n  trim config set deep-v2-backbone mbert-base\n  trim config sync\n\nDeep keep-rate (after/before, Microsoft LLMLingua): Dashboard slider or trim config rates / set compression-rate (billing min/max/step).\nDeep Base Model (Microsoft LLMLingua-2): Dashboard picker or trim config models / set deep-v2-backbone (billing catalog; default mbert-base, optional xlm-roberta-large).\n\nCursor Agent: trim cursor-link enable → trim start → trim cursor-link url (paste HTTPS …/v1; not 127.0.0.1).\n\nSimple savings check after trim start:\n  trim stats\n  open http://127.0.0.1:<port>/dashboard → Show savings detail\n\ntrim status = cloud quota. trim stats = local Deep status / savings meter.\n\nFull remove: trim uninstall (stops Trim processes, deletes local data/binary, and auto-removes npm/Scoop/Homebrew/winget installs when detected).\n\nRun \"trim help <command>\" for details. Prefer trim start / autostart for daily use (new accounts default Deep = Fast then Segmented Allowlist Deep on the live proxy). Use trim compress --deep for file/batch.")
+	set(&ch.HelpConfigShort, "Local Fast/Deep preferences (get | set | sync | rates | models)")
+	set(&ch.HelpConfigLong, "Manage local Fast/Deep preferences under ~/.config/trim/.\n\nNew accounts default to Deep Mode (live proxy runs Fast then Segmented Allowlist Deep on each last-user prose island in place, order preserved beside paths). Switch to Fast anytime.\n\n  trim config get\n  trim config get default-tier\n  trim config get compression-rate\n  trim config get deep-v2-backbone\n  trim config rates\n  trim config models\n  trim config set default-tier deep\n  trim config set default-tier fast\n  trim config set compression-rate 0.7\n  trim config set deep-v2-backbone mbert-base\n  trim config set deep-v2-backbone xlm-roberta-large\n  trim config sync\n\nget - show local preferences\nrates - list allowed keep-rates; mark billing default and selected\nmodels - list allowed LLMLingua-2 Base Models; mark billing default and selected\nset - write a local preference key (when logged in, default-tier / deep-engine / compression-rate / deep-v2-backbone also update your Trim cloud profile)\nsync - pull Fast/Deep preferences and provider adapters from your Trim cloud profile (requires trim login)\n\nFast = live proxy Fast only. Deep = live proxy runs Fast then Segmented Allowlist Deep (LLMLingua-2 on each last-user prose island in place, order preserved beside paths; tools/paths frozen) at your compression rate and Base Model.\nAfter Dashboard → Settings changes: trim config sync, then restart with trim start.")
+	set(&ch.HelpConfigGetShort, "Show preferences (default-tier, deep-engine, deep-v2-backbone, compression-rate)")
+	set(&ch.HelpConfigSetShort, "Set a preference (example: trim config set deep-v2-backbone mbert-base)")
+	set(&ch.HelpConfigSyncShort, "Pull Fast/Deep preferences and provider adapters from your Trim cloud profile into ~/.config/trim/")
+	set(&ch.HelpConfigRatesShort, "List allowed Deep compression rates; mark billing default and selected")
+	set(&ch.HelpConfigModelsShort, "List allowed Deep v2 Base Models; mark billing default and selected")
+	set(&ch.HelpCompressFlagRate, "Deep keep-rate after/before (Microsoft LLMLingua); omit to use synced preferences")
+	set(&ch.HelpCompressFlagTarget, "Deep keep-rate after/before (Microsoft LLMLingua); omit to use synced preferences")
+	set(&ch.ConfigGetRateFmt, "compression-rate: %g")
+	set(&ch.ConfigGetBackboneFmt, "deep-v2-backbone: %s")
+	set(&ch.ConfigUnknownKeyFmt, "unknown key %q (default-tier|deep-engine|compression-rate|deep-v2-backbone)")
+	set(&ch.ConfigRateRange, "compression-rate must be within billing deep_compression_rate_min..max (typically 0.3 to 1.0)")
+	set(&ch.ConfigBackboneInvalid, "deep-v2-backbone must be an id from the synced Base Model catalog (trim config models)")
+	set(&ch.ConfigSyncedFmt, "Synced preferences: tier=%s engine=%s backbone=%s compression-rate=%g")
+	set(&ch.ConfigRatesTitle, "Compression rates (after / before)")
+	set(&ch.ConfigRatesDefaultLabel, "billing default")
+	set(&ch.ConfigRatesSelectedLabel, "selected")
+	set(&ch.ConfigRatesSelectedMark, "selected")
+	set(&ch.ConfigRatesMinLabel, "min")
+	set(&ch.ConfigRatesMaxLabel, "max")
+	set(&ch.ConfigRatesStepLabel, "step")
+	set(&ch.ProxyWorkerStartFmt, "start proxy worker: %v")
+	set(&ch.ConfigRatesSyncHint, "Bounds and step come from Admin billing via trim config sync. Set with: trim config set compression-rate <rate>")
+	set(&ch.ConfigRatesUnsynced, "Rate bounds not synced. Run: trim config sync")
+	set(&ch.ConfigModelsTitle, "Deep v2 Base Models (LLMLingua-2)")
+	set(&ch.ConfigModelsDefaultLabel, "billing default")
+	set(&ch.ConfigModelsSelectedLabel, "selected")
+	set(&ch.ConfigModelsSelectedMark, "selected")
+	set(&ch.ConfigModelsSyncHint, "Catalog comes from Admin billing via trim config sync. Set with: trim config set deep-v2-backbone <id>")
+	set(&ch.ConfigModelsUnsynced, "Base Model catalog not synced. Run: trim config sync")
+	set(&ch.ConfigModelsHfLabel, "hf-model")
 	// Prefer site_messages from API chrome. Fill only when empty so Admin DB edits win.
-	set(&ch.HelpCompressShort, "Compress a file (Fast or Deep). Live IDE proxy also runs Deep when Preferences Deep is on (v2 uses synced Base Model).")
-	set(&ch.HelpCompressLong, "Fast Mode is low-latency local compression (live proxy and files). Deep Mode is stronger on-machine LLMLingua: live proxy when Preferences Deep is on, and trim compress --deep for file/batch. Engines are not loaded in Trim cloud.\n\nDeep engines (pick one): v2 LLMLingua-2 (recommended; uses synced Base Model from trim config models), long LongLLMLingua (question-aware; requires --question), v1 LLMLingua (classic).\n\nKeep-rate: --rate or synced compression-rate (Dashboard / trim config rates).\nBase Model (v2 only): Dashboard picker or trim config models / set deep-v2-backbone (billing catalog; default mbert-base, optional xlm-roberta-large). No free-text Hugging Face box.\n\nLicensed use still requires Trim login and network.")
+	set(&ch.HelpCompressShort, "Compress a file (Fast or Deep). Live IDE proxy also runs Segmented Allowlist Deep when Preferences Deep is on (v2 uses synced Base Model).")
+	set(&ch.HelpCompressLong, "Fast Mode is low-latency local compression (live proxy and files). Deep Mode is stronger on-machine LLMLingua: live proxy runs Segmented Allowlist Deep when Preferences Deep is on (each last-user prose island in place, order preserved beside paths; tools/paths/schemas frozen), and trim compress --deep for file/batch. Engines are not loaded in Trim cloud.\n\nDeep engines (pick one): v2 LLMLingua-2 (recommended; uses synced Base Model from trim config models), long LongLLMLingua (question-aware; requires --question), v1 LLMLingua (classic).\n\nKeep-rate: --rate or synced compression-rate (Dashboard / trim config rates).\nBase Model (v2 only): Dashboard picker or trim config models / set deep-v2-backbone (billing catalog; default mbert-base, optional xlm-roberta-large). No free-text Hugging Face box.\n\nLicensed use still requires Trim login and network.")
+	set(&ch.HelpStatsLong, "Reads the live local proxy (/v1/stats) and prints clear Deep status + Deep stage savings, then the raw JSON.\n\nUseful when Claude Code / Cursor shows 0% whole-body Saved: check Deep status and Deep stage (Segmented Allowlist Deep = each prose island in place, order preserved beside paths; tools/paths/schemas stay frozen).\n\nEveryday:\n  trim start\n  trim stats\n  open http://127.0.0.1:<TRIM_PORT>/dashboard → Show savings detail\n\nUse --tui for the Bubble Tea live dashboard (same as trim tui).")
 	set(&ch.HelpCompressFlagEngine, "Deep engine: v2 (recommended; uses synced Base Model) | long (needs --question) | v1 (classic). Else prefs deep-engine.")
-	ch.ProxyLiveDeepEnabledFmt = "Live Deep Mode on (engine %s, backbone %s, compression_rate %g, oom=%s). Synced from account preferences / billing settings."
-	ch.HelpUninstallShort = "Fully remove Trim from this machine (proxy, daemon, data, Deep caches, binary, package install)"
-	ch.HelpUninstallLong = "Fully removes Trim from this machine:\n  - stops the local proxy, Cursor Link tunnel, and other Trim processes\n  - removes the OS login daemon\n  - clears CLI credentials\n  - reverts IDE Base URL overrides from trim setup\n  - deletes ~/.trim and ~/.config/trim, Deep caches, sidecars, and the CLI binary (plus Windows user PATH / Apps entry)\n  - when installed via npm / Scoop / Homebrew / winget, schedules that package uninstall after exit (so Windows can release the running binary)\n\nUse --keep-data to skip deleting local data directories, Deep caches, the CLI binary/package, and Windows LocalAppData Trim.\n\nIDE extension is separate: Trim: Clear API Key, then uninstall Trim IDE from the Extensions view.\nIf a detected package install was not auto-removed after exit:\n  brew uninstall trim\n  scoop uninstall trim\n  winget uninstall Trim.CLI\n  npm uninstall -g @usetrim/trim"
-	ch.HelpUninstallFlagKeepData = "Keep ~/.trim, ~/.config/trim, Deep Mode caches, the CLI binary/package, and Windows LocalAppData Trim (only stop / unregister Always-on / logout / setup revert)"
-	ch.UninstallProcessesStopped = "Stopped other Trim processes on this machine."
-	ch.UninstallBinaryScheduledFmt = "Scheduled CLI binary removal after exit: %s"
-	ch.UninstallPkgScheduledFmt = "Scheduled package removal after exit: %s"
-	ch.UninstallBinaryManualFmt = "Could not schedule binary removal. Delete manually after closing all Trim windows (or reboot if Windows deferred the delete): %s"
-	ch.UninstallNextPkgBrew = "Fallback if Homebrew install was not auto-removed: brew uninstall trim"
-	ch.UninstallNextPkgScoop = "Fallback if Scoop install was not auto-removed: scoop uninstall trim"
-	ch.UninstallNextPkgWinget = "Fallback if winget install was not auto-removed: winget uninstall Trim.CLI"
-	ch.UninstallNextPkgNpm = "Fallback if npm install was not auto-removed: npm uninstall -g @usetrim/trim"
+	set(&ch.ProxyLiveDeepEnabledFmt, "Live Deep Mode on (engine %s, backbone %s, compression_rate %g, oom=%s). Synced from account preferences / billing settings.")
+	set(&ch.HelpUninstallShort, "Fully remove Trim from this machine (proxy, daemon, data, Deep caches, binary, package install)")
+	set(&ch.HelpUninstallLong, "Fully removes Trim from this machine:\n  - stops the local proxy, Cursor Link tunnel, and other Trim processes\n  - removes the OS login daemon\n  - clears CLI credentials\n  - reverts IDE Base URL overrides from trim setup\n  - deletes ~/.trim and ~/.config/trim, Deep caches, sidecars, and the CLI binary (plus Windows user PATH / Apps entry)\n  - when installed via npm / Scoop / Homebrew / winget, schedules that package uninstall after exit (so Windows can release the running binary)\n\nUse --keep-data to skip deleting local data directories, Deep caches, the CLI binary/package, and Windows LocalAppData Trim.\n\nIDE extension is separate: Trim: Clear API Key, then uninstall Trim IDE from the Extensions view.\nIf a detected package install was not auto-removed after exit:\n  brew uninstall trim\n  scoop uninstall trim\n  winget uninstall Trim.CLI\n  npm uninstall -g @usetrim/trim")
+	set(&ch.HelpUninstallFlagKeepData, "Keep ~/.trim, ~/.config/trim, Deep Mode caches, the CLI binary/package, and Windows LocalAppData Trim (only stop / unregister Always-on / logout / setup revert)")
+	set(&ch.UninstallProcessesStopped, "Stopped other Trim processes on this machine.")
+	set(&ch.UninstallBinaryScheduledFmt, "Scheduled CLI binary removal after exit: %s")
+	set(&ch.UninstallPkgScheduledFmt, "Scheduled package removal after exit: %s")
+	set(&ch.UninstallBinaryManualFmt, "Could not schedule binary removal. Delete manually after closing all Trim windows (or reboot if Windows deferred the delete): %s")
+	set(&ch.UninstallNextPkgBrew, "Fallback if Homebrew install was not auto-removed: brew uninstall trim")
+	set(&ch.UninstallNextPkgScoop, "Fallback if Scoop install was not auto-removed: scoop uninstall trim")
+	set(&ch.UninstallNextPkgWinget, "Fallback if winget install was not auto-removed: winget uninstall Trim.CLI")
+	set(&ch.UninstallNextPkgNpm, "Fallback if npm install was not auto-removed: npm uninstall -g @usetrim/trim")
 	// Offline fail-open purge lists (same defaults as MessageForCode) so uninstall
 	// still wipes local data / Deep / sidecars when API chrome is stale or unreachable.
 	set(&ch.UninstallHomeDirsRel, ".trim,.config/trim")
@@ -150,11 +159,53 @@ func applyHumanChromeFallbacks(ch *cliChrome) {
 	set(&ch.UninstallDone, "Trim local uninstall finished.")
 	set(&ch.UninstallNextExt, "IDE extension: Trim: Clear API Key (clears Secret Storage + local extension state), then Command Palette → Extensions → uninstall Trim IDE.")
 	set(&ch.UninstallSidecarRemovedFmt, "Removed Deep Mode sidecar: %s")
-	ch.HelpCursorLinkShort = "Public HTTPS URL to local Trim for Cursor Agent (managed tunnel)"
-	ch.HelpCursorLinkLong = "Trim Cursor Link exposes your local Trim proxy through an automatic Cloudflare quick tunnel so Cursor Agent (cloud) can reach it without 127.0.0.1.\n\nCompression, meters, and adapters still run on this PC. The public hostname is only a door. Lifecycle matches trim start / trim stop when enabled.\n\nTypical flow:\n  trim cursor-link enable\n  trim start\n  trim cursor-link url\n  # paste …/cl/<token>/v1 into Cursor Override OpenAI Base URL\n  trim stop\n\nSubcommands: enable, disable, status, url, rotate"
-	ch.HelpCursorLinkEnableShort = "Enable Cursor Link (auto tunnel while trim start is running)"
-	ch.HelpCursorLinkDisableShort = "Disable Cursor Link and stop any running tunnel"
-	ch.HelpCursorLinkStatusShort = "Show Cursor Link preference and live public URL"
-	ch.HelpCursorLinkURLShort = "Print the live Cursor Agent Base URL (…/v1) for copy/paste"
-	ch.HelpCursorLinkRotateShort = "Rotate the Cursor Link access token (revokes the previous public URL path)"
+	set(&ch.HelpCursorLinkShort, "Public HTTPS URL to local Trim for Cursor Agent (managed tunnel)")
+	set(&ch.HelpCursorLinkLong, "Trim Cursor Link exposes your local Trim proxy through an automatic Cloudflare quick tunnel so Cursor Agent (cloud) can reach it without 127.0.0.1.\n\nCompression, meters, and adapters still run on this PC. The public hostname is only a door. Lifecycle matches trim start / trim stop when enabled.\n\nTypical flow:\n  trim cursor-link enable\n  trim start\n  trim cursor-link url\n  # paste …/cl/<token>/v1 into Cursor Override OpenAI Base URL\n  trim stop\n\nSubcommands: enable, disable, status, url, rotate")
+	set(&ch.HelpCursorLinkEnableShort, "Enable Cursor Link (auto tunnel while trim start is running)")
+	set(&ch.HelpCursorLinkDisableShort, "Disable Cursor Link and stop any running tunnel")
+	set(&ch.HelpCursorLinkStatusShort, "Show Cursor Link preference and live public URL")
+	set(&ch.HelpCursorLinkURLShort, "Print the live Cursor Agent Base URL (…/v1) for copy/paste")
+	set(&ch.HelpCursorLinkRotateShort, "Rotate the Cursor Link access token (revokes the previous public URL path)")
+	set(&ch.CursorLinkEnabledOk, "Cursor Link enabled")
+	set(&ch.CursorLinkDisabledOk, "Cursor Link disabled (tunnel stopped if it was running)")
+	set(&ch.CursorLinkRotatedOk, "Cursor Link token rotated")
+	set(&ch.CursorLinkEnableNext, "Next: trim start  →  then trim cursor-link url  →  paste into Cursor Override OpenAI Base URL (…/v1)")
+	set(&ch.CursorLinkDisabledMuted, "Cursor Agent will not get a public Trim URL until you enable again. Local 127.0.0.1 still works for on-device clients.")
+	set(&ch.CursorLinkStatusPaste, "Paste Public Base URL into Cursor → Settings → Models → Override OpenAI Base URL")
+	set(&ch.CursorLinkStatusPrivacy, "Privacy: URL is public; Fast/Deep compression stays on this PC")
+	set(&ch.CursorLinkStatusEnableHint, "Enable with: trim cursor-link enable")
+	set(&ch.CursorLinkRotateMuted, "Old public path is revoked immediately (Trim reads the new token live). Update Cursor Override OpenAI Base URL.")
+	set(&ch.CursorLinkDisabledErr, "Cursor Link is disabled - run: trim cursor-link enable")
+	set(&ch.CursorLinkDisabledStartErr, "Cursor Link is disabled - run: trim cursor-link enable && trim start")
+	set(&ch.CursorLinkNoURLFmt, "no public URL yet (%v) - is Trim running? trim start")
+	set(&ch.CursorLinkLabelState, "Cursor Link")
+	set(&ch.CursorLinkStateOn, "on")
+	set(&ch.CursorLinkStateOff, "off")
+	set(&ch.CursorLinkLabelPublicURL, "Public Base URL")
+	set(&ch.CursorLinkPublicURLPending, "(not up - run trim start)")
+	set(&ch.CursorLinkLabelLocalPort, "Local port")
+	set(&ch.CursorLinkLabelTunnelPID, "Tunnel PID")
+	set(&ch.CursorLinkLabelNewURL, "New Cursor Agent Base URL")
+	set(&ch.CursorLinkWarnFmt, "Cursor Link: %v")
+	set(&ch.CursorLinkTunnelNotReadyFmt, "Trim is up but tunnel not ready yet: %v")
+	set(&ch.CursorLinkTunnelRetry, "Run trim start again (Trim auto-downloads cloudflared when needed), or: trim cursor-link status")
+	set(&ch.ProxyDeepExpansionFailClosedFmt, "expansion fail-closed (%d->%d stage tokens; kept Fast)")
+	set(&ch.ProxyWorkerExitedEarlyFmt, "proxy worker exited early: %v")
+	set(&ch.ProxyNotHealthy, "proxy did not become healthy in time")
+	set(&ch.CursorLinkDownloadingFmt, "Cursor Link: downloading cloudflared to %s")
+	set(&ch.CursorLinkDownloadErrFmt, "download cloudflared: %v\nInstall manually: %s\nOr set TRIM_CLOUDFLARED to a cloudflared binary")
+	set(&ch.CursorLinkDownloadHTTPFmt, "download cloudflared: HTTP %s\nInstall manually: %s\nOr set TRIM_CLOUDFLARED")
+	set(&ch.CursorLinkExtractErrFmt, "extract cloudflared: %v\nRun trim cursor-link enable && trim start again, or brew install cloudflared if Homebrew exists, or set TRIM_CLOUDFLARED")
+	set(&ch.CursorLinkArchiveBinMissing, "cloudflared binary not found inside archive")
+	set(&ch.CursorLinkUnsupportedPlatformFmt, "unsupported platform %s/%s for auto-download; %s; or set TRIM_CLOUDFLARED")
+	set(&ch.CursorLinkHintWindows, "Windows: run trim cursor-link enable && trim start (auto-download), or download cloudflared-windows-amd64.exe into %USERPROFILE%\\.trim\\bin, or winget install --id Cloudflare.cloudflared if winget exists")
+	set(&ch.CursorLinkHintDarwin, "macOS: run trim cursor-link enable && trim start (auto-download), or brew install cloudflared if Homebrew exists, or set TRIM_CLOUDFLARED")
+	set(&ch.CursorLinkHintLinux, "Linux: run trim cursor-link enable && trim start (auto-download), or install from https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/, or set TRIM_CLOUDFLARED")
+	set(&ch.CursorLinkHintOther, "install cloudflared from https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/ or set TRIM_CLOUDFLARED")
+	set(&ch.CursorLinkNotFoundFmt, "cloudflared not found (Trim can auto-download on Windows/macOS/Linux, or install from %s, or set TRIM_CLOUDFLARED)")
+	set(&ch.CursorLinkPortRequired, "local Trim port is required for Cursor Link")
+	set(&ch.CursorLinkStartCloudflaredFmt, "start cloudflared: %v")
+	set(&ch.CursorLinkTunnelTimeout, "cloudflared did not publish a trycloudflare.com URL in time")
+	set(&ch.CursorLinkCombineErrHintFmt, "%v\n%s")
+	set(&ch.CursorLinkEnvMissingFmt, "TRIM_CLOUDFLARED points to a missing binary: %s")
 }

@@ -70,6 +70,9 @@ export function BillingSettingsClient({
   const [deepV2Model, setDeepV2Model] = useState("");
   const [deepLongModel, setDeepLongModel] = useState("");
   const [deepV2ForceTokens, setDeepV2ForceTokens] = useState("");
+  const [deepForceReserveDigit, setDeepForceReserveDigit] = useState(false);
+  const [deepDropConsecutive, setDeepDropConsecutive] = useState(false);
+  const [deepUseSentenceLevelFilter, setDeepUseSentenceLevelFilter] = useState(false);
   const [deepV2BackboneDefault, setDeepV2BackboneDefault] = useState("");
   const [deepV2BackboneOptions, setDeepV2BackboneOptions] = useState("");
   const [allowDowngrades, setAllowDowngrades] = useState(false);
@@ -102,6 +105,10 @@ export function BillingSettingsClient({
   const deepV2Label = chrome.data?.ADMIN_BILLING_DEEP_V2_MODEL?.trim() || "";
   const deepLongLabel = chrome.data?.ADMIN_BILLING_DEEP_LONG_MODEL?.trim() || "";
   const deepForceLabel = chrome.data?.ADMIN_BILLING_DEEP_V2_FORCE_TOKENS?.trim() || "";
+  const deepForceReserveLabel = chrome.data?.ADMIN_BILLING_DEEP_FORCE_RESERVE_DIGIT?.trim() || "";
+  const deepDropConsecutiveLabel = chrome.data?.ADMIN_BILLING_DEEP_DROP_CONSECUTIVE?.trim() || "";
+  const deepSentenceFilterLabel =
+    chrome.data?.ADMIN_BILLING_DEEP_USE_SENTENCE_LEVEL_FILTER?.trim() || "";
   const deepBackboneDefaultLabel =
     chrome.data?.ADMIN_BILLING_DEEP_V2_BACKBONE_DEFAULT?.trim() || "";
   const deepBackboneOptionsLabel =
@@ -174,6 +181,9 @@ export function BillingSettingsClient({
         ? JSON.stringify(d.deep_v2_force_tokens)
         : strField(d.deep_v2_force_tokens),
     );
+    setDeepForceReserveDigit(Boolean(d.deep_force_reserve_digit));
+    setDeepDropConsecutive(Boolean(d.deep_drop_consecutive));
+    setDeepUseSentenceLevelFilter(Boolean(d.deep_use_sentence_level_filter));
     setDeepV2BackboneDefault(strField(d.default_deep_v2_backbone));
     setDeepV2BackboneOptions(
       Array.isArray(d.deep_v2_backbone_options)
@@ -438,6 +448,54 @@ export function BillingSettingsClient({
             value={deepV2ForceTokens}
             onChange={(e) => setDeepV2ForceTokens(e.target.value)}
             placeholder={deepForceLabel}
+          />
+        </Field>
+      ) : null}
+      {deepForceReserveLabel ? (
+        <Field
+          id="billing-deep-force-reserve"
+          label={deepForceReserveLabel}
+          descriptionWrap
+          {...chromeFieldDesc(chrome.data, "ADMIN_BILLING_DEEP_FORCE_RESERVE_DIGIT_DESC")}
+          className="sm:col-span-2"
+        >
+          <input
+            id="billing-deep-force-reserve"
+            type="checkbox"
+            checked={deepForceReserveDigit}
+            onChange={(e) => setDeepForceReserveDigit(e.target.checked)}
+          />
+        </Field>
+      ) : null}
+      {deepDropConsecutiveLabel ? (
+        <Field
+          id="billing-deep-drop-consecutive"
+          label={deepDropConsecutiveLabel}
+          descriptionWrap
+          {...chromeFieldDesc(chrome.data, "ADMIN_BILLING_DEEP_DROP_CONSECUTIVE_DESC")}
+          className="sm:col-span-2"
+        >
+          <input
+            id="billing-deep-drop-consecutive"
+            type="checkbox"
+            checked={deepDropConsecutive}
+            onChange={(e) => setDeepDropConsecutive(e.target.checked)}
+          />
+        </Field>
+      ) : null}
+      {deepSentenceFilterLabel ? (
+        <Field
+          id="billing-deep-sentence-filter"
+          label={deepSentenceFilterLabel}
+          descriptionWrap
+          {...chromeFieldDesc(chrome.data, "ADMIN_BILLING_DEEP_USE_SENTENCE_LEVEL_FILTER_DESC")}
+          className="sm:col-span-2"
+        >
+          <input
+            id="billing-deep-sentence-filter"
+            type="checkbox"
+            checked={deepUseSentenceLevelFilter}
+            onChange={(e) => setDeepUseSentenceLevelFilter(e.target.checked)}
           />
         </Field>
       ) : null}
@@ -718,6 +776,9 @@ export function BillingSettingsClient({
                         return undefined;
                       }
                     })(),
+                    deep_force_reserve_digit: deepForceReserveDigit,
+                    deep_drop_consecutive: deepDropConsecutive,
+                    deep_use_sentence_level_filter: deepUseSentenceLevelFilter,
                     allow_cancel_at_period_end: cancelAtPeriodEnd,
                     allow_downgrades: allowDowngrades,
                     upgrade_proration_mode: prorationMode || undefined,

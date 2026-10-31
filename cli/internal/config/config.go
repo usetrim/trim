@@ -42,6 +42,8 @@ type Local struct {
 	CompressionMode string
 	// HistoryKeepTurns from TRIM_HISTORY_KEEP_TURNS when .trimrc has no history_keep_turns (0 = off).
 	HistoryKeepTurns int
+	// ToolResultClearKeepRecent from TRIM_TOOL_RESULT_CLEAR_KEEP_RECENT when .trimrc omits it (0 = off).
+	ToolResultClearKeepRecent int
 	// ProxyHTTPTimeoutSec is outbound LLM upstream timeout for the local proxy.
 	ProxyHTTPTimeoutSec int
 	// CLIHTTPTimeoutSec is HTTP timeout for cloud API / chrome / telemetry / TUI.
@@ -123,6 +125,13 @@ func LoadLocal() (Local, error) {
 			return Local{}, fmt.Errorf("CONFIG_ENV_TRIM_HISTORY_KEEP_TURNS_INVALID")
 		}
 		cfg.HistoryKeepTurns = n
+	}
+	if v := optional("TRIM_TOOL_RESULT_CLEAR_KEEP_RECENT"); v != "" {
+		n, err := strconv.Atoi(v)
+		if err != nil || n < 0 {
+			return Local{}, fmt.Errorf("CONFIG_ENV_TRIM_TOOL_RESULT_CLEAR_KEEP_RECENT_INVALID")
+		}
+		cfg.ToolResultClearKeepRecent = n
 	}
 
 	var err error

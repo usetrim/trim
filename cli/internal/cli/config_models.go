@@ -43,7 +43,7 @@ func printDeepV2ModelsFlow(p deepopt.Preferences, chrome cliChrome) error {
 	selectedLab := strings.TrimSpace(chrome.ConfigModelsSelectedLabel)
 	selectedMark := strings.TrimSpace(chrome.ConfigModelsSelectedMark)
 	if selectedMark == "" {
-		selectedMark = "selected"
+		return chrome.fail("")
 	}
 
 	rows := make([]cliout.Row, 0, 4)

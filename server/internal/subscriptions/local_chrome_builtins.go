@@ -35,9 +35,9 @@ func builtinLocalChromeMessage(code string) string {
 	case "LOCAL_LABEL_DEEP_STATUS":
 		return "Deep status"
 	case "LOCAL_LABEL_DEEP_STAGE":
-		return "Deep stage"
+		return "Deep stage (prose)"
 	case "LOCAL_LABEL_DEEP_STAGE_SAVED":
-		return "Deep stage saved"
+		return "Deep stage saved (prose)"
 	case "LOCAL_DEEP_STATUS_APPLIED":
 		return "Deep applied"
 	case "LOCAL_DEEP_STATUS_SKIPPED_MIN":
@@ -45,7 +45,7 @@ func builtinLocalChromeMessage(code string) string {
 	case "LOCAL_DEEP_STATUS_SKIPPED_STREAM":
 		return "Deep skipped (stream request)"
 	case "LOCAL_DEEP_STATUS_SKIPPED_EMPTY":
-		return "Deep skipped (nothing compressible / chrome frozen)"
+		return "Deep skipped (no prose islands / chrome frozen)"
 	case "LOCAL_DEEP_STATUS_SKIPPED_OFF":
 		return "Deep off for this request"
 	case "LOCAL_DEEP_STATUS_PATH_SKIP":
@@ -63,7 +63,7 @@ func builtinLocalChromeMessage(code string) string {
 	case "LOCAL_SAVINGS_DETAIL_TITLE":
 		return "Savings detail"
 	case "LOCAL_SAVINGS_DETAIL_LEAD":
-		return "Whole-request Saved % can look low when IDE agent chrome is frozen. Deep stage shows savings on the compressible text Trim actually rewrote."
+		return "Whole-request Saved % can look low when IDE agent chrome is frozen. Deep compresses each last-user prose island in place (order preserved beside paths); paths, tools, and schemas stay verbatim. Deep stage shows savings on that prose."
 	case "LOCAL_SAVINGS_DETAIL_SHOW":
 		return "Show savings detail"
 	case "LOCAL_SAVINGS_DETAIL_HIDE":
@@ -75,7 +75,7 @@ func builtinLocalChromeMessage(code string) string {
 	case "LOCAL_SAVINGS_DETAIL_STATUS_FMT":
 		return "Status: {status}"
 	case "LOCAL_SAVINGS_DETAIL_CHROME_TIP":
-		return "0% whole-request Saved on Claude Code / Cursor agent turns is often normal: system reminders, tools, and git status stay frozen on purpose so the agent loop stays safe."
+		return "0% whole-request Saved on Claude Code / Cursor agent turns is often normal: system reminders, tools, and git status stay frozen on purpose. Segmented Allowlist Deep still compresses each last-user prose island in place (order preserved beside paths); check Deep stage for real savings. Optional tool_result_clear_keep_recent clears older tool outputs (chrome from Trim cloud)."
 	case "LOCAL_HEADING_BEFORE":
 		return "Before (raw IDE payload)"
 	case "LOCAL_HEADING_AFTER":

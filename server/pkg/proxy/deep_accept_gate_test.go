@@ -64,9 +64,20 @@ func TestAcceptGateParityWithDeepExpandedLogic(t *testing.T) {
 			expanded = true
 		} else if estimate(c.deep) > estimate(fast) {
 			expanded = true
+		} else if !deepControlWireIntact(fast, c.deep) {
+			expanded = true
 		}
 		if accept == expanded {
 			t.Fatalf("case %d parity broken accept=%v expanded=%v", i, accept, expanded)
 		}
+	}
+}
+
+func TestShouldRejectDeepWhenToolsDeleted(t *testing.T) {
+	t.Parallel()
+	fast := []byte(`{"tools":[{"name":"x"}],"messages":[{"role":"user","content":"hello world please compress this filler"}]}`)
+	deep := []byte(`{"messages":[{"role":"user","content":"hi"}]}`)
+	if shouldAcceptDeepResult(fast, deep, 80, 12) {
+		t.Fatal("must reject Deep that deletes tools")
 	}
 }

@@ -518,6 +518,9 @@ func (h *Handler) patchBillingSettings(w http.ResponseWriter, r *http.Request) {
 		// deep_v2_model is derived from deep_v2_backbone_options[default_deep_v2_backbone].model (not operator-writable).
 		"deep_v1_model": true, "deep_long_model": true,
 		"deep_v2_force_tokens": true,
+		"deep_force_reserve_digit": true,
+		"deep_drop_consecutive": true,
+		"deep_use_sentence_level_filter": true,
 		"deep_v2_backbone_options": true, "default_deep_v2_backbone": true,
 		"allow_downgrades":     true, "upgrade_proration_mode": true,
 		"allow_monthly_to_annual_as_upgrade": true,

@@ -248,8 +248,9 @@ func pushCompressPreferences(p deepopt.Preferences, chrome cliChrome) error {
 	defer res.Body.Close()
 	_, _ = io.Copy(io.Discard, io.LimitReader(res.Body, 8192))
 	if res.StatusCode != http.StatusOK {
-		if chrome.ConfigSyncFailedFmt != "" {
-			return fmt.Errorf(chrome.ConfigSyncFailedFmt, res.Status, "patch compression preferences")
+		action := strings.TrimSpace(chrome.ConfigSyncActionCompression)
+		if chrome.ConfigSyncFailedFmt != "" && action != "" {
+			return fmt.Errorf(chrome.ConfigSyncFailedFmt, res.Status, action)
 		}
 		return chrome.fail("")
 	}

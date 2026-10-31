@@ -130,7 +130,7 @@ export const DOC_PAGES: Record<string, DocPage> = {
     [
       {
         type: "p",
-        text: "Do steps 1–3 on every computer. Then open only the Step 4 path that matches your tool. Do not mix Cursor settings with Claude Code settings. Every code block has a Copy button.",
+        text: "Do steps 1-3 on every computer. Then open only the Step 4 path that matches your tool. Do not mix Cursor settings with Claude Code settings. Every code block has a Copy button.",
       },
       {
         type: "table",
@@ -643,7 +643,7 @@ irm https://use-trim.com/uninstall.ps1 | iex`,
     [
       {
         type: "p",
-        text: "Every request that targets the Trim listen URL hits the local proxy first. Trim compresses (Fast, and Deep when Preferences Deep is on), then forwards upstream. One Base URL serves two client dialects: OpenAI /v1/chat/completions and Anthropic /v1/messages. On the OpenAI door, DB-driven provider adapters route by model prefix: anthropic_messages for Claude, openai_compat for GPT/Gemini/DeepSeek/Mistral hosts. No OpenRouter. No daily UPSTREAM_OPENAI_URL flipping.",
+        text: "Every request that targets the Trim listen URL hits the local proxy first. Trim runs Fast Mode every turn, and when Preferences Deep is on also runs Segmented Allowlist Deep (freeze tools/paths/schemas; compress each last-user prose island in place, order preserved beside paths; validate or fail-closed Fast), then forwards upstream. One Base URL serves two client dialects: OpenAI /v1/chat/completions and Anthropic /v1/messages. On the OpenAI door, DB-driven provider adapters route by model prefix: anthropic_messages for Claude, openai_compat for GPT/Gemini/DeepSeek/Mistral hosts. No OpenRouter. No daily UPSTREAM_OPENAI_URL flipping.",
       },
       { type: "h2", id: "pipeline", text: "Request pipeline" },
       {
@@ -652,7 +652,7 @@ irm https://use-trim.com/uninstall.ps1 | iex`,
           "On-device IDE or Claude Code POSTs to the local Trim URL from trim start (example http://127.0.0.1:8888/v1/chat/completions or /v1/messages). Cursor Agent POSTs to trim cursor-link url (HTTPS …/cl/<token>/v1)",
           "Trim captures workspace context and classifies vendor vs product signal",
           "Fast Mode drops vendor dumps, lockfiles, and log spam; keeps active files and stacks",
-          "When Preferences Deep is on and engine is v2, Deep runs LLMLingua-2 with the synced Base Model (catalog id such as mbert-base or xlm-roberta-large from trim config sync)",
+          "When Preferences Deep is on, Segmented Allowlist Deep runs after Fast: freeze tools/paths/code/JSON; compress each last-user prose island in place (order preserved beside paths); validate or fail-closed Fast. Engine v2 uses LLMLingua-2 with the synced Base Model (catalog id such as mbert-base or xlm-roberta-large from trim config sync)",
           "If the OpenAI-door model matches an enabled provider_adapters prefix, Trim applies that dialect (anthropic_messages translate, or openai_compat host route via upstream_base_url), then calls that upstream",
           "Otherwise, if provider adapters are synced and no prefix matches: clear Trim error (no silent host invent). If adapters are not synced: same-shape forward to UPSTREAM_OPENAI_URL (OpenAI door) or UPSTREAM_ANTHROPIC_URL (Anthropic door)",
           "When logged in, usage is metered against your plan quotas",
@@ -769,7 +769,7 @@ irm https://use-trim.com/uninstall.ps1 | iex`,
       },
       {
         type: "note",
-        text: "Always-on starts the local proxy with your IDE. Deep Mode still only runs when Preferences set Deep on (Fast then Deep per request). After changing compression rate or Base model, run trim config sync on each machine. Everyday loop = open IDE (or trim start).",
+        text: "Always-on starts the local proxy with your IDE. Deep Mode still only runs when Preferences set Deep on (Fast then Segmented Allowlist Deep per request). After changing compression rate or Base model, run trim config sync on each machine. Everyday loop = open IDE (or trim start).",
       },
     ],
   ),
@@ -781,7 +781,7 @@ irm https://use-trim.com/uninstall.ps1 | iex`,
       { type: "h2", id: "fast", text: "Fast Mode" },
       {
         type: "p",
-        text: "Fast Mode powers the live proxy on every turn. When Dashboard preferences set Deep Mode on (compression_tier=deep), trim start also runs Deep (LLMLingua) after Fast on each request before forwarding upstream.",
+        text: "Fast Mode powers the live proxy on every turn. When Dashboard preferences set Deep Mode on (compression_tier=deep), trim start also runs Segmented Allowlist Deep after Fast: freeze tools, system, paths, code fences, URLs, and dense JSON; compress each last-user prose island in place (order preserved beside paths); validate or fail-closed Fast.",
       },
       {
         type: "ul",
@@ -795,7 +795,7 @@ irm https://use-trim.com/uninstall.ps1 | iex`,
       { type: "h2", id: "deep", text: "Deep Mode" },
       {
         type: "p",
-        text: "Deep Mode runs stronger compression on your machine (LLMLingua). With Deep Mode on in Preferences, the live IDE proxy runs Deep after Fast on each request. New accounts default to engine v2 (LLMLingua-2); choose Base model in Settings (see Base Model). trim compress --deep remains available for file/batch jobs. First run may download local dependencies (mbert-base is smaller; xlm-roberta-large is larger). Trim cloud never loads Deep Mode engines.",
+        text: "Deep Mode runs stronger compression on your machine (LLMLingua). With Deep Mode on in Preferences, the live IDE proxy runs Segmented Allowlist Deep after Fast: freeze agent control, tools, paths, code fences, URLs, and dense JSON; compress each last-user prose island in place (order preserved beside paths); validate or fail-closed Fast. New accounts default to engine v2 (LLMLingua-2); choose Base model in Settings (see Base Model). trim compress --deep remains available for file/batch jobs. First run may download local dependencies (mbert-base is smaller; xlm-roberta-large is larger). Trim cloud never loads Deep Mode engines.",
       },
       { type: "h2", id: "compression-rate", text: "Compression rate" },
       {
@@ -866,7 +866,7 @@ trim compress --bootstrap`,
       },
       {
         type: "note",
-        text: "New accounts default to Deep Mode (live proxy runs Fast then Deep). Switch to Fast anytime in Dashboard → Settings or with trim config set default-tier fast. Deep engine defaults to LLMLingua-2 (v2) with Base Model mbert-base. Run trim config sync on each machine after saving. List keep-rates with trim config rates; list Base Models with trim config models.",
+        text: "New accounts default to Deep Mode (live proxy runs Fast then Segmented Allowlist Deep). Switch to Fast anytime in Dashboard → Settings or with trim config set default-tier fast. Deep engine defaults to LLMLingua-2 (v2) with Base Model mbert-base. Run trim config sync on each machine after saving. List keep-rates with trim config rates; list Base Models with trim config models.",
       },
       { type: "h2", id: "history-window", text: "Optional history window" },
       {
@@ -876,14 +876,14 @@ trim compress --bootstrap`,
       { type: "h2", id: "reading-savings", text: "Reading Saved % on the local meter" },
       {
         type: "p",
-        text: "On http://127.0.0.1:8888/dashboard, whole-request Saved % can look low (even 0%) on Claude Code or Cursor agent turns. That is often normal: system reminders, tools, git status, and other agent chrome stay frozen so the loop stays safe. Open Show savings detail to see Deep status (applied, kept Fast / fail-closed) and Deep stage tokens (compressible text only).",
+        text: "On http://127.0.0.1:8888/dashboard, whole-request Saved % can look low (even 0%) on Claude Code or Cursor agent turns. That is often normal: system reminders, tools, git status, and other agent chrome stay frozen so the loop stays safe. Live Deep uses Segmented Allowlist Deep: compress each last-user prose island in place (order preserved beside paths); paths, code fences, URLs, and dense JSON stay verbatim. Open Show savings detail to see Deep status and Deep stage tokens (prose islands only).",
       },
       {
         type: "ul",
         items: [
-          "Deep applied: live Deep rewrote compressible last-user text at your compression rate",
+          "Deep applied: live Deep rewrote eligible last-user prose at your compression rate (paths/tools/schemas frozen)",
           "Deep kept Fast (expansion fail-closed): Deep would have grown or mangled the payload, so Trim kept Fast",
-          "Deep stage saved: savings on the text Trim actually rewrote, separate from whole-body %",
+          "Deep stage saved: savings on prose islands only, separate from whole-body %",
         ],
       },
     ],
@@ -1086,7 +1086,8 @@ trim uninstall`,
         ▼
 Trim on this PC  (http://127.0.0.1:8888)
   • receives POST /v1/messages   (Claude Code appended /v1/messages)
-  • Fast Mode (+ optional Deep) compresses on your machine
+  • Fast Mode (+ optional Segmented Allowlist Deep: each prose island in place, order preserved) on your machine
+  • tools/paths/schemas stay frozen; check Deep stage on the local meter
   • local meter: http://127.0.0.1:8888/dashboard
         │
         ▼
@@ -1811,9 +1812,9 @@ trim stop`,
           ],
           [
             "0% Saved on agent turns",
-            "Often normal agent chrome",
+            "Often normal: tools/system chrome frozen; Segmented Allowlist Deep runs on each prose island in place (order preserved beside paths)",
             "Local dashboard",
-            "Open Show savings detail - Deep may still apply on compressible text",
+            "Open Show savings detail - Deep status + Deep stage (prose islands; order preserved beside paths)",
           ],
         ],
       },
@@ -1869,7 +1870,7 @@ Cursor Agent: trim cursor-link enable → trim cursor-link url (HTTPS …/v1; no
         type: "ul",
         items: [
           "Fast Mode on live chat completions",
-          "Deep Mode on live chat when Preferences Deep is on",
+          "Segmented Allowlist Deep on live chat when Preferences Deep is on (each last-user prose island in place, order preserved beside paths; tools/paths frozen)",
           "If a healthy Trim proxy is already up, trim start attaches with a clear success banner instead of double-binding the port",
           "Optional cloud metering when authenticated",
           "Upstream forward to your configured provider after compress",
@@ -1889,7 +1890,7 @@ Cursor Agent: trim cursor-link enable → trim cursor-link url (HTTPS …/v1; no
       {
         type: "callout",
         title: "Local savings meter",
-        text: "With trim start running, open http://127.0.0.1:8888/dashboard and use Show savings detail. Or run trim stats for the same Deep status / Deep stage lines in the terminal. Whole-body 0% Saved on Claude Code chrome is often normal.",
+        text: "With trim start running, open http://127.0.0.1:8888/dashboard and use Show savings detail. Or run trim stats for the same Deep status / Deep stage lines in the terminal. Whole-body 0% Saved on Claude Code / Cursor agent chrome is often normal.",
       },
       {
         type: "note",
@@ -2236,14 +2237,14 @@ trim stats
       },
       {
         type: "p",
-        text: "trim status is your cloud login/quota check. It does not replace the local meter. After trim start and a chat turn, run trim stats for Deep status (applied, chrome frozen, fail-closed) and Deep stage savings, or open the local dashboard Show savings detail button.",
+        text: "trim status is your cloud login/quota check. It does not replace the local meter. After trim start and a chat turn, run trim stats for Deep status (applied, no prose islands / chrome frozen, fail-closed) and Deep stage (prose) savings, or open the local dashboard Show savings detail button.",
       },
       { type: "h2", id: "fields", text: "What trim stats shows" },
       {
         type: "ul",
         items: [
           "Deep status: why Deep ran or was skipped on the last request",
-          "Deep stage: compressible text tokens before → after (separate from whole-body %)",
+          "Deep stage: prose-island tokens before → after (separate from whole-body %)",
           "Last request (whole body): can be ~0% when agent chrome is frozen - often normal",
           "Dashboard tip: link to Show savings detail on the local meter",
         ],
@@ -2255,7 +2256,7 @@ trim stats
           "Confirm the IDE Base URL points at Trim",
           "Confirm trim start is still running (restart after upgrading trim.exe)",
           "Send a fresh request after fixing settings",
-          "Open Show savings detail - 0% whole-body Saved on Claude Code chrome is often normal",
+          "Open Show savings detail - 0% whole-body Saved on Claude Code / Cursor agent chrome is often normal",
           "Sign in if you expect cloud metering totals (trim status / trim login)",
         ],
       },
@@ -2306,8 +2307,8 @@ trim status
       {
         type: "ul",
         items: [
-          "Deep applied + Deep stage A → B with B < A: live Deep savings on compressible text",
-          "Deep skipped (nothing compressible / chrome frozen): agent chrome protected; whole-body 0% can still be correct",
+          "Deep applied + Deep stage A → B with B < A: live Deep savings on prose islands (order preserved beside paths)",
+          "Deep skipped (no prose islands / chrome frozen): tools/paths/schemas protected; whole-body 0% can still be correct",
           "Deep kept Fast (expansion fail-closed): safety gate refused a bad Deep result",
         ],
       },
@@ -2333,7 +2334,7 @@ trim compress --bootstrap`,
       },
       {
         type: "p",
-        text: "Use Fast Mode for interactive IDE chat when Deep is off (Fast-only path). With Preferences Deep on, live proxy runs Fast then Deep on each request using your compression rate (keep after/before; default 0.7) and, for engine v2, your synced Base Model. Use trim compress --deep --rate 0.7 for file/batch. Bootstrap may download local Deep dependencies (mbert-base is smaller; xlm-roberta-large is larger and slower). Deep Mode engines are not loaded in Trim cloud.",
+        text: "Use Fast Mode for interactive IDE chat when Deep is off (Fast-only path). With Preferences Deep on, live proxy runs Fast then Segmented Allowlist Deep on each request (each last-user prose island in place, order preserved beside paths; tools/paths frozen) using your compression rate (keep after/before; default 0.7) and, for engine v2, your synced Base Model. Use trim compress --deep --rate 0.7 for file/batch. Bootstrap may download local Deep dependencies (mbert-base is smaller; xlm-roberta-large is larger and slower). Deep Mode engines are not loaded in Trim cloud.",
       },
       { type: "h2", id: "engines", text: "Deep engines (pick one)" },
       {
@@ -2417,7 +2418,7 @@ trim config sync`,
         type: "ul",
         items: [
           "fast: live IDE proxy runs Fast Mode only",
-          "deep: live IDE proxy runs Fast then Deep (LLMLingua-2) at your compression rate and Base Model",
+          "deep: live IDE proxy runs Fast then Segmented Allowlist Deep (LLMLingua-2 on each last-user prose island in place, order preserved beside paths) at your compression rate and Base Model",
           "compression-rate: keep-rate after/before (Microsoft-aligned; default 0.7; typically 0.3 to 1.0 step 0.1)",
           "deep-v2-backbone: Microsoft Base Model id from Admin catalog (default mbert-base; optional xlm-roberta-large)",
           "After Dashboard → Settings changes (rate slider or Base model): trim config sync, then trim start again",
@@ -2431,7 +2432,7 @@ trim config sync`,
       },
       {
         type: "p",
-        text: "After changing Compression defaults in the dashboard (Deep on/off, engine, compression rate, Base model), sync so the local proxy picks up preferences. New accounts default to Deep (live proxy runs Fast then Deep). Switch to Fast anytime for Fast-only turns.",
+        text: "After changing Compression defaults in the dashboard (Deep on/off, engine, compression rate, Base model), sync so the local proxy picks up preferences. New accounts default to Deep (live proxy runs Fast then Segmented Allowlist Deep). Switch to Fast anytime for Fast-only turns.",
       },
       {
         type: "note",
@@ -2446,7 +2447,7 @@ trim config sync`,
     [
       {
         type: "p",
-        text: "history_keep_turns is an optional Fast Mode knob for very long multi-turn chats. When enabled, Trim keeps the last N eligible conversation turns more fully and may replace older eligible text turns with a short compacted marker so you stop resending ancient prose on every request.",
+        text: "history_keep_turns is an optional Fast Mode knob for very long multi-turn chats. When enabled, Trim keeps the last N eligible conversation turns more fully and may replace older eligible text turns with the synced site_messages stub CLI_PROXY_HISTORY_COMPACTED_STUB so you stop resending ancient prose on every request. If that chrome is missing after trim config sync, history stubbing stays off (fail-closed).",
       },
       {
         type: "callout",
@@ -2460,7 +2461,7 @@ trim config sync`,
           "Keeps the newest N eligible chat turns (user/assistant text history) more fully",
           "May stub older eligible text turns with a compact history marker",
           "Still forwards a normal multi-turn request structure to the model (not “last message only”)",
-          "Does not replace Deep Mode: Deep still compresses last-user plain text only when Deep prefs are on",
+          "Does not replace Deep Mode: Deep still compresses each last-user prose island in place (order preserved beside paths) when Deep prefs are on (paths/tools/schemas stay frozen)",
         ],
       },
       { type: "h2", id: "what-stays-protected", text: "What stays protected" },
@@ -2508,19 +2509,30 @@ trim config sync`,
         code: `# Keep last 8 eligible turns; older eligible text turns may be stubbed
 history_keep_turns=8
 
+# Optional: keep last 2 tool outputs; older tool_result / role=tool payloads cleared
+# (requires synced CLI_PROXY_TOOL_RESULT_CLEARED_FMT from Trim cloud; 0 = off)
+# tool_result_clear_keep_recent=2
+
 # Explicit off
-# history_keep_turns=0`,
+# history_keep_turns=0
+# tool_result_clear_keep_recent=0`,
       },
-      { type: "h3", id: "env", text: "Environment fallback" },
+      { type: "h3", id: "tool-result-clearing", text: "Optional tool-result clearing" },
       {
         type: "p",
-        text: "If .trimrc does not set the value, you can use TRIM_HISTORY_KEEP_TURNS. Project .trimrc wins when set.",
+        text: "tool_result_clear_keep_recent is a separate Fast Mode dial (Claude Code / Cursor / Codex style). When set above 0 and Trim cloud chrome CLI_PROXY_TOOL_RESULT_CLEARED_FMT is synced, older tool_result / role=tool payloads are replaced with that chrome stub while keeping tool ids. The trailing user turn is never cleared. Default is 0 (off). When .trimrc omits the dial, TRIM_TOOL_RESULT_CLEAR_KEEP_RECENT from the process environment applies.",
+      },
+      { type: "h3", id: "env", text: "Environment when .trimrc omits" },
+      {
+        type: "p",
+        text: "If .trimrc does not set the value, you can use TRIM_HISTORY_KEEP_TURNS (and TRIM_TOOL_RESULT_CLEAR_KEEP_RECENT). Project .trimrc wins when set.",
       },
       {
         type: "code",
         language: "bash",
         code: `# Unix
 export TRIM_HISTORY_KEEP_TURNS=8
+# export TRIM_TOOL_RESULT_CLEAR_KEEP_RECENT=2
 
 # Windows PowerShell (user scope example)
 # [Environment]::SetEnvironmentVariable("TRIM_HISTORY_KEEP_TURNS", "8", "User")`,
@@ -2539,13 +2551,13 @@ export TRIM_HISTORY_KEEP_TURNS=8
         items: [
           "Fast Mode: always runs; can also shorten compressible text without stubbing whole turns",
           "history_keep_turns: optional Fast-path sliding window that stubs older eligible turns",
-          "Deep Mode: optional; compresses last-user plain text only (does not smash system/tools into LLMLingua). For engine v2, uses your synced Base Model and keep-rate (separate from history_keep_turns stubbing)",
+          "Deep Mode: optional Segmented Allowlist Deep on each last-user prose island in place (order preserved beside paths; does not smash system/tools/paths into LLMLingua). For engine v2, uses your synced Base Model and keep-rate (separate from history_keep_turns stubbing)",
         ],
       },
       {
         type: "callout",
         title: "Best practice",
-        text: "Leave history_keep_turns off unless you have a real huge-history problem. Start around 8–30 if you enable it, protect critical files with never_trim / active_file_protection, and turn it back to 0 if the model starts “forgetting” older details you still need.",
+        text: "Leave history_keep_turns off unless you have a real huge-history problem. Start around 8-30 if you enable it, protect critical files with never_trim / active_file_protection, and turn it back to 0 if the model starts “forgetting” older details you still need.",
       },
     ],
   ),
@@ -2725,7 +2737,7 @@ gpt-4o-mini`,
           "Cursor Composer / chat through Trim …/v1: supported (primary path).",
           "Claude Code through Anthropic door: supported (ANTHROPIC_BASE_URL = origin, no /v1).",
           "Windsurf / Zed / Aider / curl OpenAI SDKs: supported when Base URL = Trim …/v1 (exact UI fields vary; trim setup helps when settings files exist).",
-          "Dashboard Deep status “chrome frozen / nothing compressible” on agent turns: normal - open Show savings detail.",
+          "Dashboard Deep status “chrome frozen / no prose islands” on agent turns: normal - open Show savings detail for Deep stage.",
         ],
       },
       {
@@ -3174,7 +3186,8 @@ Trim Cursor Link (public HTTPS door)
         │
         ▼
 Local Trim on YOUR PC  (http://127.0.0.1:8888)
-  • Fast Mode (+ optional Deep) on this machine
+  • Fast Mode (+ optional Segmented Allowlist Deep: each prose island in place, order preserved) on this machine
+  • tools/paths/schemas stay frozen; check Deep stage on the local meter
   • local meter: http://127.0.0.1:8888/dashboard
         │
         ▼
@@ -3387,6 +3400,7 @@ trim stop`,
           "Cursor Override Base URL matches that URL (not 127.0.0.1)",
           "Send Agent/Composer: Reply with exactly: ok",
           "Open http://127.0.0.1:8888/dashboard - Requests increase (proves work is local)",
+          "Open Show savings detail - Deep status / Deep stage (prose islands; order preserved beside paths) explain whole-body 0% when chrome dominates",
           "If you still see “private networks forbidden”, the Base URL is still localhost - re-paste trim cursor-link url",
         ],
       },
@@ -3423,6 +3437,11 @@ trim stop`,
             "Tunnel up but Cursor fails auth",
             "Wrong provider key for model",
             "Paste Anthropic/OpenAI/Google key matching the model id",
+          ],
+          [
+            "0% Saved on Agent turns",
+            "Often normal: tools/system chrome frozen; Segmented Allowlist Deep runs on each last-user prose island in place (order preserved beside paths)",
+            "Open http://127.0.0.1:8888/dashboard → Show savings detail (Deep status + Deep stage)",
           ],
         ],
       },
@@ -3593,6 +3612,11 @@ http://127.0.0.1:8888/v1
 VS Code Chat Custom Endpoint url (full path)
 http://127.0.0.1:8888/v1/chat/completions`,
       },
+      {
+        type: "callout",
+        title: "Low or 0% Saved on agent-style turns",
+        text: "Whole-request Saved % can look low when tools or long chrome dominate. Live Deep uses Segmented Allowlist Deep: each last-user prose island in place (order preserved beside paths); tools/paths/schemas stay frozen. Open http://127.0.0.1:8888/dashboard → Show savings detail for Deep status and Deep stage.",
+      },
       { type: "h2", id: "extension", text: "Install the Trim IDE extension" },
       {
         type: "p",
@@ -3754,7 +3778,7 @@ models:
         type: "ul",
         items: [
           "Chat: normal Q&A through Trim - always the first smoke test.",
-          "Agent: file tools / edits. Requires capabilities tool_use. Low whole-body Saved % with Deep skipped (chrome frozen) is often normal on tool-heavy turns - use Show savings detail.",
+          "Agent: file tools / edits. Requires capabilities tool_use. Low whole-body Saved % is often normal on tool-heavy turns (tools frozen; prose islands may still Deep). Use Show savings detail for Deep stage.",
           "If you see Custom Endpoint/… • 0 credits in the transcript header, you are in VS Code Chat, not Continue.",
         ],
       },
@@ -3768,6 +3792,11 @@ models:
         language: "bash",
         code: `trim stats
 # or open http://127.0.0.1:8888/dashboard → Show savings detail`,
+      },
+      {
+        type: "callout",
+        title: "Low or 0% Saved",
+        text: "Whole-request Saved % can look low on Continue Agent turns. Live Deep uses Segmented Allowlist Deep (each prose island in place, order preserved beside paths; tools/paths frozen). Open http://127.0.0.1:8888/dashboard → Show savings detail for Deep status and Deep stage.",
       },
       {
         type: "h2",
@@ -3864,6 +3893,11 @@ gpt-4o-mini`,
         title: "Honest limits",
         text: "Windsurf UI labels change across releases. If a key is ignored, use Windsurf’s current OpenAI-compatible / custom Base URL setting and set it to Trim …/v1. Model ids must still match GET /v1/models / provider adapters. See Custom models for naming ideas such as trim-gpt-4o-mini or trim-gemini-fast-latest.",
       },
+      {
+        type: "callout",
+        title: "Low or 0% Saved",
+        text: "Whole-request Saved % can look low on agent turns. Live Deep uses Segmented Allowlist Deep (each prose island in place, order preserved beside paths; tools/paths frozen). Open http://127.0.0.1:8888/dashboard → Show savings detail for Deep status and Deep stage.",
+      },
     ],
   ),
 
@@ -3925,6 +3959,11 @@ gpt-4o-mini`,
       {
         type: "note",
         text: "available_models shape can vary by Zed version - keep api_url = Trim …/v1 as the required Trim field. See Custom models and OpenAI-compatible clients if your Zed build uses different keys.",
+      },
+      {
+        type: "callout",
+        title: "Low or 0% Saved",
+        text: "Whole-request Saved % can look low on agent turns. Live Deep uses Segmented Allowlist Deep (each prose island in place, order preserved beside paths; tools/paths frozen). Open http://127.0.0.1:8888/dashboard → Show savings detail for Deep status and Deep stage.",
       },
     ],
   ),
@@ -3991,6 +4030,11 @@ gpt-4o-mini`,
         type: "callout",
         title: "Honest limits",
         text: "Exact JetBrains menu names differ by IDE (IDEA, PyCharm, …) and plugin version. The Trim contract is the OpenAI-compatible Base URL = Trim …/v1 plus the matching provider key and a Trim-known model id.",
+      },
+      {
+        type: "callout",
+        title: "Low or 0% Saved",
+        text: "Whole-request Saved % can look low on agent turns. Live Deep uses Segmented Allowlist Deep (each prose island in place, order preserved beside paths; tools/paths frozen). Open http://127.0.0.1:8888/dashboard → Show savings detail for Deep status and Deep stage.",
       },
     ],
   ),
@@ -4073,6 +4117,11 @@ gpt-4o-mini`,
       {
         type: "note",
         text: "trim setup prints shell exports for OPENAI_BASE_URL and ANTHROPIC_BASE_URL. Never point OPENAI_BASE_URL at api.anthropic.com - that skips Trim. See Custom models for trim-gpt-… / trim-gemini-fast naming ideas.",
+      },
+      {
+        type: "callout",
+        title: "Low or 0% Saved",
+        text: "Whole-request Saved % can look low on agent turns. Live Deep uses Segmented Allowlist Deep (each prose island in place, order preserved beside paths; tools/paths frozen). Open http://127.0.0.1:8888/dashboard → Show savings detail for Deep status and Deep stage.",
       },
     ],
   ),
@@ -4398,6 +4447,11 @@ claude`,
         type: "note",
         text: "Full CLI-only walkthrough: Claude Code (CLI only). For Claude inside Cursor, use Cursor setup + Custom models instead.",
       },
+      {
+        type: "callout",
+        title: "Low or 0% Saved",
+        text: "Whole-request Saved % can look low on agent turns. Live Deep uses Segmented Allowlist Deep (each prose island in place, order preserved beside paths; tools/paths frozen). Open http://127.0.0.1:8888/dashboard → Show savings detail for Deep status and Deep stage.",
+      },
     ],
   ),
 
@@ -4428,7 +4482,7 @@ claude`,
         items: [
           "Cursor → Override OpenAI Base URL → Trim",
           "Model id matches an enabled adapter prefix (e.g. claude-, anthropic/, trim-claude-)",
-          "Trim compresses (Fast / Deep)",
+          "Trim compresses: Fast every turn; when Deep is on, Segmented Allowlist Deep on each last-user prose island in place (order preserved beside paths; tools/paths frozen)",
           "Adapter translates OpenAI chat → Anthropic /v1/messages (tools + stream)",
           "Auth: Authorization Bearer → x-api-key + anthropic-version from the adapter row",
           "Org/multi-workspace Anthropic keys: Trim also sends anthropic-workspace-id when set (client header → TRIM_ANTHROPIC_WORKSPACE_ID). Workspace-scoped keys omit it.",
@@ -5023,7 +5077,7 @@ gpt-4o-mini`,
     [
       {
         type: "p",
-        text: "Preferences live on Dashboard → Settings (same page as identities and API keys). Deep Mode on enables live proxy Deep (after Fast) plus trim compress defaults. Off keeps Fast only on the live proxy.",
+        text: "Preferences live on Dashboard → Settings (same page as identities and API keys). Deep Mode on enables live Segmented Allowlist Deep after Fast (each last-user prose island in place, order preserved beside paths; tools/paths/schemas frozen) plus trim compress defaults. Off keeps Fast only on the live proxy.",
       },
       { type: "h2", id: "always-on", text: "Start Trim with your IDE" },
       {
@@ -5046,7 +5100,7 @@ gpt-4o-mini`,
       {
         type: "ol",
         items: [
-          "Deep Mode is on by default for new accounts (live proxy runs Fast then Deep); switch to Fast in Settings or with trim config set default-tier fast",
+          "Deep Mode is on by default for new accounts (live proxy runs Fast then Segmented Allowlist Deep); switch to Fast in Settings or with trim config set default-tier fast",
           "Deep engine defaults to LLMLingua-2 (v2); switch to long (needs a question) or v1 if you prefer",
           "Drag Compression rate (keep after/before; default 0.7; typically 0.3 to 1.0 step 0.1), Save, then on each machine: trim config sync (or trim config set compression-rate 0.7 while logged in)",
           "Choose Base model (Microsoft LLMLingua-2: mbert-base default, optional xlm-roberta-large), Save, then trim config sync",
@@ -5239,7 +5293,7 @@ gpt-4o-mini`,
         items: [
           "Tabs: pricing, deep, lists, policy (labels from chrome)",
           "Pricing - annual_discount_percent, currency, proration / upgrade dials, default_seat_quantity, min_seat_quantity, default_plan_interval when returned",
-          "Deep - default/min/max/step compression rate (keep after/before), OOM policy, warm on start, LLMLingua-2 Base Model catalog (deep_v2_backbone_options + default_deep_v2_backbone; seeded mbert-base / optional xlm-roberta-large), read-only deep_v2_model (resolved HF id for the billing default backbone), editable deep_v1_model / deep_long_model, force_tokens JSON",
+          "Deep - default/min/max/step compression rate (keep after/before), OOM policy, warm on start, LLMLingua-2 Base Model catalog (deep_v2_backbone_options + default_deep_v2_backbone; seeded mbert-base / optional xlm-roberta-large), read-only deep_v2_model (resolved HF id for the billing default backbone), editable deep_v1_model / deep_long_model, force_tokens JSON, deep_force_reserve_digit, deep_drop_consecutive, deep_use_sentence_level_filter (default off for coding; synced to CLI; not inventable in the optimizer)",
           "Lists - pagination page sizes and chart dials (TTL / days / top-N / date_range_months) - not email/IP denylist (see Denylist)",
           "Policy - cancel / downgrade and related policy dials",
         ],
@@ -5263,7 +5317,7 @@ gpt-4o-mini`,
     [
       {
         type: "p",
-        text: "Product settings align new-account defaults with customer Preferences (Deep Mode by default = Fast then Deep; Deep engine v2) without inventing client fallbacks. LLMLingua-2 Base Model catalog and default (mbert-base / optional xlm-roberta-large) live under Admin → Billing → Settings → Deep, not Product tabs.",
+        text: "Product settings align new-account defaults with customer Preferences (Deep Mode by default = Fast then Segmented Allowlist Deep; Deep engine v2) without inventing client fallbacks. LLMLingua-2 Base Model catalog and default (mbert-base / optional xlm-roberta-large) live under Admin → Billing → Settings → Deep, not Product tabs.",
       },
       { type: "h2", id: "tabs", text: "Config tabs" },
       {
@@ -5963,8 +6017,8 @@ Optional build features: follow README flags for native parsers`,
         type: "ul",
         items: [
           "Open http://127.0.0.1:8888/dashboard → Show savings detail",
-          "Check Deep status: applied, chrome frozen / nothing compressible, or fail-closed kept Fast",
-          "Compare Deep stage tokens to whole-request Saved - agent chrome stays frozen on purpose",
+          "Check Deep status: applied, chrome frozen / no prose islands, or fail-closed kept Fast",
+          "Compare Deep stage tokens to whole-request Saved - Segmented Allowlist Deep meters prose islands only (order preserved beside paths); agent chrome stays frozen on purpose",
           "0% whole-request Saved with a correct Claude Code / Cursor answer is often normal, not a broken install",
         ],
       },
@@ -6008,12 +6062,12 @@ Optional build features: follow README flags for native parsers`,
       },
       {
         type: "p",
-        text: "Compression runs in the local proxy on your machine (Fast only, or Fast then Deep when Deep Mode is on). The hosted Service stores account, billing, and metering data. Full prompt bodies are not required in Trim cloud for the local proxy path. Upstream model providers still receive the slim prompt you forward.",
+        text: "Compression runs in the local proxy on your machine (Fast only, or Fast then Segmented Allowlist Deep when Deep Mode is on). The hosted Service stores account, billing, and metering data. Full prompt bodies are not required in Trim cloud for the local proxy path. Upstream model providers still receive the slim prompt you forward.",
       },
       { type: "h2", id: "fast-vs-deep", text: "When should I use Deep Mode?" },
       {
         type: "p",
-        text: "Use Fast Mode for interactive IDE chat when Deep Mode is off. When Deep Mode is on in Preferences, trim start runs Fast then Deep on each request at your compression rate (default 0.7) and, for LLMLingua-2 (v2), your Base Model (default mbert-base; optional xlm-roberta-large). Set rate and Base model in Dashboard → Settings, or with trim config rates / models and trim config set compression-rate / deep-v2-backbone, then trim config sync. File/batch: trim compress --deep --rate. Engines are not loaded in Trim cloud.",
+        text: "Use Fast Mode for interactive IDE chat when Deep Mode is off. When Deep Mode is on in Preferences, trim start runs Fast then Segmented Allowlist Deep (each last-user prose island in place, order preserved beside paths; tools/paths/schemas frozen) at your compression rate (default 0.7) and, for LLMLingua-2 (v2), your Base Model (default mbert-base; optional xlm-roberta-large). Set rate and Base model in Dashboard → Settings, or with trim config rates / models and trim config set compression-rate / deep-v2-backbone, then trim config sync. File/batch: trim compress --deep --rate. Engines are not loaded in Trim cloud.",
       },
       {
         type: "h2",
@@ -6027,11 +6081,11 @@ Optional build features: follow README flags for native parsers`,
       {
         type: "h2",
         id: "zero-saved-claude-code",
-        text: "Why does the local dashboard show 0% Saved on Claude Code?",
+        text: "Why does the local dashboard show 0% Saved on Claude Code or Cursor Agent?",
       },
       {
         type: "p",
-        text: "Usually because most of the request is frozen agent chrome (system reminders, tools, git status). Trim protects that on purpose. Open Show savings detail on the local meter for Deep status and Deep stage savings. Whole-request 0% with a correct answer is not a broken install.",
+        text: "Usually because most of the request is frozen agent chrome (system reminders, tools, git status). Trim protects that on purpose. Eligible last-user prose still runs Segmented Allowlist Deep; paths and schemas stay verbatim. Open Show savings detail for Deep status and Deep stage (prose) savings. Whole-request 0% with a correct answer is not a broken install.",
       },
       { type: "h2", id: "works-with-other-ides", text: "Does Trim work outside Cursor?" },
       {

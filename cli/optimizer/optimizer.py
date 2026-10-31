@@ -42,6 +42,66 @@ def parse_rate(payload: dict) -> float:
     return rate
 
 
+def billing_coding_kwargs(
+    rate: float,
+    force_tokens: list,
+    force_reserve_digit: bool | None,
+    drop_consecutive: bool | None,
+    use_sentence_level_filter: bool | None,
+) -> dict:
+    """Billing-driven compress_prompt knobs only. Missing dials stay omitted (no invent)."""
+    kwargs: dict = {"rate": rate}
+    if force_tokens:
+        kwargs["force_tokens"] = force_tokens
+    if drop_consecutive is not None:
+        kwargs["drop_consecutive"] = drop_consecutive
+    if force_reserve_digit is not None:
+        kwargs["force_reserve_digit"] = force_reserve_digit
+    if use_sentence_level_filter is not None:
+        kwargs["use_sentence_level_filter"] = use_sentence_level_filter
+    return kwargs
+
+
+def compress_prompt_compat(compressor, text: str, kwargs: dict, prefer_list: bool = False):
+    """
+    Call LLMLingua compress_prompt with graduated peel on TypeError.
+    Keep billing coding dials as long as the installed library accepts them.
+    Do not jump straight to rate-only (that previously dropped force_reserve_digit /
+    drop_consecutive whenever question=/instruction= was rejected).
+    """
+    attempts: list[tuple[object, dict]] = []
+    primary = [text] if prefer_list else text
+    attempts.append((primary, dict(kwargs)))
+    # Peel Microsoft question/instruction first (common reject on some LLMLingua-2 builds).
+    no_qx = dict(kwargs)
+    no_qx.pop("question", None)
+    no_qx.pop("instruction", None)
+    if no_qx != kwargs:
+        attempts.append((text, no_qx))
+    # Then peel coding dials only if the signature still rejects.
+    no_dials = dict(no_qx)
+    no_dials.pop("drop_consecutive", None)
+    no_dials.pop("force_reserve_digit", None)
+    no_dials.pop("use_sentence_level_filter", None)
+    if no_dials != no_qx:
+        attempts.append((text, no_dials))
+    no_tokens = dict(no_dials)
+    no_tokens.pop("force_tokens", None)
+    if no_tokens != no_dials:
+        attempts.append((text, no_tokens))
+
+    last_err: TypeError | None = None
+    for payload, kw in attempts:
+        try:
+            return compressor.compress_prompt(payload, **kw)
+        except TypeError as exc:
+            last_err = exc
+            continue
+    if last_err is not None:
+        raise last_err
+    fail("DEEP_OPT_COMPRESS_PROMPT_FAILED")
+
+
 def main() -> None:
     try:
         raw = sys.stdin.read()
@@ -72,6 +132,15 @@ def main() -> None:
     if not isinstance(force_tokens, list):
         fail("DEEP_OPT_FORCE_TOKENS_INVALID")
     use_llmlingua2 = bool(payload.get("use_llmlingua2"))
+    # Billing-driven only (trim config sync). Missing keys = do not invent True.
+    has_force_reserve = "force_reserve_digit" in payload
+    has_drop_consecutive = "drop_consecutive" in payload
+    has_sentence_filter = "use_sentence_level_filter" in payload
+    force_reserve_digit = bool(payload.get("force_reserve_digit")) if has_force_reserve else None
+    drop_consecutive = bool(payload.get("drop_consecutive")) if has_drop_consecutive else None
+    use_sentence_level_filter = (
+        bool(payload.get("use_sentence_level_filter")) if has_sentence_filter else None
+    )
 
     if not text.strip():
         print(
@@ -100,96 +169,56 @@ def main() -> None:
                 device_map=device_map,
             )
             # Microsoft LLMLingua-2 Space: rate is the primary knob (after/before).
+            kwargs = billing_coding_kwargs(
+                rate,
+                force_tokens,
+                force_reserve_digit,
+                drop_consecutive,
+                use_sentence_level_filter,
+            )
             q = question.strip()
-            kwargs = {"rate": rate}
-            if force_tokens:
-                kwargs["force_tokens"] = force_tokens
-                # Official LLMLingua-2 examples pair force_tokens with drop_consecutive
-                # and often force_reserve_digit so line numbers / versions survive.
-                kwargs["drop_consecutive"] = True
-                kwargs["force_reserve_digit"] = True
             if q:
                 kwargs["question"] = q
                 kwargs["instruction"] = ""
-                try:
-                    results = compressor.compress_prompt([text], **kwargs)
-                except TypeError:
-                    # Some LLMLingua-2 builds reject question=/instruction=/drop_consecutive.
-                    fallback = {"rate": rate}
-                    if force_tokens:
-                        fallback["force_tokens"] = force_tokens
-                    results = compressor.compress_prompt(text, **fallback)
+                results = compress_prompt_compat(compressor, text, kwargs, prefer_list=True)
             else:
-                try:
-                    results = compressor.compress_prompt(text, **kwargs)
-                except TypeError:
-                    fallback = {"rate": rate}
-                    if force_tokens:
-                        fallback["force_tokens"] = force_tokens
-                    results = compressor.compress_prompt(text, **fallback)
+                results = compress_prompt_compat(compressor, text, kwargs, prefer_list=False)
         elif engine == "long":
             if not question.strip():
                 fail("DEEP_OPT_LONG_QUESTION_REQUIRED")
             compressor = PromptCompressor(model_name=model_name, device_map=device_map)
-            long_kwargs = {
-                "question": question.strip(),
-                "rate": rate,
-                "reorder_context": "sort",
-                "condition_compare": True,
-                "rank_method": "longllmlingua",
-            }
-            if force_tokens:
-                long_kwargs["force_tokens"] = force_tokens
-                # Official LLMLingua DOCUMENT.md: pair force_tokens with digit reserve
-                # so path segments / versions survive (coding-agent garble defense).
-                long_kwargs["force_reserve_digit"] = True
-                long_kwargs["drop_consecutive"] = True
-            try:
-                results = compressor.compress_prompt([text], **long_kwargs)
-            except TypeError:
-                long_kwargs.pop("force_reserve_digit", None)
-                long_kwargs.pop("drop_consecutive", None)
-                try:
-                    results = compressor.compress_prompt([text], **long_kwargs)
-                except TypeError:
-                    long_kwargs.pop("force_tokens", None)
-                    results = compressor.compress_prompt([text], **long_kwargs)
+            long_kwargs = billing_coding_kwargs(
+                rate,
+                force_tokens,
+                force_reserve_digit,
+                drop_consecutive,
+                use_sentence_level_filter,
+            )
+            long_kwargs.update(
+                {
+                    "question": question.strip(),
+                    "reorder_context": "sort",
+                    "condition_compare": True,
+                    "rank_method": "longllmlingua",
+                }
+            )
+            results = compress_prompt_compat(compressor, text, long_kwargs, prefer_list=True)
         else:
             compressor = PromptCompressor(model_name=model_name, device_map=device_map)
+            kwargs = billing_coding_kwargs(
+                rate,
+                force_tokens,
+                force_reserve_digit,
+                drop_consecutive,
+                use_sentence_level_filter,
+            )
             q = question.strip()
-            kwargs = {"rate": rate}
-            if force_tokens:
-                kwargs["force_tokens"] = force_tokens
-                # Official Microsoft LLMLingua: force_reserve_digit + drop_consecutive
-                # with force_tokens (same as v2 path) - protects digits in paths/versions.
-                kwargs["force_reserve_digit"] = True
-                kwargs["drop_consecutive"] = True
             if q:
                 kwargs["question"] = q
                 kwargs["instruction"] = ""
-                try:
-                    results = compressor.compress_prompt([text], **kwargs)
-                except TypeError:
-                    fallback = {"rate": rate}
-                    if force_tokens:
-                        fallback["force_tokens"] = force_tokens
-                    try:
-                        results = compressor.compress_prompt(text, **fallback)
-                    except TypeError:
-                        fallback.pop("force_tokens", None)
-                        results = compressor.compress_prompt(text, **fallback)
+                results = compress_prompt_compat(compressor, text, kwargs, prefer_list=True)
             else:
-                try:
-                    results = compressor.compress_prompt(text, **kwargs)
-                except TypeError:
-                    fallback = {"rate": rate}
-                    if force_tokens:
-                        fallback["force_tokens"] = force_tokens
-                    try:
-                        results = compressor.compress_prompt(text, **fallback)
-                    except TypeError:
-                        fallback.pop("force_tokens", None)
-                        results = compressor.compress_prompt(text, **fallback)
+                results = compress_prompt_compat(compressor, text, kwargs, prefer_list=False)
     except Exception as exc:  # noqa: BLE001 - surface model errors to CLI
         fail(f"DEEP_OPT_FAILED:{engine}:{exc}")
 

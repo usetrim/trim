@@ -419,6 +419,7 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 			StatusLabelRemaining               string `json:"status_label_remaining"`
 			StatusLabelDashboard               string `json:"status_label_dashboard"`
 			StatusLabelUpgrade                 string `json:"status_label_upgrade"`
+			StatusUpgradeCmd                   string `json:"status_upgrade_cmd"`
 			StatusRemainingFmt                 string `json:"status_remaining_fmt"`
 			StatusChecking                     string `json:"status_checking"`
 			StatusHTTPErrorFmt                 string `json:"status_http_error_fmt"`
@@ -482,6 +483,9 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 			StartStopped                       string `json:"start_stopped"`
 			ErrFmt                             string `json:"err_fmt"`
 			ProxyFailedFmt                     string `json:"proxy_failed_fmt"`
+			ProxyWorkerStartFmt                string `json:"proxy_worker_start_fmt"`
+			ProxyWorkerExitedEarlyFmt          string `json:"proxy_worker_exited_early_fmt"`
+			ProxyNotHealthy                    string `json:"proxy_not_healthy"`
 			MainErrFmt                         string `json:"main_err_fmt"`
 			DaemonUnsupportedFmt               string `json:"daemon_unsupported_fmt"`
 			DaemonLaunchdInstalledFmt          string `json:"daemon_launchd_installed_fmt"`
@@ -590,9 +594,12 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 			DeepTimeout                        string `json:"deep_timeout"`
 			DeepParseFmt                       string `json:"deep_parse_fmt"`
 			ProxyDeepFailedFmt                 string `json:"proxy_deep_failed_fmt"`
+			ProxyDeepExpansionFailClosedFmt    string `json:"proxy_deep_expansion_fail_closed_fmt"`
 			ProxyLiveDeepModeFmt               string `json:"proxy_live_deep_mode_fmt"`
 			ProxyLiveDeepEnabledFmt            string `json:"proxy_live_deep_enabled_fmt"`
 			ProxyDeepCompactStub               string `json:"proxy_deep_compact_stub"`
+			ProxyToolResultClearedFmt          string `json:"proxy_tool_result_cleared_fmt"`
+			ProxyHistoryCompactedStub          string `json:"proxy_history_compacted_stub"`
 			ProxyDeepChromeRequired            string `json:"proxy_deep_chrome_required"`
 			ProxyDeepPrefsRequired             string `json:"proxy_deep_prefs_required"`
 			ProxyDeepOOMSkipped                string `json:"proxy_deep_oom_skipped"`
@@ -634,6 +641,9 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 			ConfigRatesDefaultLabel            string `json:"config_rates_default_label"`
 			ConfigRatesSelectedLabel           string `json:"config_rates_selected_label"`
 			ConfigRatesSelectedMark            string `json:"config_rates_selected_mark"`
+			ConfigRatesMinLabel                string `json:"config_rates_min_label"`
+			ConfigRatesMaxLabel                string `json:"config_rates_max_label"`
+			ConfigRatesStepLabel               string `json:"config_rates_step_label"`
 			ConfigRatesSyncHint                string `json:"config_rates_sync_hint"`
 			ConfigRatesUnsynced                string `json:"config_rates_unsynced"`
 			HelpConfigRatesShort               string `json:"help_config_rates_short"`
@@ -653,6 +663,10 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 			ConfigSavedFmt                     string `json:"config_saved_fmt"`
 			ConfigNotLoggedIn                  string `json:"config_not_logged_in"`
 			ConfigSyncFailedFmt                string `json:"config_sync_failed_fmt"`
+			ConfigSyncActionAutoStart          string `json:"config_sync_action_auto_start"`
+			ConfigSyncActionCompression        string `json:"config_sync_action_compression"`
+			ChromeTimeoutInvalidFmt            string `json:"chrome_timeout_invalid_fmt"`
+			DaemonWindowsOnly                  string `json:"daemon_windows_only"`
 			ConfigSyncedFmt                    string `json:"config_synced_fmt"`
 			HelpRootShort                      string `json:"help_root_short"`
 			HelpRootLong                       string `json:"help_root_long"`
@@ -661,6 +675,7 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 			HelpStartShort                     string `json:"help_start_short"`
 			HelpStartLong                      string `json:"help_start_long"`
 			HelpStartFlagPort                  string `json:"help_start_flag_port"`
+			HelpStartFlagForeground            string `json:"help_start_flag_foreground"`
 			HelpLoginShort                     string `json:"help_login_short"`
 			HelpLogoutShort                    string `json:"help_logout_short"`
 			HelpUninstallShort                 string `json:"help_uninstall_short"`
@@ -755,6 +770,45 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 			HelpCursorLinkStatusShort          string `json:"help_cursor_link_status_short"`
 			HelpCursorLinkURLShort             string `json:"help_cursor_link_url_short"`
 			HelpCursorLinkRotateShort          string `json:"help_cursor_link_rotate_short"`
+			CursorLinkEnabledOk                string `json:"cursor_link_enabled_ok"`
+			CursorLinkDisabledOk               string `json:"cursor_link_disabled_ok"`
+			CursorLinkRotatedOk                string `json:"cursor_link_rotated_ok"`
+			CursorLinkEnableNext               string `json:"cursor_link_enable_next"`
+			CursorLinkDisabledMuted            string `json:"cursor_link_disabled_muted"`
+			CursorLinkStatusPaste              string `json:"cursor_link_status_paste"`
+			CursorLinkStatusPrivacy            string `json:"cursor_link_status_privacy"`
+			CursorLinkStatusEnableHint         string `json:"cursor_link_status_enable_hint"`
+			CursorLinkRotateMuted              string `json:"cursor_link_rotate_muted"`
+			CursorLinkDisabledErr              string `json:"cursor_link_disabled_err"`
+			CursorLinkDisabledStartErr         string `json:"cursor_link_disabled_start_err"`
+			CursorLinkNoURLFmt                 string `json:"cursor_link_no_url_fmt"`
+			CursorLinkLabelState               string `json:"cursor_link_label_state"`
+			CursorLinkStateOn                  string `json:"cursor_link_state_on"`
+			CursorLinkStateOff                 string `json:"cursor_link_state_off"`
+			CursorLinkLabelPublicURL           string `json:"cursor_link_label_public_url"`
+			CursorLinkPublicURLPending         string `json:"cursor_link_public_url_pending"`
+			CursorLinkLabelLocalPort           string `json:"cursor_link_label_local_port"`
+			CursorLinkLabelTunnelPID           string `json:"cursor_link_label_tunnel_pid"`
+			CursorLinkLabelNewURL              string `json:"cursor_link_label_new_url"`
+			CursorLinkWarnFmt                  string `json:"cursor_link_warn_fmt"`
+			CursorLinkTunnelNotReadyFmt        string `json:"cursor_link_tunnel_not_ready_fmt"`
+			CursorLinkTunnelRetry              string `json:"cursor_link_tunnel_retry"`
+			CursorLinkDownloadingFmt           string `json:"cursor_link_downloading_fmt"`
+			CursorLinkDownloadErrFmt           string `json:"cursor_link_download_err_fmt"`
+			CursorLinkDownloadHTTPFmt          string `json:"cursor_link_download_http_fmt"`
+			CursorLinkExtractErrFmt            string `json:"cursor_link_extract_err_fmt"`
+			CursorLinkArchiveBinMissing        string `json:"cursor_link_archive_bin_missing"`
+			CursorLinkUnsupportedPlatformFmt   string `json:"cursor_link_unsupported_platform_fmt"`
+			CursorLinkHintWindows              string `json:"cursor_link_hint_windows"`
+			CursorLinkHintDarwin               string `json:"cursor_link_hint_darwin"`
+			CursorLinkHintLinux                string `json:"cursor_link_hint_linux"`
+			CursorLinkHintOther                string `json:"cursor_link_hint_other"`
+			CursorLinkNotFoundFmt              string `json:"cursor_link_not_found_fmt"`
+			CursorLinkPortRequired             string `json:"cursor_link_port_required"`
+			CursorLinkStartCloudflaredFmt      string `json:"cursor_link_start_cloudflared_fmt"`
+			CursorLinkTunnelTimeout            string `json:"cursor_link_tunnel_timeout"`
+			CursorLinkCombineErrHintFmt        string `json:"cursor_link_combine_err_hint_fmt"`
+			CursorLinkEnvMissingFmt            string `json:"cursor_link_env_missing_fmt"`
 		} `json:"cli"`
 	}
 	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
@@ -786,6 +840,7 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 		StatusLabelRemaining:               body.CLI.StatusLabelRemaining,
 		StatusLabelDashboard:               body.CLI.StatusLabelDashboard,
 		StatusLabelUpgrade:                 body.CLI.StatusLabelUpgrade,
+		StatusUpgradeCmd:                   body.CLI.StatusUpgradeCmd,
 		StatusRemainingFmt:                 body.CLI.StatusRemainingFmt,
 		StatusChecking:                     body.CLI.StatusChecking,
 		StatusHTTPErrorFmt:                 body.CLI.StatusHTTPErrorFmt,
@@ -849,6 +904,9 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 		StartStopped:                       body.CLI.StartStopped,
 		ErrFmt:                             body.CLI.ErrFmt,
 		ProxyFailedFmt:                     body.CLI.ProxyFailedFmt,
+		ProxyWorkerStartFmt:                body.CLI.ProxyWorkerStartFmt,
+		ProxyWorkerExitedEarlyFmt:          body.CLI.ProxyWorkerExitedEarlyFmt,
+		ProxyNotHealthy:                    body.CLI.ProxyNotHealthy,
 		MainErrFmt:                         body.CLI.MainErrFmt,
 		DaemonUnsupportedFmt:               body.CLI.DaemonUnsupportedFmt,
 		DaemonLaunchdInstalledFmt:          body.CLI.DaemonLaunchdInstalledFmt,
@@ -957,9 +1015,12 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 		DeepTimeout:                        body.CLI.DeepTimeout,
 		DeepParseFmt:                       body.CLI.DeepParseFmt,
 		ProxyDeepFailedFmt:                 body.CLI.ProxyDeepFailedFmt,
+		ProxyDeepExpansionFailClosedFmt:    body.CLI.ProxyDeepExpansionFailClosedFmt,
 		ProxyLiveDeepModeFmt:               body.CLI.ProxyLiveDeepModeFmt,
 		ProxyLiveDeepEnabledFmt:            body.CLI.ProxyLiveDeepEnabledFmt,
 		ProxyDeepCompactStub:               body.CLI.ProxyDeepCompactStub,
+		ProxyToolResultClearedFmt:          body.CLI.ProxyToolResultClearedFmt,
+		ProxyHistoryCompactedStub:          body.CLI.ProxyHistoryCompactedStub,
 		ProxyDeepChromeRequired:            body.CLI.ProxyDeepChromeRequired,
 		ProxyDeepPrefsRequired:             body.CLI.ProxyDeepPrefsRequired,
 		ProxyDeepOOMSkipped:                body.CLI.ProxyDeepOOMSkipped,
@@ -1001,6 +1062,9 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 		ConfigRatesDefaultLabel:            body.CLI.ConfigRatesDefaultLabel,
 		ConfigRatesSelectedLabel:           body.CLI.ConfigRatesSelectedLabel,
 		ConfigRatesSelectedMark:            body.CLI.ConfigRatesSelectedMark,
+		ConfigRatesMinLabel:                body.CLI.ConfigRatesMinLabel,
+		ConfigRatesMaxLabel:                body.CLI.ConfigRatesMaxLabel,
+		ConfigRatesStepLabel:               body.CLI.ConfigRatesStepLabel,
 		ConfigRatesSyncHint:                body.CLI.ConfigRatesSyncHint,
 		ConfigRatesUnsynced:                body.CLI.ConfigRatesUnsynced,
 		HelpConfigRatesShort:               body.CLI.HelpConfigRatesShort,
@@ -1020,6 +1084,10 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 		ConfigSavedFmt:                     body.CLI.ConfigSavedFmt,
 		ConfigNotLoggedIn:                  body.CLI.ConfigNotLoggedIn,
 		ConfigSyncFailedFmt:                body.CLI.ConfigSyncFailedFmt,
+		ConfigSyncActionAutoStart:          body.CLI.ConfigSyncActionAutoStart,
+		ConfigSyncActionCompression:        body.CLI.ConfigSyncActionCompression,
+		ChromeTimeoutInvalidFmt:            body.CLI.ChromeTimeoutInvalidFmt,
+		DaemonWindowsOnly:                  body.CLI.DaemonWindowsOnly,
 		ConfigSyncedFmt:                    body.CLI.ConfigSyncedFmt,
 		HelpRootShort:                      body.CLI.HelpRootShort,
 		HelpRootLong:                       body.CLI.HelpRootLong,
@@ -1028,6 +1096,7 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 		HelpStartShort:                     body.CLI.HelpStartShort,
 		HelpStartLong:                      body.CLI.HelpStartLong,
 		HelpStartFlagPort:                  body.CLI.HelpStartFlagPort,
+		HelpStartFlagForeground:            body.CLI.HelpStartFlagForeground,
 		HelpLoginShort:                     body.CLI.HelpLoginShort,
 		HelpLogoutShort:                    body.CLI.HelpLogoutShort,
 		HelpUninstallShort:                 body.CLI.HelpUninstallShort,
@@ -1122,6 +1191,45 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 		HelpCursorLinkStatusShort:          body.CLI.HelpCursorLinkStatusShort,
 		HelpCursorLinkURLShort:             body.CLI.HelpCursorLinkURLShort,
 		HelpCursorLinkRotateShort:          body.CLI.HelpCursorLinkRotateShort,
+		CursorLinkEnabledOk:                body.CLI.CursorLinkEnabledOk,
+		CursorLinkDisabledOk:               body.CLI.CursorLinkDisabledOk,
+		CursorLinkRotatedOk:                body.CLI.CursorLinkRotatedOk,
+		CursorLinkEnableNext:               body.CLI.CursorLinkEnableNext,
+		CursorLinkDisabledMuted:            body.CLI.CursorLinkDisabledMuted,
+		CursorLinkStatusPaste:              body.CLI.CursorLinkStatusPaste,
+		CursorLinkStatusPrivacy:            body.CLI.CursorLinkStatusPrivacy,
+		CursorLinkStatusEnableHint:         body.CLI.CursorLinkStatusEnableHint,
+		CursorLinkRotateMuted:              body.CLI.CursorLinkRotateMuted,
+		CursorLinkDisabledErr:              body.CLI.CursorLinkDisabledErr,
+		CursorLinkDisabledStartErr:         body.CLI.CursorLinkDisabledStartErr,
+		CursorLinkNoURLFmt:                 body.CLI.CursorLinkNoURLFmt,
+		CursorLinkLabelState:               body.CLI.CursorLinkLabelState,
+		CursorLinkStateOn:                  body.CLI.CursorLinkStateOn,
+		CursorLinkStateOff:                 body.CLI.CursorLinkStateOff,
+		CursorLinkLabelPublicURL:           body.CLI.CursorLinkLabelPublicURL,
+		CursorLinkPublicURLPending:         body.CLI.CursorLinkPublicURLPending,
+		CursorLinkLabelLocalPort:           body.CLI.CursorLinkLabelLocalPort,
+		CursorLinkLabelTunnelPID:           body.CLI.CursorLinkLabelTunnelPID,
+		CursorLinkLabelNewURL:              body.CLI.CursorLinkLabelNewURL,
+		CursorLinkWarnFmt:                  body.CLI.CursorLinkWarnFmt,
+		CursorLinkTunnelNotReadyFmt:        body.CLI.CursorLinkTunnelNotReadyFmt,
+		CursorLinkTunnelRetry:              body.CLI.CursorLinkTunnelRetry,
+		CursorLinkDownloadingFmt:           body.CLI.CursorLinkDownloadingFmt,
+		CursorLinkDownloadErrFmt:           body.CLI.CursorLinkDownloadErrFmt,
+		CursorLinkDownloadHTTPFmt:          body.CLI.CursorLinkDownloadHTTPFmt,
+		CursorLinkExtractErrFmt:            body.CLI.CursorLinkExtractErrFmt,
+		CursorLinkArchiveBinMissing:        body.CLI.CursorLinkArchiveBinMissing,
+		CursorLinkUnsupportedPlatformFmt:   body.CLI.CursorLinkUnsupportedPlatformFmt,
+		CursorLinkHintWindows:              body.CLI.CursorLinkHintWindows,
+		CursorLinkHintDarwin:               body.CLI.CursorLinkHintDarwin,
+		CursorLinkHintLinux:                body.CLI.CursorLinkHintLinux,
+		CursorLinkHintOther:                body.CLI.CursorLinkHintOther,
+		CursorLinkNotFoundFmt:              body.CLI.CursorLinkNotFoundFmt,
+		CursorLinkPortRequired:             body.CLI.CursorLinkPortRequired,
+		CursorLinkStartCloudflaredFmt:      body.CLI.CursorLinkStartCloudflaredFmt,
+		CursorLinkTunnelTimeout:            body.CLI.CursorLinkTunnelTimeout,
+		CursorLinkCombineErrHintFmt:        body.CLI.CursorLinkCombineErrHintFmt,
+		CursorLinkEnvMissingFmt:            body.CLI.CursorLinkEnvMissingFmt,
 		providerLabels:                     labels,
 	}
 	return out
@@ -1188,6 +1296,7 @@ type cliChrome struct {
 	StatusLabelRemaining               string
 	StatusLabelDashboard               string
 	StatusLabelUpgrade                 string
+	StatusUpgradeCmd                   string
 	StatusRemainingFmt                 string
 	StatusChecking                     string
 	StatusHTTPErrorFmt                 string
@@ -1251,6 +1360,9 @@ type cliChrome struct {
 	StartStopped                       string
 	ErrFmt                             string
 	ProxyFailedFmt                     string
+	ProxyWorkerStartFmt                string
+	ProxyWorkerExitedEarlyFmt          string
+	ProxyNotHealthy                    string
 	MainErrFmt                         string
 	DaemonUnsupportedFmt               string
 	DaemonLaunchdInstalledFmt          string
@@ -1359,9 +1471,12 @@ type cliChrome struct {
 	DeepTimeout                        string
 	DeepParseFmt                       string
 	ProxyDeepFailedFmt                 string
+	ProxyDeepExpansionFailClosedFmt    string
 	ProxyLiveDeepModeFmt               string
 	ProxyLiveDeepEnabledFmt            string
 	ProxyDeepCompactStub               string
+	ProxyToolResultClearedFmt          string
+	ProxyHistoryCompactedStub          string
 	ProxyDeepChromeRequired            string
 	ProxyDeepPrefsRequired             string
 	ProxyDeepOOMSkipped                string
@@ -1403,6 +1518,9 @@ type cliChrome struct {
 	ConfigRatesDefaultLabel            string
 	ConfigRatesSelectedLabel           string
 	ConfigRatesSelectedMark            string
+	ConfigRatesMinLabel                string
+	ConfigRatesMaxLabel                string
+	ConfigRatesStepLabel               string
 	ConfigRatesSyncHint                string
 	ConfigRatesUnsynced                string
 	HelpConfigRatesShort               string
@@ -1422,6 +1540,10 @@ type cliChrome struct {
 	ConfigSavedFmt                     string
 	ConfigNotLoggedIn                  string
 	ConfigSyncFailedFmt                string
+	ConfigSyncActionAutoStart          string
+	ConfigSyncActionCompression        string
+	ChromeTimeoutInvalidFmt            string
+	DaemonWindowsOnly                  string
 	ConfigSyncedFmt                    string
 	HelpRootShort                      string
 	HelpRootLong                       string
@@ -1430,6 +1552,7 @@ type cliChrome struct {
 	HelpStartShort                     string
 	HelpStartLong                      string
 	HelpStartFlagPort                  string
+	HelpStartFlagForeground            string
 	HelpLoginShort                     string
 	HelpLogoutShort                    string
 	HelpUninstallShort                 string
@@ -1524,6 +1647,45 @@ type cliChrome struct {
 	HelpCursorLinkStatusShort          string
 	HelpCursorLinkURLShort             string
 	HelpCursorLinkRotateShort          string
+	CursorLinkEnabledOk                string
+	CursorLinkDisabledOk               string
+	CursorLinkRotatedOk                string
+	CursorLinkEnableNext               string
+	CursorLinkDisabledMuted            string
+	CursorLinkStatusPaste              string
+	CursorLinkStatusPrivacy            string
+	CursorLinkStatusEnableHint         string
+	CursorLinkRotateMuted              string
+	CursorLinkDisabledErr              string
+	CursorLinkDisabledStartErr         string
+	CursorLinkNoURLFmt                 string
+	CursorLinkLabelState               string
+	CursorLinkStateOn                  string
+	CursorLinkStateOff                 string
+	CursorLinkLabelPublicURL           string
+	CursorLinkPublicURLPending         string
+	CursorLinkLabelLocalPort           string
+	CursorLinkLabelTunnelPID           string
+	CursorLinkLabelNewURL              string
+	CursorLinkWarnFmt                  string
+	CursorLinkTunnelNotReadyFmt        string
+	CursorLinkTunnelRetry              string
+	CursorLinkDownloadingFmt           string
+	CursorLinkDownloadErrFmt           string
+	CursorLinkDownloadHTTPFmt          string
+	CursorLinkExtractErrFmt            string
+	CursorLinkArchiveBinMissing        string
+	CursorLinkUnsupportedPlatformFmt   string
+	CursorLinkHintWindows              string
+	CursorLinkHintDarwin               string
+	CursorLinkHintLinux                string
+	CursorLinkHintOther                string
+	CursorLinkNotFoundFmt              string
+	CursorLinkPortRequired             string
+	CursorLinkStartCloudflaredFmt      string
+	CursorLinkTunnelTimeout            string
+	CursorLinkCombineErrHintFmt        string
+	CursorLinkEnvMissingFmt            string
 	providerLabels                     []string
 }
 

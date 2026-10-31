@@ -6,8 +6,8 @@ func TestFormatTokenPair(t *testing.T) {
 	if got := formatTokenPair("%d -> %d", 10, 4); got != "10 -> 4" {
 		t.Fatalf("got %q", got)
 	}
-	if got := formatTokenPair("", 3, 1); got != "3 -> 1" {
-		t.Fatalf("empty fmt got %q", got)
+	if got := formatTokenPair("", 3, 1); got != "" {
+		t.Fatalf("empty fmt must fail-closed, got %q", got)
 	}
 }
 
@@ -20,7 +20,7 @@ func TestPrintLiveSavingsClarityParses(t *testing.T) {
 		"last_deep_stage_before_tokens":0,
 		"last_deep_stage_after_tokens":0,
 		"last_deep_stage_saved_percent":0,
-		"chrome":{"deep_status_labels":{"skipped_empty":"Deep skipped (nothing compressible / chrome frozen)"},"last_request_value_fmt":"%d -> %d"}
+		"chrome":{"deep_status_labels":{"skipped_empty":"Deep skipped (no prose islands / chrome frozen)"},"last_request_value_fmt":"%d -> %d"}
 	}`)
 	chrome := cliChrome{
 		StatsDeepStatusFmt:    "Deep: %s",

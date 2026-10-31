@@ -13,8 +13,13 @@ log_compact_min_bytes=200
 log_compact_max_lines=80
 # Case-insensitive substrings dropped from logs (omit = keep all; no invent filter)
 log_noise_substrings=[info],deprecated,npm warn,warning:
-# Optional sliding-window history (0 or omit = off; see /docs/cli/history-keep-turns)
+# Optional sliding-window history (0 or omit = off; see /docs/cli/history-keep-turns).
+# Stubs older eligible turns via synced CLI_PROXY_HISTORY_COMPACTED_STUB (fail-closed if missing).
 # history_keep_turns=8
+# Optional tool-result clearing (0 or omit = off; needs synced CLI_PROXY_TOOL_RESULT_CLEARED_FMT).
+# Keeps recent tool outputs; clears older re-fetchable payloads (Claude/Cursor/Codex ladder).
+# Live Deep (Preferences Deep on) is separate: Segmented Allowlist Deep, each last-user prose island in place (order preserved beside paths).
+# tool_result_clear_keep_recent=2
 ignore_paths=node_modules/**,vendor/**,*.min.js
 never_trim=schema.prisma,openapi.yaml
 

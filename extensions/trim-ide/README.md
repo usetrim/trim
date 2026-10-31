@@ -78,7 +78,7 @@ See [Device binding](https://use-trim.com/docs/security/device-binding).
 
 - When Always-on is enabled, the extension health-checks the local proxy and runs `trim start` if needed
 - If a healthy proxy already owns the port, it attaches (no double-bind)
-- It only starts the Fast Mode proxy - not Deep Mode or `trim compress`
+- It only runs `trim start` (no separate `trim compress` process). Live Segmented Allowlist Deep still runs inside the proxy when Dashboard Preferences set Deep on; file/batch Deep stays `trim compress --deep`
 - While the IDE stays open, it re-checks the dashboard preference so turning Always-on off can stop auto-start
 - Proxy start failures do **not** block the editor (you’ll see a warning; details in **Output → Trim**)
 - The browser cannot start Trim; this extension and/or the CLI handle the local proxy

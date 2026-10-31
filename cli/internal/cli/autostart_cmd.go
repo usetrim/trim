@@ -213,8 +213,9 @@ func pushAutostartPreference(on bool, chrome cliChrome) error {
 	defer res.Body.Close()
 	_, _ = io.Copy(io.Discard, io.LimitReader(res.Body, 8192))
 	if res.StatusCode != http.StatusOK {
-		if chrome.ConfigSyncFailedFmt != "" {
-			return fmt.Errorf(chrome.ConfigSyncFailedFmt, res.Status, "patch auto_start_with_ide")
+		action := strings.TrimSpace(chrome.ConfigSyncActionAutoStart)
+		if chrome.ConfigSyncFailedFmt != "" && action != "" {
+			return fmt.Errorf(chrome.ConfigSyncFailedFmt, res.Status, action)
 		}
 		return chrome.fail("")
 	}

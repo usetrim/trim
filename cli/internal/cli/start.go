@@ -108,6 +108,10 @@ var startCmd = &cobra.Command{
 		if historyKeep == 0 {
 			historyKeep = cfg.HistoryKeepTurns
 		}
+		toolClearKeep := proj.ToolResultClearKeepRecent
+		if toolClearKeep == 0 {
+			toolClearKeep = cfg.ToolResultClearKeepRecent
+		}
 		activeFile := proj.ActiveFileProtection
 		if !proj.ActiveFileProtectionSet {
 			activeFile = chromeProxyActiveFileProtection(chrome)
@@ -157,6 +161,9 @@ var startCmd = &cobra.Command{
 			RouteMaxTokens:                cfg.RouteMaxTokens,
 			SavingsUsdPerMTok:             cfg.SavingsUsdPerMTok,
 			HistoryKeepTurns:              historyKeep,
+			HistoryCompactedStub:          chrome.ProxyHistoryCompactedStub,
+			ToolResultClearKeepRecent:     toolClearKeep,
+			ToolResultClearedFmt:          chrome.ProxyToolResultClearedFmt,
 			UpstreamHTTPTimeout:           time.Duration(cfg.ProxyHTTPTimeoutSec) * time.Second,
 			LiveModeLabel:                 liveMode,
 			DeepOptimize:                  deepOptimize,
@@ -504,7 +511,11 @@ func startDetachedAndWaitHealthy(cmd *cobra.Command, cfg config.Local, chrome cl
 	child.Stdin = nil
 	configureDetachedStartProc(child)
 	if err := child.Start(); err != nil {
-		return fmt.Errorf("start proxy worker: %w", err)
+		fmtStr := strings.TrimSpace(chrome.ProxyWorkerStartFmt)
+		if fmtStr == "" {
+			return chrome.fail("")
+		}
+		return fmt.Errorf(fmtStr, err)
 	}
 	waitErr := make(chan error, 1)
 	go func() { waitErr <- child.Wait() }()
@@ -534,10 +545,15 @@ func startDetachedAndWaitHealthy(cmd *cobra.Command, cfg config.Local, chrome cl
 	for time.Now().Before(deadline) {
 		select {
 		case err := <-waitErr:
-			if chrome.ProxyFailedFmt != "" {
-				return fmt.Errorf(chrome.ProxyFailedFmt, fmt.Sprintf("proxy worker exited early: %v", err))
+			early := strings.TrimSpace(chrome.ProxyWorkerExitedEarlyFmt)
+			if early == "" {
+				return chrome.fail("")
 			}
-			return fmt.Errorf("proxy worker exited early: %w", err)
+			detail := fmt.Sprintf(early, err)
+			if chrome.ProxyFailedFmt != "" {
+				return fmt.Errorf(chrome.ProxyFailedFmt, detail)
+			}
+			return fmt.Errorf("%s", detail)
 		default:
 		}
 		if healthURL != "" && proxyHealthOK(healthURL, probe) {
@@ -548,10 +564,14 @@ func startDetachedAndWaitHealthy(cmd *cobra.Command, cfg config.Local, chrome cl
 	}
 	if !healthy {
 		_ = child.Process.Kill()
-		if chrome.ProxyFailedFmt != "" {
-			return fmt.Errorf(chrome.ProxyFailedFmt, "proxy did not become healthy in time")
+		notHealthy := strings.TrimSpace(chrome.ProxyNotHealthy)
+		if notHealthy == "" {
+			return chrome.fail("")
 		}
-		return fmt.Errorf("proxy did not become healthy in time")
+		if chrome.ProxyFailedFmt != "" {
+			return fmt.Errorf(chrome.ProxyFailedFmt, notHealthy)
+		}
+		return fmt.Errorf("%s", notHealthy)
 	}
 
 	// Worker starts Cursor Link after health; wait so ready UI can include the URL when enabled.
@@ -717,7 +737,7 @@ func printStartReadyUI(chrome cliChrome, scheme, port string, attached bool) {
 	if st, err := loadCursorLinkState(); err == nil && st.Enabled {
 		url, err := ensureCursorLink(port)
 		if err != nil {
-			cliout.Warn(fmt.Sprintf("Cursor Link: %v", err))
+			// Fail-closed: only print synced tip chrome (no invent English prefix).
 			if tip := strings.TrimSpace(chrome.StartCursorAgentCloudflaredTip); tip != "" {
 				cliout.Muted(tip)
 			}
@@ -727,10 +747,9 @@ func printStartReadyUI(chrome cliChrome, scheme, port string, attached bool) {
 	}
 	if cursorURL != "" {
 		lab := strings.TrimSpace(chrome.StartCursorAgentLabel)
-		if lab == "" {
-			lab = "Cursor Agent Base URL"
+		if lab != "" {
+			rows = append(rows, cliout.Row{Label: lab, Value: cursorURL, Kind: "accent"})
 		}
-		rows = append(rows, cliout.Row{Label: lab, Value: cursorURL, Kind: "accent"})
 	}
 	if len(rows) > 0 {
 		cliout.Table(rows)
