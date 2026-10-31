@@ -37,3 +37,5 @@ func uninstallWindowsTask(chrome cliChrome) error {
 func printWindowsAutostartStatus(chrome cliChrome) {
 	_ = chrome
 }
+
+func healWindowsDeepSidecarsForRunningExe() {}

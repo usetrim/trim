@@ -24,6 +24,7 @@ var cursorLinkEnableCmd = &cobra.Command{
 	Use:   "enable",
 	Short: "",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		healWindowsDeepSidecarsForRunningExe()
 		chrome := loadCLIChrome()
 		if err := setCursorLinkEnabled(true); err != nil {
 			return err

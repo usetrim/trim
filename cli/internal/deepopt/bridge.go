@@ -22,6 +22,8 @@ var (
 	ErrDeepDeviceMapRequired  = errors.New("DEEP_DEVICE_MAP_REQUIRED")
 	ErrDeepModelRequired      = errors.New("DEEP_MODEL_REQUIRED")
 	ErrDeepEngineInvalid      = errors.New("DEEP_ENGINE_INVALID")
+	// ErrLLMLinguaMissing: optimizer.py found but Python package llmlingua is not importable.
+	ErrLLMLinguaMissing = errors.New("DEEP_LLMLINGUA_MISSING")
 )
 
 // IsDeepRuntimeConfigError reports ApplyEngine / billing-sync precondition failures.
@@ -30,6 +32,11 @@ func IsDeepRuntimeConfigError(err error) bool {
 		errors.Is(err, ErrDeepDeviceMapRequired) ||
 		errors.Is(err, ErrDeepModelRequired) ||
 		errors.Is(err, ErrDeepEngineInvalid)
+}
+
+// IsLLMLinguaMissing reports that Deep should auto-bootstrap pip deps (script present).
+func IsLLMLinguaMissing(err error) bool {
+	return errors.Is(err, ErrLLMLinguaMissing)
 }
 
 // Request is the JSON stdin payload for optimizer.py.
@@ -184,11 +191,31 @@ func OptimizerBin(ux UXChrome) (string, error) {
 	return "", ux.err(ux.BinMissing)
 }
 
+// resolveDeepSidecarFile returns a flat file dir/name, or the nested GoReleaser
+// layout dir/name/name (v0.1.23 shipped optimizer.py/optimizer.py as a directory).
+func resolveDeepSidecarFile(dir, name string) string {
+	dir = strings.TrimSpace(dir)
+	name = strings.TrimSpace(name)
+	if dir == "" || name == "" {
+		return ""
+	}
+	flat := filepath.Join(dir, name)
+	if st, err := os.Stat(flat); err == nil && !st.IsDir() {
+		return flat
+	}
+	nested := filepath.Join(dir, name, name)
+	if st, err := os.Stat(nested); err == nil && !st.IsDir() {
+		return nested
+	}
+	return ""
+}
+
 // ScriptPath resolves optimizer.py next to the trim binary, or from TRIM_OPTIMIZER_PY,
 // or from the source tree during local development.
 func ScriptPath(ux UXChrome) (string, error) {
 	if v := strings.TrimSpace(os.Getenv("TRIM_OPTIMIZER_PY")); v != "" {
-		if _, err := os.Stat(v); err == nil {
+		st, err := os.Stat(v)
+		if err == nil && !st.IsDir() {
 			return v, nil
 		}
 		return "", ux.errFmt(ux.PyEnvMissingFmt, v)
@@ -197,12 +224,15 @@ func ScriptPath(ux UXChrome) (string, error) {
 	candidates := []string{}
 	if exe, err := os.Executable(); err == nil {
 		dir := filepath.Dir(exe)
-		candidates = append(candidates,
-			filepath.Join(dir, "optimizer.py"),
-			filepath.Join(dir, "optimizer", "optimizer.py"),
-		)
+		if p := resolveDeepSidecarFile(dir, "optimizer.py"); p != "" {
+			return p, nil
+		}
+		candidates = append(candidates, filepath.Join(dir, "optimizer", "optimizer.py"))
 	}
 	if wd, err := os.Getwd(); err == nil {
+		if p := resolveDeepSidecarFile(wd, "optimizer.py"); p != "" {
+			return p, nil
+		}
 		candidates = append(candidates,
 			filepath.Join(wd, "optimizer", "optimizer.py"),
 			filepath.Join(wd, "cli", "optimizer", "optimizer.py"),
@@ -246,17 +276,22 @@ func Available(ux UXChrome) error {
 	if _, err := OptimizerBin(ux); err == nil {
 		return nil
 	}
-	script, err := ScriptPath(ux)
-	if err != nil {
+	if _, err := ScriptPath(ux); err != nil {
 		return err
 	}
+	return llmlinguaImportErr(ux)
+}
+
+// llmlinguaImportErr returns ErrLLMLinguaMissing when import fails (typed for auto-bootstrap).
+func llmlinguaImportErr(ux UXChrome) error {
 	cmd := exec.Command(pythonBin(), "-c", "import llmlingua")
 	configureHiddenChildProc(cmd)
-	if out, err := cmd.CombinedOutput(); err != nil {
-		return ux.errFmt(ux.LLMMissingFmt, err, strings.TrimSpace(string(out)))
+	out, err := cmd.CombinedOutput()
+	if err == nil {
+		return nil
 	}
-	_ = script
-	return nil
+	detail := ux.errFmt(ux.LLMMissingFmt, err, strings.TrimSpace(string(out)))
+	return fmt.Errorf("%w: %v", ErrLLMLinguaMissing, detail)
 }
 
 func requirementsPath(ux UXChrome) string {
@@ -264,16 +299,22 @@ func requirementsPath(ux UXChrome) string {
 	if err != nil {
 		return ""
 	}
-	dir := filepath.Dir(script)
-	candidates := []string{
-		filepath.Join(dir, "requirements-deep.txt"),
-		filepath.Join(dir, "requirements.txt"),
-		filepath.Join(dir, "optimizer", "requirements-deep.txt"),
-		filepath.Join(dir, "optimizer", "requirements.txt"),
+	scriptDir := filepath.Dir(script)
+	// Flat: …/requirements-deep.txt beside optimizer.py.
+	// Nested zip: script is …/optimizer.py/optimizer.py → also search parent tree.
+	roots := []string{scriptDir, filepath.Dir(scriptDir)}
+	if exe, err := os.Executable(); err == nil {
+		roots = append(roots, filepath.Dir(exe))
 	}
-	for _, c := range candidates {
-		if st, err := os.Stat(c); err == nil && !st.IsDir() {
-			return c
+	for _, root := range roots {
+		for _, name := range []string{"requirements-deep.txt", "requirements.txt"} {
+			if p := resolveDeepSidecarFile(root, name); p != "" {
+				return p
+			}
+			sub := filepath.Join(root, "optimizer", name)
+			if st, err := os.Stat(sub); err == nil && !st.IsDir() {
+				return sub
+			}
 		}
 	}
 	return ""
@@ -334,8 +375,15 @@ func Compress(req Request, ux UXChrome, timeoutSec int) (*Response, error) {
 		return runOptimizerCmd(exec.Command(bin), req, ux, timeoutSec)
 	}
 
-	if err := Available(ux); err != nil {
-		if ux.LLMMissingFmt != "" && strings.Contains(err.Error(), "llmlingua") {
+	// Script must exist before pip bootstrap can run (requirements live beside it).
+	script, err := ScriptPath(ux)
+	if err != nil {
+		return nil, err
+	}
+	if err := llmlinguaImportErr(ux); err != nil {
+		// Always bootstrap when the package is missing (typed ErrLLMLinguaMissing).
+		// Do not require the chrome string to contain "llmlingua" (that gate hid installs).
+		if IsLLMLinguaMissing(err) {
 			if ux.AutoInstall != "" {
 				fmt.Println(ux.AutoInstall)
 			}
@@ -345,10 +393,6 @@ func Compress(req Request, ux UXChrome, timeoutSec int) (*Response, error) {
 		} else {
 			return nil, err
 		}
-	}
-	script, err := ScriptPath(ux)
-	if err != nil {
-		return nil, err
 	}
 	return runOptimizerCmd(exec.Command(pythonBin(), script), req, ux, timeoutSec)
 }

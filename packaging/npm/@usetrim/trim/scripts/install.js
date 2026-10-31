@@ -119,20 +119,47 @@ async function install() {
       fs.chmodSync(destBin, 0o755);
     }
 
-    // Optional sidecar files from the archive (Deep Mode helpers).
-    for (const name of ["optimizer.py", "requirements-deep.txt", "requirements.txt"]) {
-      try {
-        const src = findBinary(extractDir, name);
-        fs.copyFileSync(src, path.join(VENDOR, name));
-      } catch {
-        // optional
-      }
+    // Deep Mode sidecars (must sit beside vendor/trim.exe for ScriptPath).
+    copyDeepSidecars(extractDir, VENDOR);
+    if (!fs.existsSync(path.join(VENDOR, "optimizer.py"))) {
+      console.warn(
+        "@usetrim/trim: optimizer.py missing from release archive - Deep Mode will fail until sidecars are present beside the binary",
+      );
     }
 
     console.log(`@usetrim/trim: binary ready at ${destBin}`);
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }
+}
+
+/** Copy Deep helpers from an extracted release tree into vendor/. */
+function copyDeepSidecars(extractDir, vendorDir) {
+  for (const name of ["optimizer.py", "requirements-deep.txt", "requirements.txt"]) {
+    try {
+      const src = findBinary(extractDir, name);
+      fs.copyFileSync(src, path.join(vendorDir, name));
+    } catch {
+      // Archive may omit a file; warn above if optimizer.py still missing.
+    }
+  }
+}
+
+/** True when vendor has the CLI binary and Deep sidecars (script + requirements). */
+function vendorDeepReady(pkgRoot, binaryName) {
+  const vendor = path.join(pkgRoot, "vendor");
+  const isFile = (name) => {
+    try {
+      return fs.statSync(path.join(vendor, name)).isFile();
+    } catch {
+      return false;
+    }
+  };
+  return (
+    isFile(binaryName) &&
+    isFile("optimizer.py") &&
+    isFile("requirements-deep.txt")
+  );
 }
 
 if (require.main === module) {
@@ -143,4 +170,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { install, tag, repo };
+module.exports = { install, tag, repo, copyDeepSidecars, vendorDeepReady };

@@ -29,8 +29,10 @@ npx @usetrim/trim version
 
 1. `postinstall` fetches `trim_<os>_<arch>.(tar.gz|zip)` for package version `vX.Y.Z`
 2. Verifies checksums from the same release
-3. Places the binary under `vendor/`
-4. `bin/trim.js` execs that binary (self-heals if `npm install --ignore-scripts` was used)
+3. Places `trim` / `trim.exe` **and** Deep helpers (`optimizer.py`, `requirements-deep.txt`, `requirements.txt`) under `vendor/`
+4. `bin/trim.js` execs that binary (self-heals binary **and** Deep sidecars if `npm install --ignore-scripts` was used)
+5. On Windows Always-on (`trim autostart enable`), Trim copies those Deep helpers into `%LOCALAPPDATA%\Trim\bin` beside the stable `trim.exe`
+6. First Deep use: `trim compress --bootstrap` (local `pip install` of Microsoft LLMLingua; not done at npm install time)
 
 Same assets as `https://use-trim.com/install.sh` (default CGO-free build).
 

@@ -18,6 +18,9 @@ Installers:
     InstallerSha256: REPLACE_FROM_checksums.txt
     NestedInstallerType: portable
     NestedInstallerFiles:
+      # Winget portable aliases executables only. Deep helpers must still ship as
+      # flat siblings inside the zip (optimizer.py, requirements-deep.txt, requirements.txt).
+      # After install: trim compress --bootstrap (local llmlingua).
       - RelativeFilePath: trim.exe
         PortableCommandAlias: trim
 ManifestType: singleton

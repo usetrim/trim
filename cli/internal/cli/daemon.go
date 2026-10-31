@@ -81,6 +81,8 @@ var daemonRunCmd = &cobra.Command{
 				return err
 			}
 			if proxyHealthOK(healthURL, to) {
+				// Heal Deep sidecars even on attach (cold start path already heals in start.go).
+				healWindowsDeepSidecarsForRunningExe()
 				cfg, err := config.LoadLocal()
 				if err != nil {
 					return err

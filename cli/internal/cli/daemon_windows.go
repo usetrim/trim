@@ -34,6 +34,20 @@ func configureDetachedStartProc(cmd *exec.Cmd) {
 	}
 }
 
+// healWindowsDeepSidecarsForRunningExe copies optimizer.py next to the running
+// LocalAppData trim.exe when npm/Scoop still have the release sidecars.
+// Best-effort: never fail start/Deep prefs over a heal miss.
+func healWindowsDeepSidecarsForRunningExe() {
+	exe, err := os.Executable()
+	if err != nil {
+		return
+	}
+	_ = ensureWindowsDeepSidecars(filepath.Dir(exe))
+	if stable, err := windowsStableDaemonExe(); err == nil {
+		_ = ensureWindowsDeepSidecars(filepath.Dir(stable))
+	}
+}
+
 // installWindowsTask registers per-user logon autostart via HKCU Run (no admin).
 // Industry practice: CurrentVersion\Run pointing at a stable LocalAppData copy -
 // never at node_modules (npm uninstall cannot delete a running vendor\trim.exe).
@@ -114,8 +128,157 @@ func windowsStableDaemonExe() (string, error) {
 	return filepath.Join(base, "Trim", "bin", "trim.exe"), nil
 }
 
+// windowsDeepSidecarNames are packed next to trim.exe in release/npm archives.
+// Deep Mode (LLMLingua) resolves optimizer.py beside the running binary.
+func windowsDeepSidecarNames() []string {
+	return []string{"optimizer.py", "requirements-deep.txt", "requirements.txt"}
+}
+
+// resolveWindowsDeepSidecarFile finds a flat sidecar file, or the nested
+// GoReleaser layout name/name (v0.1.23 shipped optimizer.py/optimizer.py).
+func resolveWindowsDeepSidecarFile(dir, name string) string {
+	dir = strings.TrimSpace(dir)
+	name = strings.TrimSpace(name)
+	if dir == "" || name == "" {
+		return ""
+	}
+	flat := filepath.Join(dir, name)
+	if st, err := os.Stat(flat); err == nil && !st.IsDir() {
+		return flat
+	}
+	nested := filepath.Join(dir, name, name)
+	if st, err := os.Stat(nested); err == nil && !st.IsDir() {
+		return nested
+	}
+	return ""
+}
+
+// syncWindowsDeepSidecars copies Deep helpers from srcDir into dstDir when present.
+// Missing sources are skipped (caller may recover from another install tree).
+func syncWindowsDeepSidecars(srcDir, dstDir string) error {
+	srcDir = strings.TrimSpace(srcDir)
+	dstDir = strings.TrimSpace(dstDir)
+	if srcDir == "" || dstDir == "" {
+		return nil
+	}
+	if err := os.MkdirAll(dstDir, 0o755); err != nil {
+		return fmt.Errorf("windows deep sidecar dir: %w", err)
+	}
+	for _, name := range windowsDeepSidecarNames() {
+		src := resolveWindowsDeepSidecarFile(srcDir, name)
+		if src == "" {
+			continue
+		}
+		dst := filepath.Join(dstDir, name)
+		if err := copyFileReplace(src, dst); err != nil {
+			return fmt.Errorf("windows deep sidecar %s: %w", name, err)
+		}
+	}
+	return nil
+}
+
+// windowsDeepSidecarTreeComplete requires both optimizer.py and requirements-deep.txt
+// (Bootstrap needs the requirements file beside the script).
+func windowsDeepSidecarTreeComplete(dir string) bool {
+	return resolveWindowsDeepSidecarFile(dir, "optimizer.py") != "" &&
+		resolveWindowsDeepSidecarFile(dir, "requirements-deep.txt") != ""
+}
+
+// findWindowsDeepSidecarDir locates a COMPLETE Deep helper tree (optimizer + requirements).
+// skipDirs are ignored (so Always-on heal does not self-donate an incomplete Trim\bin).
+func findWindowsDeepSidecarDir(prefer string, skipDirs ...string) string {
+	seen := map[string]struct{}{}
+	for _, s := range skipDirs {
+		s = strings.ToLower(filepath.Clean(strings.TrimSpace(s)))
+		if s != "" && s != "." {
+			seen[s] = struct{}{}
+		}
+	}
+	add := func(dir string) string {
+		dir = filepath.Clean(strings.TrimSpace(dir))
+		if dir == "" || dir == "." {
+			return ""
+		}
+		key := strings.ToLower(dir)
+		if _, ok := seen[key]; ok {
+			return ""
+		}
+		seen[key] = struct{}{}
+		if windowsDeepSidecarTreeComplete(dir) {
+			return dir
+		}
+		return ""
+	}
+	if d := add(prefer); d != "" {
+		return d
+	}
+	// Prefer package installs over Always-on Trim\bin (which may be incomplete).
+	candidates := make([]string, 0, 20)
+	if ra := strings.TrimSpace(os.Getenv("APPDATA")); ra != "" {
+		candidates = append(candidates, filepath.Join(ra, "npm", "node_modules", "@usetrim", "trim", "vendor"))
+	}
+	if la := strings.TrimSpace(os.Getenv("LOCALAPPDATA")); la != "" {
+		candidates = append(candidates, filepath.Join(la, "Programs", "trim"))
+	}
+	if home, err := os.UserHomeDir(); err == nil {
+		candidates = append(candidates,
+			filepath.Join(home, "scoop", "apps", "trim", "current"),
+			filepath.Join(home, "AppData", "Roaming", "npm", "node_modules", "@usetrim", "trim", "vendor"),
+		)
+	}
+	if exe, err := os.Executable(); err == nil {
+		dir := filepath.Dir(exe)
+		for i := 0; i < 6; i++ {
+			candidates = append(candidates, filepath.Join(dir, "node_modules", "@usetrim", "trim", "vendor"))
+			parent := filepath.Dir(dir)
+			if parent == dir {
+				break
+			}
+			dir = parent
+		}
+	}
+	if pathEnv := os.Getenv("PATH"); pathEnv != "" {
+		for _, p := range strings.Split(pathEnv, string(os.PathListSeparator)) {
+			p = strings.TrimSpace(p)
+			if p == "" {
+				continue
+			}
+			candidates = append(candidates, p, filepath.Join(p, "node_modules", "@usetrim", "trim", "vendor"))
+		}
+	}
+	// Last resort: another complete Always-on tree (never the skip/dst dir).
+	if la := strings.TrimSpace(os.Getenv("LOCALAPPDATA")); la != "" {
+		candidates = append(candidates, filepath.Join(la, "Trim", "bin"))
+	}
+	for _, dir := range candidates {
+		if d := add(dir); d != "" {
+			return d
+		}
+	}
+	return ""
+}
+
+// ensureWindowsDeepSidecars makes sure LocalAppData Trim/bin has optimizer.py +
+// requirements when any known install tree still has the release sidecars.
+func ensureWindowsDeepSidecars(dstDir string) error {
+	dstDir = strings.TrimSpace(dstDir)
+	if dstDir == "" {
+		return nil
+	}
+	if windowsDeepSidecarTreeComplete(dstDir) {
+		return nil
+	}
+	// Skip dst itself so an incomplete Trim\bin cannot be chosen as its own donor.
+	src := findWindowsDeepSidecarDir("", dstDir)
+	if src == "" {
+		return nil
+	}
+	return syncWindowsDeepSidecars(src, dstDir)
+}
+
 // syncWindowsStableDaemonExe copies the current CLI into LocalAppData so OS logon
-// does not lock npm/Scoop/Homebrew install trees.
+// does not lock npm/Scoop/Homebrew install trees. Also copies Deep Mode sidecars
+// (optimizer.py + requirements) so live Deep does not fail-closed with engine error.
 func syncWindowsStableDaemonExe(src string) (string, error) {
 	src, err := filepath.Abs(src)
 	if err != nil {
@@ -125,17 +288,22 @@ func syncWindowsStableDaemonExe(src string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	dstDir := filepath.Dir(dst)
+	srcDir := filepath.Dir(src)
 	srcEval, _ := filepath.EvalSymlinks(src)
 	dstEval, _ := filepath.EvalSymlinks(dst)
-	if srcEval != "" && dstEval != "" && strings.EqualFold(srcEval, dstEval) {
-		return dst, nil
-	}
-	if strings.EqualFold(src, dst) {
+	same := (srcEval != "" && dstEval != "" && strings.EqualFold(srcEval, dstEval)) ||
+		strings.EqualFold(src, dst)
+	if same {
+		// Already the stable binary; still heal missing Deep sidecars from npm/PATH.
+		if err := ensureWindowsDeepSidecars(dstDir); err != nil {
+			return "", err
+		}
 		return dst, nil
 	}
 
 	stopWindowsTrimExactPath(dst)
-	if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
+	if err := os.MkdirAll(dstDir, 0o755); err != nil {
 		return "", fmt.Errorf("windows stable daemon dir: %w", err)
 	}
 
@@ -152,6 +320,13 @@ func syncWindowsStableDaemonExe(src string) (string, error) {
 		if err2 := copyFileReplace(src, dst); err2 != nil {
 			return "", fmt.Errorf("windows stable daemon install: %w", err2)
 		}
+	}
+	// Prefer sidecars beside the source install (npm vendor / Scoop); fall back to PATH heal.
+	if err := syncWindowsDeepSidecars(srcDir, dstDir); err != nil {
+		return "", err
+	}
+	if err := ensureWindowsDeepSidecars(dstDir); err != nil {
+		return "", err
 	}
 	return dst, nil
 }
