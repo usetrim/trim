@@ -64,7 +64,11 @@ export const DOC_PAGES: Record<string, DocPage> = {
             "~/.continue/config.yaml",
           ],
           ["VS Code built-in Chat", "Quickstart → VS Code setup", "Chat: Manage Language Models"],
-          ["Not sure yet", "Quickstart", "Shared install + bootstrap + login first, then pick a path"],
+          [
+            "Not sure yet",
+            "Quickstart",
+            "Shared install + bootstrap + login first, then pick a path",
+          ],
         ],
       },
       {

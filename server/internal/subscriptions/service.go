@@ -2322,10 +2322,6 @@ func builtinMessageForCode(code string) string {
 		return "Live Deep Mode chrome missing from Trim cloud (CLI_PROXY_LIVE_DEEP_MODE_FMT / CLI_PROXY_DEEP_COMPACT_STUB). Sync site_messages and retry."
 	case "CLI_PROXY_DEEP_PREFS_REQUIRED":
 		return "Live Deep Mode requires compression_tier=deep plus deep_engine and deep_compression_rate. Save Dashboard → Settings, then run: trim config sync"
-	case "CLI_PROXY_DEEP_SKIPPED_MIN_FMT":
-		return ""
-	case "CLI_PROXY_DEEP_SKIPPED_STREAM":
-		return ""
 	case "CLI_PROXY_DEEP_OOM_SKIPPED":
 		return "Live Deep skipped after OOM/memory error (billing live_deep_oom_policy=skip). Fast Mode only for this request."
 	case "CLI_PROXY_DEEP_RUNTIME_REQUIRED":
@@ -2406,18 +2402,6 @@ func builtinMessageForCode(code string) string {
 		return "Claude Code: export ANTHROPIC_BASE_URL to the Trim listen origin only (e.g. http://127.0.0.1:8888) with no /v1 suffix - Claude Code appends /v1/messages. Optional: CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY=1 to load models from Trim GET /v1/models. Prefer a workspace-scoped Anthropic key; org keys need TRIM_ANTHROPIC_WORKSPACE_ID or anthropic-workspace-id."
 	case "PREFERENCES_CLI_HELP_9":
 		return "GPT / Gemini / DeepSeek / Mistral: same OpenAI Base URL → Trim. DB provider_adapters (openai_compat) pick the host from the model prefix. Put that host’s key in the OpenAI key field for the model you pick. After trim config sync, unmatched prefixes return a clear Trim error (no silent invent). UPSTREAM_OPENAI_URL is only the OpenAI-door default when adapters are not synced. Do not edit .env every day."
-	case "PREFERENCES_LIVE_DEEP_MIN_HINT":
-		return ""
-	case "PREFERENCES_LIVE_DEEP_STREAM_HINT":
-		return ""
-	case "ADMIN_BILLING_LIVE_DEEP_SKIP_STREAM":
-		return ""
-	case "ADMIN_BILLING_LIVE_DEEP_SKIP_STREAM_DESC":
-		return ""
-	case "ADMIN_BILLING_LIVE_DEEP_MIN":
-		return ""
-	case "ADMIN_BILLING_LIVE_DEEP_MIN_DESC":
-		return ""
 	case "ADMIN_BILLING_LIVE_DEEP_OOM":
 		return "Live Deep OOM policy"
 	case "ADMIN_BILLING_LIVE_DEEP_OOM_DESC":

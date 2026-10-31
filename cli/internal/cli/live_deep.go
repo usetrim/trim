@@ -129,11 +129,8 @@ func prepareLiveDeep(cfg config.Local, chrome cliChrome) (liveModeLabel string, 
 		est := deepopt.EstimateLiveDeepInputTokens(optimized, path)
 		if est == 0 {
 			// Nothing compressible (empty/non-chat / IDE chrome-only) - Fast-only.
+			// No hardcoded min-token floor: any estimable prose honors user Deep prefs.
 			return deepFastOnly(optimized, proxy.DeepStatusSkippedEmpty), nil
-		}
-		if est < deepopt.LiveDeepMinProseTokens {
-			// Tiny turns (Cursor "hi") - skip LLMLingua warmup; Fast Mode is enough.
-			return deepFastOnly(optimized, proxy.DeepStatusSkippedMin), nil
 		}
 
 		rt := deepopt.RuntimeFromPreferences(p, deviceMap)

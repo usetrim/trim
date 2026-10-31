@@ -26,7 +26,8 @@ hi`
 	}
 }
 
-func TestCursorHiBelowLiveDeepMin(t *testing.T) {
+func TestCursorHiStillEstimatesProseForDeep(t *testing.T) {
+	// User Deep prefs control whether LLMLingua runs; we must not silently zero-out short turns.
 	blob := `<user_info>
 OS Version: win32
 Workspace Path: C:\Users\berek\proj
@@ -40,15 +41,11 @@ hi`
 	in := []byte(`{"model":"trim-claude-sonnet","messages":[{"role":"user","content":` + string(userJSON) + `}]}`)
 	n := EstimateLiveDeepInputTokens(in, "/v1/chat/completions")
 	if n == 0 {
-		t.Fatal("hi remains estimable prose after chrome freeze")
-	}
-	if n >= LiveDeepMinProseTokens {
-		t.Fatalf("Cursor hi must be under live Deep min (%d), est=%d prose=%q",
-			LiveDeepMinProseTokens, n, DeepProseFromUserText(blob))
+		t.Fatal("hi remains estimable prose after chrome freeze (Deep must be allowed when prefs say Deep)")
 	}
 }
 
-func TestLongCursorProseStillGatesDeep(t *testing.T) {
+func TestLongCursorProseStillEstimates(t *testing.T) {
 	var b strings.Builder
 	b.WriteString("<user_info>\nOS: win32\n</user_info>\n\n")
 	for i := 0; i < 40; i++ {
@@ -59,7 +56,7 @@ func TestLongCursorProseStillGatesDeep(t *testing.T) {
 		t.Fatal(err)
 	}
 	in := []byte(`{"model":"trim-claude-sonnet","messages":[{"role":"user","content":` + string(userJSON) + `}]}`)
-	if n := EstimateLiveDeepInputTokens(in, "/v1/chat/completions"); n < LiveDeepMinProseTokens {
-		t.Fatalf("long prose must still invoke Deep, est=%d", n)
+	if n := EstimateLiveDeepInputTokens(in, "/v1/chat/completions"); n == 0 {
+		t.Fatal("long prose must remain estimable after chrome freeze")
 	}
 }

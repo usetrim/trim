@@ -41,7 +41,7 @@ func builtinLocalChromeMessage(code string) string {
 	case "LOCAL_DEEP_STATUS_APPLIED":
 		return "Deep applied"
 	case "LOCAL_DEEP_STATUS_SKIPPED_MIN":
-		return "Deep skipped (below min input tokens)"
+		return "Deep skipped (legacy status; min-token gate removed)"
 	case "LOCAL_DEEP_STATUS_SKIPPED_STREAM":
 		return "Deep skipped (stream request)"
 	case "LOCAL_DEEP_STATUS_SKIPPED_EMPTY":
