@@ -23,7 +23,7 @@ func applyCLIHelpChrome(ch cliChrome) {
 	startCmd.Short = ch.HelpStartShort
 	startCmd.Long = ch.HelpStartLong
 	setFlagUsage(startCmd, "port", ch.HelpStartFlagPort)
-	setFlagUsage(startCmd, "foreground", "Keep the proxy in this terminal (Ctrl+C to stop); default detaches and returns the shell")
+	setFlagUsage(startCmd, "foreground", ch.HelpStartFlagForeground)
 
 	stopCmd.Short = ch.HelpStopShort
 

@@ -9,7 +9,7 @@ import (
 )
 
 func TestOptimizePayloadPreservesOpenAIToolScaffolding(t *testing.T) {
-	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 1})
+	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 1, HistoryCompactedStub: trimmer.MarkerHistoryCompacted})
 	in := []byte(`{
 		"model":"deepseek-chat",
 		"messages":[
@@ -46,7 +46,7 @@ func TestOptimizePayloadPreservesOpenAIToolScaffolding(t *testing.T) {
 }
 
 func TestOptimizePayloadPreservesAnthropicToolResultTurns(t *testing.T) {
-	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 1})
+	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 1, HistoryCompactedStub: trimmer.MarkerHistoryCompacted})
 	in := []byte(`{
 		"model":"claude-opus-4",
 		"messages":[
@@ -98,7 +98,7 @@ func TestMessageHasToolScaffolding(t *testing.T) {
 }
 
 func TestOptimizePayloadPreservesAnthropicCitations(t *testing.T) {
-	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 1})
+	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 1, HistoryCompactedStub: trimmer.MarkerHistoryCompacted})
 	in := []byte(`{
 		"model":"claude-opus-4",
 		"messages":[
@@ -126,7 +126,7 @@ func TestOptimizePayloadPreservesAnthropicCitations(t *testing.T) {
 func TestOptimizePayloadRequestLevelPromptCacheLastUserOnly(t *testing.T) {
 	// Official Anthropic automatic caching (top-level cache_control) and OpenAI
 	// prompt_cache_options / prompt_cache_key: Fast must not history-stub or mutate earlier turns.
-	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 1})
+	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 1, HistoryCompactedStub: trimmer.MarkerHistoryCompacted})
 	in := []byte(`{
 		"model":"claude-opus-4",
 		"cache_control":{"type":"ephemeral"},
@@ -210,7 +210,7 @@ func TestOptimizePayloadRequestLevelPromptCacheLastUserOnly(t *testing.T) {
 }
 
 func TestOptimizePayloadPreservesOpenAIPromptCacheBreakpoint(t *testing.T) {
-	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 1})
+	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 1, HistoryCompactedStub: trimmer.MarkerHistoryCompacted})
 	in := []byte(`{
 		"model":"gpt-5.6",
 		"messages":[
@@ -241,7 +241,7 @@ func TestOptimizePayloadFreezesAnthropicCacheControlMessage(t *testing.T) {
 	// Official Anthropic prompt caching: part-level cache_control makes the whole
 	// message a cache-prefix participant. Fast must not mutate pre-breakpoint text
 	// (byte change invalidates the reusable prefix) - parity with OpenAI breakpoints.
-	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 1})
+	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 1, HistoryCompactedStub: trimmer.MarkerHistoryCompacted})
 	in := []byte(`{
 		"model":"claude-opus-4",
 		"messages":[
@@ -275,7 +275,7 @@ func TestOptimizePayloadFreezesAnthropicCacheControlMessage(t *testing.T) {
 }
 
 func TestOptimizePayloadPreservesReasoningContent(t *testing.T) {
-	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 1})
+	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 1, HistoryCompactedStub: trimmer.MarkerHistoryCompacted})
 	in := []byte(`{
 		"model":"deepseek-chat",
 		"messages":[
@@ -295,7 +295,7 @@ func TestOptimizePayloadPreservesReasoningContent(t *testing.T) {
 }
 
 func TestOptimizePayloadPreservesGeminiThoughtSignatures(t *testing.T) {
-	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 1})
+	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 1, HistoryCompactedStub: trimmer.MarkerHistoryCompacted})
 	in := []byte(`{
 		"model":"gemini-2.5-flash",
 		"messages":[
@@ -321,7 +321,7 @@ func TestOptimizePayloadPreservesGeminiThoughtSignatures(t *testing.T) {
 func TestOptimizePayloadFreezesGeminiThoughtSummaryParts(t *testing.T) {
 	// Official Gemini thinking: thought:true marks a thought-summary part. Fast must
 	// not mutate or history-stub those turns (same smash class as thought_signature).
-	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 1})
+	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 1, HistoryCompactedStub: trimmer.MarkerHistoryCompacted})
 	in := []byte(`{
 		"model":"gemini-2.5-flash",
 		"messages":[
@@ -347,7 +347,7 @@ func TestOptimizePayloadFreezesGeminiThoughtSummaryParts(t *testing.T) {
 }
 
 func TestOptimizePayloadPreservesMultimodalHistory(t *testing.T) {
-	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 1})
+	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 1, HistoryCompactedStub: trimmer.MarkerHistoryCompacted})
 	in := []byte(`{
 		"model":"gpt-4o",
 		"messages":[
@@ -369,7 +369,7 @@ func TestOptimizePayloadPreservesMultimodalHistory(t *testing.T) {
 func TestOptimizePayloadPreservesInputImageHistoryDefense(t *testing.T) {
 	// Defense in depth: Responses input_image before migrate must not be history-stubbed
 	// (GPT/Gemini vision turns on openai_compat doors).
-	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 1})
+	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 1, HistoryCompactedStub: trimmer.MarkerHistoryCompacted})
 	in := []byte(`{
 		"model":"gpt-4o",
 		"messages":[
@@ -394,7 +394,7 @@ func TestOptimizePayloadPreservesInputImageHistoryDefense(t *testing.T) {
 func TestOptimizePayloadPreservesRefusalHistory(t *testing.T) {
 	// Official Chat Completions refusal parts must not be history-stubbed (same freeze
 	// class as Deep contentPartFrozenForDeep refusal).
-	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 1})
+	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 1, HistoryCompactedStub: trimmer.MarkerHistoryCompacted})
 	in := []byte(`{
 		"model":"gpt-4o",
 		"messages":[
@@ -420,7 +420,7 @@ func TestOptimizePayloadPreservesRefusalHistory(t *testing.T) {
 func TestOptimizePayloadPreservesMessageLevelRefusalAndAnnotations(t *testing.T) {
 	// Official Chat Completions: assistant may carry top-level refusal + annotations[]
 	// (url_citation) outside content[]. Fast must not history-stub or mutate those turns.
-	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 1})
+	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 1, HistoryCompactedStub: trimmer.MarkerHistoryCompacted})
 	in := []byte(`{
 		"model":"gpt-4o",
 		"messages":[
@@ -451,7 +451,7 @@ func TestOptimizePayloadPreservesMessageLevelRefusalAndAnnotations(t *testing.T)
 func TestOptimizePayloadPreservesAssistantAudioHistory(t *testing.T) {
 	// Official Chat Completions: message.audio is outside content[]. Stubbing destroys it.
 	// Round-trip also pairs audio.id with content=transcript - Fast must not mutate that text.
-	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 1})
+	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 1, HistoryCompactedStub: trimmer.MarkerHistoryCompacted})
 	in := []byte(`{
 		"model":"gpt-4o-audio-preview",
 		"messages":[
@@ -478,7 +478,7 @@ func TestOptimizePayloadPreservesAssistantAudioHistory(t *testing.T) {
 }
 
 func TestOptimizePayloadPreservesServerToolResultHistory(t *testing.T) {
-	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 1})
+	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 1, HistoryCompactedStub: trimmer.MarkerHistoryCompacted})
 	in := []byte(`{
 		"model":"claude-opus-4",
 		"messages":[
@@ -498,7 +498,7 @@ func TestOptimizePayloadPreservesServerToolResultHistory(t *testing.T) {
 }
 
 func TestOptimizePayloadPreservesSearchResultHistory(t *testing.T) {
-	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 1})
+	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 1, HistoryCompactedStub: trimmer.MarkerHistoryCompacted})
 	in := []byte(`{
 		"model":"claude-opus-4",
 		"messages":[
@@ -1473,7 +1473,7 @@ func TestNormalizeResponsesPreservesAssistantPhase(t *testing.T) {
 }
 
 func TestOptimizePayloadFreezesAssistantPhase(t *testing.T) {
-	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 1})
+	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 1, HistoryCompactedStub: trimmer.MarkerHistoryCompacted})
 	in := []byte(`{
 		"model":"gpt-5.5",
 		"messages":[
@@ -1498,7 +1498,7 @@ func TestOptimizePayloadFreezesAssistantPhase(t *testing.T) {
 func TestOptimizePayloadFreezesMistralPrefixAssistant(t *testing.T) {
 	// Official Mistral: assistant prefix:true content is prepended to the completion.
 	// Fast must not mutate or history-stub that text (forced-prefix contract).
-	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 1})
+	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 1, HistoryCompactedStub: trimmer.MarkerHistoryCompacted})
 	in := []byte(`{
 		"model":"mistral-large-latest",
 		"messages":[
@@ -1675,7 +1675,7 @@ func TestNormalizeOpenAICompatMapsModelAndFunctionRoles(t *testing.T) {
 func TestOptimizePayloadFreezesGeminiModelToolTurns(t *testing.T) {
 	// Fast must not mutate role=model tool turns (Gemini assistant alias) - same freeze
 	// class as role=assistant + tool_calls.
-	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 2})
+	s := NewServer(Options{CompressionMode: "aggressive", HistoryKeepTurns: 2, HistoryCompactedStub: trimmer.MarkerHistoryCompacted})
 	in := []byte(`{
 		"model":"gemini-2.5-flash",
 		"messages":[
@@ -1718,7 +1718,7 @@ func TestNormalizeOpenAICompatRequestBodyPublic(t *testing.T) {
 }
 
 func TestOptimizePayloadFreezesAnthropicThinkingBlocks(t *testing.T) {
-	s := NewServer(Options{CompressionMode: "balanced", HistoryKeepTurns: 2})
+	s := NewServer(Options{CompressionMode: "balanced", HistoryKeepTurns: 2, HistoryCompactedStub: trimmer.MarkerHistoryCompacted})
 	in := []byte(`{
 		"model":"claude-opus-4",
 		"messages":[
@@ -1747,7 +1747,7 @@ func TestOptimizePayloadFreezesAnthropicThinkingBlocks(t *testing.T) {
 func TestOptimizePayloadFreezesOpenAICompatThinkingBlocksField(t *testing.T) {
 	// Stream adapter emits thinking_blocks on the OpenAI message; Fast must not history-stub
 	// or mutate that assistant turn (official Anthropic: return signed blocks unchanged).
-	s := NewServer(Options{CompressionMode: "balanced", HistoryKeepTurns: 1})
+	s := NewServer(Options{CompressionMode: "balanced", HistoryKeepTurns: 1, HistoryCompactedStub: trimmer.MarkerHistoryCompacted})
 	in := []byte(`{
 		"model":"claude-sonnet-4",
 		"messages":[

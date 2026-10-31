@@ -55,6 +55,9 @@ type Preferences struct {
 	DeepV2Model           string    `json:"deep_v2_model"`
 	DeepLongModel         string    `json:"deep_long_model"`
 	DeepV2ForceTokens     []string  `json:"deep_v2_force_tokens"`
+	DeepForceReserveDigit bool      `json:"deep_force_reserve_digit"`
+	DeepDropConsecutive   bool      `json:"deep_drop_consecutive"`
+	DeepUseSentenceLevelFilter bool `json:"deep_use_sentence_level_filter"`
 	// DeepV2Backbone is the Microsoft Space Base Model id (catalog row). DeepV2Model is its HF id.
 	DeepV2Backbone          string             `json:"deep_v2_backbone"`
 	DefaultDeepV2Backbone   string             `json:"default_deep_v2_backbone"`
@@ -308,11 +311,15 @@ func RuntimeFromPreferences(p Preferences, deviceMap string) Runtime {
 		v2 = resolved
 	}
 	return Runtime{
-		DeviceMap:     deviceMap,
-		V1Model:       strings.TrimSpace(p.DeepV1Model),
-		V2Model:       v2,
-		LongModel:     strings.TrimSpace(p.DeepLongModel),
-		V2ForceTokens: append([]string(nil), p.DeepV2ForceTokens...),
+		DeviceMap:             deviceMap,
+		V1Model:               strings.TrimSpace(p.DeepV1Model),
+		V2Model:               v2,
+		LongModel:             strings.TrimSpace(p.DeepLongModel),
+		V2ForceTokens:         append([]string(nil), p.DeepV2ForceTokens...),
+		ForceReserveDigit:          p.DeepForceReserveDigit,
+		DropConsecutive:            p.DeepDropConsecutive,
+		UseSentenceLevelFilter:     p.DeepUseSentenceLevelFilter,
+		LLMLinguaCodingDials:       p.LiveDeepPolicySynced,
 	}
 }
 

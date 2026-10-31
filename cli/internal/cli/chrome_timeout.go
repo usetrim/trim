@@ -38,7 +38,11 @@ func requireChromeTimeout(raw, code string, chrome cliChrome) (time.Duration, er
 	if chrome.ChromeUnavailable != "" {
 		return 0, fmt.Errorf("%s: %s", code, chrome.ChromeUnavailable)
 	}
-	return 0, fmt.Errorf("%s missing or invalid", code)
+	fmtStr := strings.TrimSpace(chrome.ChromeTimeoutInvalidFmt)
+	if fmtStr == "" {
+		return 0, chrome.fail("")
+	}
+	return 0, fmt.Errorf(fmtStr, code)
 }
 
 // autostartPrefPollIntervalMs reads CLI_AUTOSTART_PREF_POLL_MS against

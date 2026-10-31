@@ -26,7 +26,12 @@ func findCloudflared() (string, error) {
 		if st, err := os.Stat(p); err == nil && !st.IsDir() {
 			return p, nil
 		}
-		return "", fmt.Errorf("TRIM_CLOUDFLARED points to a missing binary: %s", p)
+		chrome := loadCLIChrome()
+		fmtStr := strings.TrimSpace(chrome.CursorLinkEnvMissingFmt)
+		if fmtStr == "" {
+			return "", chrome.fail("")
+		}
+		return "", fmt.Errorf(fmtStr, p)
 	}
 	if p, err := exec.LookPath("cloudflared"); err == nil {
 		return p, nil
@@ -70,7 +75,12 @@ func findCloudflared() (string, error) {
 			return c, nil
 		}
 	}
-	return "", fmt.Errorf("cloudflared not found (Trim can auto-download on Windows/macOS/Linux, or install from %s, or set TRIM_CLOUDFLARED)", cloudflaredDownloadsDocs)
+	chrome := loadCLIChrome()
+	fmtStr := strings.TrimSpace(chrome.CursorLinkNotFoundFmt)
+	if fmtStr == "" {
+		return "", chrome.fail("")
+	}
+	return "", fmt.Errorf(fmtStr, cloudflaredDownloadsDocs)
 }
 
 func parseTryCloudflareURL(line string) string {
@@ -112,7 +122,12 @@ func ensureCursorLink(localPort string) (string, error) {
 
 	localPort = strings.TrimSpace(localPort)
 	if localPort == "" {
-		return "", fmt.Errorf("local Trim port is required for Cursor Link")
+		chrome := loadCLIChrome()
+		msg := strings.TrimSpace(chrome.CursorLinkPortRequired)
+		if msg == "" {
+			return "", chrome.fail("")
+		}
+		return "", fmt.Errorf("%s", msg)
 	}
 
 	st, err := loadCursorLinkState()
@@ -163,7 +178,12 @@ func ensureCursorLink(localPort string) (string, error) {
 		return "", err
 	}
 	if err := cmd.Start(); err != nil {
-		return "", fmt.Errorf("start cloudflared: %w", err)
+		chrome := loadCLIChrome()
+		fmtStr := strings.TrimSpace(chrome.CursorLinkStartCloudflaredFmt)
+		if fmtStr == "" {
+			return "", chrome.fail("")
+		}
+		return "", fmt.Errorf(fmtStr, err)
 	}
 
 	originCh := make(chan string, 1)
@@ -189,7 +209,12 @@ func ensureCursorLink(localPort string) (string, error) {
 	case <-time.After(45 * time.Second):
 		_ = cmd.Process.Kill()
 		_, _ = cmd.Process.Wait()
-		return "", fmt.Errorf("cloudflared did not publish a trycloudflare.com URL in time")
+		chrome := loadCLIChrome()
+		msg := strings.TrimSpace(chrome.CursorLinkTunnelTimeout)
+		if msg == "" {
+			return "", chrome.fail("")
+		}
+		return "", fmt.Errorf("%s", msg)
 	}
 
 	origin = strings.TrimRight(origin, "/")

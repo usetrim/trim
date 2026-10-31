@@ -50,31 +50,28 @@ func printHumanStatus(chrome cliChrome, q quotaStatus) {
 	}
 
 	if lab := strings.TrimSpace(chrome.StatusLabelRemaining); lab != "" {
-		limit := q.MonthlyCreditLimit
-		if limit < 0 {
-			limit = 0
-		}
-		usedShown := q.Remaining
 		remFmt := strings.TrimSpace(chrome.StatusRemainingFmt)
-		val := ""
 		if remFmt != "" && strings.Contains(remFmt, "%") {
-			val = fmt.Sprintf(remFmt, usedShown, limit)
-		} else {
-			val = fmt.Sprintf("%d / %d", usedShown, limit)
-		}
-		kind := "ok"
-		if !q.Unlimited && limit > 0 {
-			pct := float64(usedShown) / float64(limit)
-			if pct <= 0.15 {
-				kind = "bad"
-			} else if pct <= 0.35 {
-				kind = "warn"
+			limit := q.MonthlyCreditLimit
+			if limit < 0 {
+				limit = 0
 			}
+			usedShown := q.Remaining
+			val := fmt.Sprintf(remFmt, usedShown, limit)
+			kind := "ok"
+			if !q.Unlimited && limit > 0 {
+				pct := float64(usedShown) / float64(limit)
+				if pct <= 0.15 {
+					kind = "bad"
+				} else if pct <= 0.35 {
+					kind = "warn"
+				}
+			}
+			if q.Unlimited {
+				kind = "ok"
+			}
+			rows = append(rows, cliout.Row{Label: lab, Value: val, Kind: kind})
 		}
-		if q.Unlimited {
-			kind = "ok"
-		}
-		rows = append(rows, cliout.Row{Label: lab, Value: val, Kind: kind})
 	}
 
 	dash := strings.TrimSpace(q.TierUpgrade)
@@ -90,8 +87,10 @@ func printHumanStatus(chrome cliChrome, q quotaStatus) {
 			low = float64(q.Remaining)/float64(limit) <= 0.35
 		}
 		if low {
-			if lab := strings.TrimSpace(chrome.StatusLabelUpgrade); lab != "" {
-				rows = append(rows, cliout.Row{Label: lab, Value: "trim upgrade", Kind: "warn"})
+			lab := strings.TrimSpace(chrome.StatusLabelUpgrade)
+			cmd := strings.TrimSpace(chrome.StatusUpgradeCmd)
+			if lab != "" && cmd != "" {
+				rows = append(rows, cliout.Row{Label: lab, Value: cmd, Kind: "warn"})
 			}
 		}
 	}

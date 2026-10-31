@@ -15,41 +15,45 @@ import (
 var cursorLinkCmd = &cobra.Command{
 	Use:     "cursor-link",
 	Aliases: []string{"cursorlink", "tunnel"},
-	Short:   "Trim Cursor Link - public HTTPS URL to local Trim (for Cursor Agent)",
-	Long: `Trim Cursor Link exposes your local Trim proxy through an automatic Cloudflare
-quick tunnel so Cursor Agent (cloud) can reach it without using 127.0.0.1.
-
-Compression, meters, and adapters still run on this PC. The public hostname is
-only a door. Lifecycle matches trim start / trim stop when enabled.
-
-Typical flow:
-  trim cursor-link enable
-  trim start
-  trim cursor-link url          # paste …/v1 into Cursor Override OpenAI Base URL
-  trim stop                     # stops Trim and the tunnel together
-`,
+	// Short/Long come from site_messages via applyCLIHelpChrome (DB-driven; empty until chrome loads).
+	Short: "",
+	Long:  "",
 }
 
 var cursorLinkEnableCmd = &cobra.Command{
 	Use:   "enable",
-	Short: "Enable Cursor Link (auto tunnel while trim start is running)",
+	Short: "",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		chrome := loadCLIChrome()
 		if err := setCursorLinkEnabled(true); err != nil {
 			return err
 		}
-		cliout.Success("Cursor Link enabled")
-		cliout.Muted("Next: trim start  →  then trim cursor-link url  →  paste into Cursor Override OpenAI Base URL (…/v1)")
-		cliout.Muted("cloudflared: Trim auto-downloads to ~/.trim/bin on enable/start when missing (all OS). Optional brew/winget only if installed. Or set TRIM_CLOUDFLARED. Local Trim still does the work.")
+		if s := strings.TrimSpace(chrome.CursorLinkEnabledOk); s != "" {
+			cliout.Success(s)
+		}
+		if s := strings.TrimSpace(chrome.CursorLinkEnableNext); s != "" {
+			cliout.Muted(s)
+		}
+		if tip := strings.TrimSpace(chrome.StartCursorAgentCloudflaredTip); tip != "" {
+			cliout.Muted(tip)
+		}
 		cfg, err := config.LoadLocal()
 		if err == nil {
 			port := cursorLinkLocalPortFallback(cfg.Port)
 			healthURL := fmt.Sprintf("http://127.0.0.1:%s/health", port)
 			if proxyHealthOK(healthURL, 2*time.Second) {
 				if url, err := ensureCursorLink(port); err == nil && url != "" {
-					cliout.Table([]cliout.Row{{Label: "Cursor Agent Base URL", Value: url, Kind: "accent"}})
+					lab := strings.TrimSpace(chrome.StartCursorAgentLabel)
+					if lab != "" {
+						cliout.Table([]cliout.Row{{Label: lab, Value: url, Kind: "accent"}})
+					}
 				} else if err != nil {
-					cliout.Warn(fmt.Sprintf("Trim is up but tunnel not ready yet: %v", err))
-					cliout.Muted("Run trim start again (Trim auto-downloads cloudflared when needed), or: trim cursor-link status")
+					if fmtStr := strings.TrimSpace(chrome.CursorLinkTunnelNotReadyFmt); fmtStr != "" {
+						cliout.Warn(fmt.Sprintf(fmtStr, err))
+					}
+					if tip := strings.TrimSpace(chrome.CursorLinkTunnelRetry); tip != "" {
+						cliout.Muted(tip)
+					}
 				}
 			}
 		}
@@ -59,21 +63,27 @@ var cursorLinkEnableCmd = &cobra.Command{
 
 var cursorLinkDisableCmd = &cobra.Command{
 	Use:   "disable",
-	Short: "Disable Cursor Link and stop any running tunnel",
+	Short: "",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		chrome := loadCLIChrome()
 		if err := setCursorLinkEnabled(false); err != nil {
 			return err
 		}
-		cliout.Success("Cursor Link disabled (tunnel stopped if it was running)")
-		cliout.Muted("Cursor Agent will not get a public Trim URL until you enable again. Local 127.0.0.1 still works for on-device clients.")
+		if s := strings.TrimSpace(chrome.CursorLinkDisabledOk); s != "" {
+			cliout.Success(s)
+		}
+		if s := strings.TrimSpace(chrome.CursorLinkDisabledMuted); s != "" {
+			cliout.Muted(s)
+		}
 		return nil
 	},
 }
 
 var cursorLinkStatusCmd = &cobra.Command{
 	Use:   "status",
-	Short: "Show Cursor Link preference and live public URL",
+	Short: "",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		chrome := loadCLIChrome()
 		st, err := loadCursorLinkState()
 		if err != nil {
 			return err
@@ -81,30 +91,48 @@ var cursorLinkStatusCmd = &cobra.Command{
 		if flagJSON {
 			return json.NewEncoder(os.Stdout).Encode(st)
 		}
-		enabled := "off"
+		enabled := strings.TrimSpace(chrome.CursorLinkStateOff)
 		if st.Enabled {
-			enabled = "on"
+			enabled = strings.TrimSpace(chrome.CursorLinkStateOn)
 		}
-		rows := []cliout.Row{
-			{Label: "Cursor Link", Value: enabled, Kind: "accent"},
+		rows := []cliout.Row{}
+		if lab := strings.TrimSpace(chrome.CursorLinkLabelState); lab != "" && enabled != "" {
+			rows = append(rows, cliout.Row{Label: lab, Value: enabled, Kind: "accent"})
 		}
 		if u := cursorLinkPublicBaseURL(st); u != "" {
-			rows = append(rows, cliout.Row{Label: "Public Base URL", Value: u, Kind: "ok"})
+			if lab := strings.TrimSpace(chrome.CursorLinkLabelPublicURL); lab != "" {
+				rows = append(rows, cliout.Row{Label: lab, Value: u, Kind: "ok"})
+			}
 		} else if st.Enabled {
-			rows = append(rows, cliout.Row{Label: "Public Base URL", Value: "(not up - run trim start)", Kind: "warn"})
+			if lab := strings.TrimSpace(chrome.CursorLinkLabelPublicURL); lab != "" {
+				pending := strings.TrimSpace(chrome.CursorLinkPublicURLPending)
+				if pending != "" {
+					rows = append(rows, cliout.Row{Label: lab, Value: pending, Kind: "warn"})
+				}
+			}
 		}
 		if st.LocalPort != "" {
-			rows = append(rows, cliout.Row{Label: "Local port", Value: st.LocalPort, Kind: ""})
+			if lab := strings.TrimSpace(chrome.CursorLinkLabelLocalPort); lab != "" {
+				rows = append(rows, cliout.Row{Label: lab, Value: st.LocalPort, Kind: ""})
+			}
 		}
 		if st.PID > 0 {
-			rows = append(rows, cliout.Row{Label: "Tunnel PID", Value: formatPID(st.PID), Kind: ""})
+			if lab := strings.TrimSpace(chrome.CursorLinkLabelTunnelPID); lab != "" {
+				rows = append(rows, cliout.Row{Label: lab, Value: formatPID(st.PID), Kind: ""})
+			}
 		}
-		cliout.Table(rows)
+		if len(rows) > 0 {
+			cliout.Table(rows)
+		}
 		if st.Enabled {
-			cliout.Muted("Paste Public Base URL into Cursor → Settings → Models → Override OpenAI Base URL")
-			cliout.Muted("Privacy: URL is public; Fast/Deep compression stays on this PC")
-		} else {
-			cliout.Muted("Enable with: trim cursor-link enable")
+			if s := strings.TrimSpace(chrome.CursorLinkStatusPaste); s != "" {
+				cliout.Muted(s)
+			}
+			if s := strings.TrimSpace(chrome.CursorLinkStatusPrivacy); s != "" {
+				cliout.Muted(s)
+			}
+		} else if s := strings.TrimSpace(chrome.CursorLinkStatusEnableHint); s != "" {
+			cliout.Muted(s)
 		}
 		return nil
 	},
@@ -112,23 +140,35 @@ var cursorLinkStatusCmd = &cobra.Command{
 
 var cursorLinkRotateCmd = &cobra.Command{
 	Use:   "rotate",
-	Short: "Rotate the Cursor Link access token (revokes the previous public URL path)",
+	Short: "",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		chrome := loadCLIChrome()
 		st, err := loadCursorLinkState()
 		if err != nil {
 			return err
 		}
 		if !st.Enabled {
-			return fmt.Errorf("Cursor Link is disabled - run: trim cursor-link enable")
+			msg := strings.TrimSpace(chrome.CursorLinkDisabledErr)
+			if msg == "" {
+				return chrome.fail("")
+			}
+			return fmt.Errorf("%s", msg)
 		}
 		if _, err := rotateCursorLinkAccessToken(); err != nil {
 			return err
 		}
-		cliout.Success("Cursor Link token rotated")
-		cliout.Muted("Old public path is revoked immediately (Trim reads the new token live). Update Cursor Override OpenAI Base URL.")
+		if s := strings.TrimSpace(chrome.CursorLinkRotatedOk); s != "" {
+			cliout.Success(s)
+		}
+		if s := strings.TrimSpace(chrome.CursorLinkRotateMuted); s != "" {
+			cliout.Muted(s)
+		}
 		st, _ = loadCursorLinkState()
 		if u := cursorLinkPublicBaseURL(st); u != "" {
-			cliout.Table([]cliout.Row{{Label: "New Cursor Agent Base URL", Value: u, Kind: "accent"}})
+			lab := strings.TrimSpace(chrome.CursorLinkLabelNewURL)
+			if lab != "" {
+				cliout.Table([]cliout.Row{{Label: lab, Value: u, Kind: "accent"}})
+			}
 		}
 		return nil
 	},
@@ -136,14 +176,19 @@ var cursorLinkRotateCmd = &cobra.Command{
 
 var cursorLinkURLCmd = &cobra.Command{
 	Use:   "url",
-	Short: "Print the live Cursor Agent Base URL (…/v1) for copy/paste",
+	Short: "",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		chrome := loadCLIChrome()
 		st, err := loadCursorLinkState()
 		if err != nil {
 			return err
 		}
 		if !st.Enabled {
-			return fmt.Errorf("Cursor Link is disabled - run: trim cursor-link enable && trim start")
+			msg := strings.TrimSpace(chrome.CursorLinkDisabledStartErr)
+			if msg == "" {
+				return chrome.fail("")
+			}
+			return fmt.Errorf("%s", msg)
 		}
 		u := cursorLinkPublicBaseURL(st)
 		if u == "" {
@@ -152,10 +197,14 @@ var cursorLinkURLCmd = &cobra.Command{
 			if cfg.Port != "" {
 				port = cursorLinkLocalPortFallback(cfg.Port)
 			}
-			var ensureErr error
-			u, ensureErr = ensureCursorLink(port)
-			if ensureErr != nil {
-				return fmt.Errorf("no public URL yet (%v) - is Trim running? trim start", ensureErr)
+			ensureURL, ensureErr := ensureCursorLink(port)
+			u = strings.TrimSpace(ensureURL)
+			if u == "" {
+				fmtStr := strings.TrimSpace(chrome.CursorLinkNoURLFmt)
+				if fmtStr == "" {
+					return chrome.fail("")
+				}
+				return fmt.Errorf(fmtStr, ensureErr)
 			}
 		}
 		if flagJSON {
@@ -180,18 +229,30 @@ func maybeStartCursorLinkAfterProxy(listenPort string) {
 	if err != nil || !st.Enabled {
 		return
 	}
+	chrome := loadCLIChrome()
 	url, err := ensureCursorLink(listenPort)
 	if err != nil {
-		cliout.Warn(fmt.Sprintf("Cursor Link: %v", err))
-		cliout.Muted("Trim auto-downloads cloudflared to ~/.trim/bin when missing (all OS). Optional brew/winget only if installed. Or set TRIM_CLOUDFLARED, then: trim cursor-link status")
+		if fmtStr := strings.TrimSpace(chrome.CursorLinkWarnFmt); fmtStr != "" {
+			cliout.Warn(fmt.Sprintf(fmtStr, err))
+		}
+		if tip := strings.TrimSpace(chrome.StartCursorAgentCloudflaredTip); tip != "" {
+			cliout.Muted(tip)
+		}
 		return
 	}
 	if strings.TrimSpace(url) == "" {
 		return
 	}
-	cliout.Table([]cliout.Row{
-		{Label: "Cursor Agent Base URL", Value: url, Kind: "accent"},
-	})
-	cliout.Muted("Cursor Agent: paste that URL (not 127.0.0.1) - avoids \"private networks forbidden\"")
-	cliout.Muted("Local tools / Claude Code: keep using http://127.0.0.1:" + strings.TrimSpace(listenPort) + " as documented")
+	lab := strings.TrimSpace(chrome.StartCursorAgentLabel)
+	if lab != "" {
+		cliout.Table([]cliout.Row{
+			{Label: lab, Value: url, Kind: "accent"},
+		})
+	}
+	if tip := strings.TrimSpace(chrome.StartCursorAgentTipOn); tip != "" {
+		cliout.Muted(tip)
+	}
+	if tipFmt := strings.TrimSpace(chrome.StartCursorAgentLocalTip); tipFmt != "" {
+		cliout.Muted(fmt.Sprintf(tipFmt, strings.TrimSpace(listenPort)))
+	}
 }

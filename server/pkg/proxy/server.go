@@ -71,8 +71,20 @@ type Options struct {
 	// PreviewMaxChars truncates last before/after dashboard previews (required; no invent 1200).
 	PreviewMaxChars int
 	// HistoryKeepTurns keeps the last N non-system chat turns verbatim (after text trim).
-	// Older turns are replaced with a short stub. 0 disables history sliding-window (no invent).
+	// Older turns are replaced with HistoryCompactedStub. 0 disables. Requires non-empty
+	// HistoryCompactedStub from site_messages (fail-closed: no invent stub).
 	HistoryKeepTurns int
+	// HistoryCompactedStub is site_messages chrome for stubbed older eligible turns.
+	// Empty disables history stubbing even when HistoryKeepTurns > 0.
+	HistoryCompactedStub string
+	// ToolResultClearKeepRecent keeps the last N tool_result / role=tool payloads verbatim
+	// (Claude Code / Cursor / Codex style tool-output budgeting). Older results are cleared
+	// to ToolResultClearedFmt. 0 disables (default). Requires non-empty ToolResultClearedFmt
+	// from site_messages (fail-closed: no invent stub). Never clears the trailing user turn.
+	ToolResultClearKeepRecent int
+	// ToolResultClearedFmt is site_messages chrome for cleared tool outputs (%d = prior byte size).
+	// Empty disables clearing even when ToolResultClearKeepRecent > 0.
+	ToolResultClearedFmt string
 	// UpstreamHTTPTimeout is the outbound LLM HTTP client timeout. Required (no invent 120s).
 	UpstreamHTTPTimeout time.Duration
 	// Chrome is dashboard/TUI label set from site_messages (LOCAL_*). Empty is fail-closed (no invent).
@@ -1694,7 +1706,7 @@ func chatModelRejectsReasoningEffortWithTools(model string) bool {
 	if rest == "" {
 		return false
 	}
-	// Minor version digit: 4–9 (gpt-5.4, gpt-5.5, …). gpt-5.3 and below stay unchanged.
+	// Minor version digit: 4-9 (gpt-5.4, gpt-5.5, ...). gpt-5.3 and below stay unchanged.
 	c := rest[0]
 	return c >= '4' && c <= '9'
 }
@@ -2919,7 +2931,8 @@ func (s *Server) optimizePayload(body []byte) ([]byte, int, int) {
 	}
 
 	collapseIdx := map[int]bool{}
-	if messages.IsArray() && s.opts.HistoryKeepTurns > 0 && !requestPromptCache {
+	historyStub := strings.TrimSpace(s.opts.HistoryCompactedStub)
+	if messages.IsArray() && s.opts.HistoryKeepTurns > 0 && historyStub != "" && !requestPromptCache {
 		var convo []int
 		for i, msg := range messages.Array() {
 			role := strings.ToLower(strings.TrimSpace(msg.Get("role").String()))
@@ -2947,6 +2960,11 @@ func (s *Server) optimizePayload(body []byte) ([]byte, int, int) {
 				collapseIdx[idx] = true
 			}
 		}
+	}
+
+	toolClear := map[toolResultClearKey]bool{}
+	if messages.IsArray() {
+		toolClear = s.planToolResultClears(messages.Array(), requestPromptCache)
 	}
 
 	if messages.IsArray() {
@@ -2990,7 +3008,25 @@ func (s *Server) optimizePayload(body []byte) ([]byte, int, int) {
 				}
 				b := estimate([]byte(raw))
 				totalBefore += b
-				stub := trimmer.MarkerHistoryCompacted
+				totalAfter += estimate([]byte(historyStub))
+				var err error
+				out, err = sjson.SetBytes(out, path, historyStub)
+				if err != nil {
+					return body, estimate(body), estimate(body)
+				}
+				continue
+			}
+
+			// Industry tool-output budgeting (Claude/Cursor/Codex): clear older role=tool
+			// payloads while keeping tool_call_id linkage. Default off (keep_recent=0).
+			if (role == "tool" || role == "function") && toolClear[toolResultClearKey{msgIdx: i, partIdx: -1}] {
+				raw := content.String()
+				if content.IsArray() {
+					raw = content.Raw
+				}
+				b := estimate([]byte(raw))
+				stub := formatToolResultCleared(s.opts.ToolResultClearedFmt, len(raw))
+				totalBefore += b
 				totalAfter += estimate([]byte(stub))
 				var err error
 				out, err = sjson.SetBytes(out, path, stub)
@@ -3020,6 +3056,22 @@ func (s *Server) optimizePayload(body []byte) ([]byte, int, int) {
 			} else if content.IsArray() {
 				for j, part := range content.Array() {
 					typ := strings.ToLower(strings.TrimSpace(part.Get("type").String()))
+					// Tool-result part clearing (Anthropic / MCP / server tools): keep type +
+					// tool_use_id; replace bulky content only when planned.
+					if isToolResultOutputPartType(typ) && toolClear[toolResultClearKey{msgIdx: i, partIdx: j}] {
+						raw := toolResultPartRaw(part)
+						b := estimate([]byte(raw))
+						stub := formatToolResultCleared(s.opts.ToolResultClearedFmt, len(raw))
+						totalBefore += b
+						totalAfter += estimate([]byte(stub))
+						p := fmt.Sprintf("messages.%d.content.%d.content", i, j)
+						var err error
+						out, err = sjson.SetBytes(out, p, stub)
+						if err != nil {
+							return body, estimate(body), estimate(body)
+						}
+						continue
+					}
 					// Chat Completions uses "text"; Responses leftovers may still say input_text/output_text
 					// until normalizeOpenAICompatMessageContentParts runs (defense in depth).
 					if typ != "" && typ != "text" && typ != "input_text" && typ != "output_text" {
@@ -3573,6 +3625,68 @@ func shouldAcceptDeepResult(fastBody, deepBody []byte, deepOrigin, deepCompresse
 		return false
 	}
 	if estimate(deepBody) > estimate(fastBody) {
+		return false
+	}
+	// Phase D mirror of deepopt.DeepControlWireIntact (no cli import; keep gates inverse).
+	if !deepControlWireIntact(fastBody, deepBody) {
+		return false
+	}
+	return true
+}
+
+// deepControlWireIntact mirrors deepopt.DeepControlWireIntact for the accept gate.
+func deepControlWireIntact(in, out []byte) bool {
+	if len(out) == 0 || !gjson.ValidBytes(out) {
+		return false
+	}
+	if !gjson.ValidBytes(in) {
+		return false
+	}
+	inMsgs := gjson.GetBytes(in, "messages")
+	outMsgs := gjson.GetBytes(out, "messages")
+	// Non-chat bodies: chat wire checks N/A (size/expansion gates still apply).
+	if !inMsgs.Exists() && !outMsgs.Exists() {
+		return true
+	}
+	if !inMsgs.IsArray() || !outMsgs.IsArray() {
+		return false
+	}
+	inArr := inMsgs.Array()
+	outArr := outMsgs.Array()
+	if len(inArr) != len(outArr) {
+		return false
+	}
+	for i := 0; i < len(inArr)-1; i++ {
+		if inArr[i].Raw != outArr[i].Raw {
+			return false
+		}
+	}
+	for _, key := range []string{"tools", "tool_choice", "system"} {
+		inV := gjson.GetBytes(in, key)
+		outV := gjson.GetBytes(out, key)
+		if inV.Exists() != outV.Exists() {
+			return false
+		}
+		if inV.Exists() && inV.Raw != outV.Raw {
+			return false
+		}
+	}
+	if len(inArr) == 0 {
+		return true
+	}
+	last := len(inArr) - 1
+	if !strings.EqualFold(inArr[last].Get("role").String(), outArr[last].Get("role").String()) {
+		return false
+	}
+	inRaw := inArr[last].Raw
+	outRaw := outArr[last].Raw
+	if strings.Contains(inRaw, "thought_signature") && !strings.Contains(outRaw, "thought_signature") {
+		return false
+	}
+	if strings.Contains(inRaw, "cache_control") && !strings.Contains(outRaw, "cache_control") {
+		return false
+	}
+	if strings.Contains(inRaw, "prompt_cache_breakpoint") && !strings.Contains(outRaw, "prompt_cache_breakpoint") {
 		return false
 	}
 	return true

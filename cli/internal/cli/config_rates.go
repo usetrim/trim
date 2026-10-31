@@ -44,8 +44,11 @@ func printCompressionRatesFlow(p deepopt.Preferences, chrome cliChrome) error {
 	defaultLab := strings.TrimSpace(chrome.ConfigRatesDefaultLabel)
 	selectedLab := strings.TrimSpace(chrome.ConfigRatesSelectedLabel)
 	selectedMark := strings.TrimSpace(chrome.ConfigRatesSelectedMark)
-	if selectedMark == "" {
-		selectedMark = "selected"
+	minLab := strings.TrimSpace(chrome.ConfigRatesMinLabel)
+	maxLab := strings.TrimSpace(chrome.ConfigRatesMaxLabel)
+	stepLab := strings.TrimSpace(chrome.ConfigRatesStepLabel)
+	if selectedMark == "" || minLab == "" || maxLab == "" || stepLab == "" {
+		return chrome.fail("")
 	}
 
 	rows := make([]cliout.Row, 0, 4)
@@ -64,9 +67,9 @@ func printCompressionRatesFlow(p deepopt.Preferences, chrome cliChrome) error {
 		})
 	}
 	rows = append(rows,
-		cliout.Row{Label: "min", Value: formatRate(p.CompressionRateMin)},
-		cliout.Row{Label: "max", Value: formatRate(p.CompressionRateMax)},
-		cliout.Row{Label: "step", Value: formatRate(p.CompressionRateStep)},
+		cliout.Row{Label: minLab, Value: formatRate(p.CompressionRateMin)},
+		cliout.Row{Label: maxLab, Value: formatRate(p.CompressionRateMax)},
+		cliout.Row{Label: stepLab, Value: formatRate(p.CompressionRateStep)},
 	)
 	cliout.Table(rows)
 

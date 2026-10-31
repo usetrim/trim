@@ -2,6 +2,7 @@ package deepopt
 
 import (
 	"bytes"
+	"encoding/json"
 	"strings"
 	"testing"
 
@@ -452,7 +453,10 @@ func TestCompressPreservesOpenAIPromptCacheBreakpoint(t *testing.T) {
 
 func TestLastUserUnsafeDirTreeWithoutExt(t *testing.T) {
 	if !LastUserUnsafeForDeepLLMLingua("please inspect pkg/proxy and explain the gate") {
-		t.Fatal("coding dir tree without file ext must skip Deep")
+		t.Fatal("coding dir tree without file ext must mark protected spans")
+	}
+	if DeepProseFromUserText("please inspect pkg/proxy and explain the gate") == "" {
+		t.Fatal("prose beside dir tree must stay Deep-eligible")
 	}
 	if LastUserUnsafeForDeepLLMLingua("FILLER A\nFILLER B\nwhat is 2+2?") {
 		t.Fatal("plain prose must remain Deep-eligible")
@@ -472,26 +476,109 @@ func TestLastUserUnsafeUNCAndWindowsRoots(t *testing.T) {
 	}
 }
 
-func TestCompressSkipsPathAndCodeFenceUnsafeLastUser(t *testing.T) {
-	// LLMLingua lossiness: paths/fences must not enter Deep (all doors).
+func TestCompressSegmentedDeepKeepsPathsOutOfLLMLingua(t *testing.T) {
+	// Segmented Allowlist Deep: paths/fences/URLs never enter LLMLingua; prose islands do.
+	prev := compressFn
+	t.Cleanup(func() { compressFn = prev })
+	cases := []struct {
+		raw           string
+		mustNotContain []string
+		mustContainProse string
+	}{
+		{
+			raw: `{"model":"gpt-4o","messages":[{"role":"user","content":"see C:\\Users\\berek\\proj\\main.go and fix it please now carefully"}]}`,
+			mustNotContain: []string{`C:\Users\berek\proj\main.go`, `main.go`},
+			mustContainProse: "fix",
+		},
+		{
+			raw: `{"model":"claude-opus-4","messages":[{"role":"user","content":"read /Users/berek/proj/app.ts then explain carefully"}]}`,
+			mustNotContain: []string{"/Users/berek/proj/app.ts", "app.ts"},
+			mustContainProse: "explain",
+		},
+		{
+			raw: "{\"model\":\"gemini-flash\",\"messages\":[{\"role\":\"user\",\"content\":\"```go\\npackage main\\n```\\nwhat does this do carefully?\"}]}",
+			mustNotContain: []string{"```", "package main"},
+			mustContainProse: "what does this do",
+		},
+		{
+			raw: `{"model":"deepseek-chat","messages":[{"role":"user","content":"open https://example.com/docs and summarize carefully"}]}`,
+			mustNotContain: []string{"https://example.com/docs", "://"},
+			mustContainProse: "summarize",
+		},
+		{
+			raw: `{"model":"mistral-large","messages":[{"role":"user","content":"please edit src/proxy/server.go and explain carefully"}]}`,
+			mustNotContain: []string{"src/proxy/server.go", "server.go"},
+			mustContainProse: "explain",
+		},
+		{
+			raw: `{"model":"gpt-4o","messages":[{"role":"user","content":"please inspect pkg/proxy and explain the gate carefully"}]}`,
+			mustNotContain: []string{"pkg/proxy"},
+			mustContainProse: "explain",
+		},
+	}
+	for _, tc := range cases {
+		called := false
+		var deepJoined strings.Builder
+		compressFn = func(req Request, _ UXChrome, _ int) (*Response, error) {
+			called = true
+			for _, bad := range tc.mustNotContain {
+				if strings.Contains(req.Text, bad) || strings.Contains(req.Question, bad) {
+					t.Fatalf("protected span entered Deep: %q in text=%q q=%q", bad, req.Text, req.Question)
+				}
+			}
+			deepJoined.WriteString(req.Text)
+			deepJoined.WriteByte('\n')
+			deepJoined.WriteString(req.Question)
+			deepJoined.WriteByte('\n')
+			return &Response{CompressedPrompt: "SHORT_PROSE", OriginTokens: 40, CompressedTokens: 5}, nil
+		}
+		in := []byte(tc.raw)
+		if n := EstimateLiveDeepInputTokens(in, "/v1/chat/completions"); n == 0 {
+			t.Fatalf("gate must count prose islands, body=%s", tc.raw)
+		}
+		out, origin, compressed, err := CompressOpenAIChatJSON(in, EngineV2, 50, "", UXChrome{}, 30, ChatDeepChrome{
+			CompactStub: "stub", Unavailable: "u",
+		}, Runtime{DeviceMap: "cpu", V2Model: "v2", V1Model: "v1", LongModel: "long"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !called {
+			t.Fatalf("Deep must run on prose islands: %s", tc.raw)
+		}
+		if !strings.Contains(deepJoined.String(), tc.mustContainProse) {
+			t.Fatalf("expected prose %q across Deep islands, got %q body=%s", tc.mustContainProse, deepJoined.String(), tc.raw)
+		}
+		if origin <= compressed {
+			t.Fatalf("stage tokens must shrink origin=%d compressed=%d", origin, compressed)
+		}
+		if !strings.Contains(string(out), "SHORT_PROSE") {
+			t.Fatalf("expected rewritten prose in body: %s", string(out))
+		}
+	}
+	if LastUserUnsafeForDeepLLMLingua("FILLER A\nFILLER B\nwhat is 2+2?") {
+		t.Fatal("plain prose must remain Deep-eligible")
+	}
+}
+
+func TestCompressSkipsWhenOnlyProtectedSpans(t *testing.T) {
+	// Pure path / fence / URL blobs still Fast-only (no prose island).
 	prev := compressFn
 	t.Cleanup(func() { compressFn = prev })
 	compressFn = func(req Request, _ UXChrome, _ int) (*Response, error) {
-		t.Fatalf("Deep must not run on path/code-heavy turn: %q", req.Text)
+		t.Fatalf("Deep must not run on protected-only turn: %q", req.Text)
 		return nil, nil
 	}
 	cases := []string{
-		`{"model":"gpt-4o","messages":[{"role":"user","content":"see C:\\Users\\berek\\proj\\main.go and fix it please now"}]}`,
-		`{"model":"claude-opus-4","messages":[{"role":"user","content":"read /Users/berek/proj/app.ts then explain"}]}`,
-		"{\"model\":\"gemini-flash\",\"messages\":[{\"role\":\"user\",\"content\":\"```go\\npackage main\\n```\\nwhat does this do?\"}]}",
-		`{"model":"deepseek-chat","messages":[{"role":"user","content":"open https://example.com/docs and summarize"}]}`,
-		`{"model":"mistral-large","messages":[{"role":"user","content":"please edit src/proxy/server.go and explain"}]}`,
-		`{"model":"gpt-4o","messages":[{"role":"user","content":"please inspect pkg/proxy and explain the gate"}]}`,
+		`{"model":"gpt-4o","messages":[{"role":"user","content":"C:\\Users\\berek\\proj\\main.go"}]}`,
+		`{"model":"claude-opus-4","messages":[{"role":"user","content":"/Users/berek/proj/app.ts"}]}`,
+		"{\"model\":\"gemini-flash\",\"messages\":[{\"role\":\"user\",\"content\":\"```go\\npackage main\\n```\"}]}",
+		`{"model":"deepseek-chat","messages":[{"role":"user","content":"https://example.com/docs"}]}`,
+		`{"model":"mistral-large","messages":[{"role":"user","content":"src/proxy/server.go"}]}`,
 	}
 	for _, raw := range cases {
 		in := []byte(raw)
 		if n := EstimateLiveDeepInputTokens(in, "/v1/chat/completions"); n != 0 {
-			t.Fatalf("gate should skip unsafe last-user, est=%d body=%s", n, raw)
+			t.Fatalf("gate should skip protected-only last-user, est=%d body=%s", n, raw)
 		}
 		out, origin, compressed, err := CompressOpenAIChatJSON(in, EngineV2, 50, "", UXChrome{}, 30, ChatDeepChrome{
 			CompactStub: "stub", Unavailable: "u",
@@ -500,11 +587,54 @@ func TestCompressSkipsPathAndCodeFenceUnsafeLastUser(t *testing.T) {
 			t.Fatal(err)
 		}
 		if string(out) != string(in) || origin != compressed {
-			t.Fatalf("unsafe turn must stay Fast-only: %s", string(out))
+			t.Fatalf("protected-only turn must stay Fast-only: %s", string(out))
 		}
 	}
-	if LastUserUnsafeForDeepLLMLingua("FILLER A\nFILLER B\nwhat is 2+2?") {
-		t.Fatal("plain prose must remain Deep-eligible")
+}
+
+func TestSegmentJohnSarahProseWithPathStillDeep(t *testing.T) {
+	// Cursor-shaped: long dialogue prose + one workspace path must Deep the prose.
+	prev := compressFn
+	t.Cleanup(func() { compressFn = prev })
+	dialogue := "John: I think we should ship Friday.\nSarah: That timeline feels rushed without tests.\nJohn: Fair. Lets add coverage then decide.\nSarah: Agreed. What is the smallest safe plan?"
+	blob := dialogue + "\n\nC:\\Users\\berek\\proj\\app.ts"
+	if DeepProseFromUserText(blob) == "" {
+		t.Fatal("prose islands must be non-empty")
+	}
+	if !LastUserUnsafeForDeepLLMLingua(blob) {
+		t.Fatal("path must still classify as containing unsafe spans")
+	}
+	compressFn = func(req Request, _ UXChrome, _ int) (*Response, error) {
+		if strings.Contains(req.Text, `C:\Users`) || strings.Contains(req.Text, "app.ts") {
+			t.Fatalf("path must not enter Deep: %q", req.Text)
+		}
+		if !strings.Contains(req.Text, "John") && !strings.Contains(req.Question, "plan") {
+			t.Fatalf("dialogue prose missing: %q / %q", req.Text, req.Question)
+		}
+		return &Response{CompressedPrompt: "SHORT_DIALOGUE", OriginTokens: 80, CompressedTokens: 20}, nil
+	}
+	contentJSON, err := json.Marshal(blob)
+	if err != nil {
+		t.Fatal(err)
+	}
+	in := []byte(`{"model":"gpt-4o","messages":[{"role":"user","content":` + string(contentJSON) + `}]}`)
+	if n := EstimateLiveDeepInputTokens(in, "/v1/chat/completions"); n == 0 {
+		t.Fatal("live gate must count John/Sarah prose beside path")
+	}
+	out, origin, compressed, cerr := CompressOpenAIChatJSON(in, EngineV2, 50, "", UXChrome{}, 30, ChatDeepChrome{
+		CompactStub: "stub", Unavailable: "u",
+	}, Runtime{DeviceMap: "cpu", V2Model: "v2", V1Model: "v1", LongModel: "long"})
+	if cerr != nil {
+		t.Fatal(cerr)
+	}
+	if origin <= compressed {
+		t.Fatalf("stage must shrink %d->%d", origin, compressed)
+	}
+	if !strings.Contains(string(out), "SHORT_DIALOGUE") {
+		t.Fatalf("expected compressed prose: %s", string(out))
+	}
+	if !strings.Contains(string(out), `C:\\Users\\berek\\proj\\app.ts`) && !strings.Contains(string(out), `C:\Users\berek\proj\app.ts`) {
+		t.Fatalf("path must remain verbatim: %s", string(out))
 	}
 }
 

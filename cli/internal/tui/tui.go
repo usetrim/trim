@@ -257,7 +257,14 @@ func (m model) View() string {
 	}
 
 	card1 := box.Render(fmt.Sprintf("%s\n\n%d", muted(ch.TUILabelRequests), m.stats.Requests))
-	card2 := box.Render(fmt.Sprintf("%s\n\n%d -> %d", muted(ch.TUILabelTokens), m.stats.TokensBefore, m.stats.TokensAfter))
+	tokenPair := chromeTokenPair(ch.LastRequestValueFmt, int(m.stats.TokensBefore), int(m.stats.TokensAfter))
+	var card2 string
+	if tokenPair != "" {
+		card2 = box.Render(fmt.Sprintf("%s\n\n%s", muted(ch.TUILabelTokens), tokenPair))
+	} else {
+		// Fail-closed: LOCAL_LAST_REQUEST_VALUE_FMT must be synced (no invent "%d -> %d").
+		card2 = box.Render(fmt.Sprintf("%s\n\n", muted(ch.TUILabelTokens)))
+	}
 	card3 := box.Render(fmt.Sprintf("%s\n\n%.1f%%", muted(ch.TUILabelReduction), savedPct))
 	estFmt := ch.TUIEstSavedFmt
 	latFmt := ch.TUILatencyFmt
@@ -292,15 +299,17 @@ func (m model) View() string {
 	deepStageLabel := strings.TrimSpace(ch.LabelDeepStage)
 	var card8 string
 	if deepStageLabel != "" {
-		pair := fmt.Sprintf("%d -> %d", m.stats.LastDeepStageBefore, m.stats.LastDeepStageAfter)
-		if strings.TrimSpace(ch.LastRequestValueFmt) != "" && strings.Count(ch.LastRequestValueFmt, "%d") >= 2 {
-			pair = fmt.Sprintf(ch.LastRequestValueFmt, m.stats.LastDeepStageBefore, m.stats.LastDeepStageAfter)
-		}
-		savedLabel := strings.TrimSpace(ch.LabelDeepStageSaved)
-		if savedLabel == "" {
-			card8 = box.Render(fmt.Sprintf("%s\n\n%s", muted(deepStageLabel), pair))
+		pair := chromeTokenPair(ch.LastRequestValueFmt, m.stats.LastDeepStageBefore, m.stats.LastDeepStageAfter)
+		if pair == "" {
+			// Fail-closed: no invent "%d -> %d" when LOCAL_LAST_REQUEST_VALUE_FMT missing.
+			card8 = box.Render(fmt.Sprintf("%s\n\n", muted(deepStageLabel)))
 		} else {
-			card8 = box.Render(fmt.Sprintf("%s\n\n%s\n%.1f%%", muted(deepStageLabel), pair, m.stats.LastDeepStageSaved))
+			savedLabel := strings.TrimSpace(ch.LabelDeepStageSaved)
+			if savedLabel == "" {
+				card8 = box.Render(fmt.Sprintf("%s\n\n%s", muted(deepStageLabel), pair))
+			} else {
+				card8 = box.Render(fmt.Sprintf("%s\n\n%s\n%.1f%%", muted(deepStageLabel), pair, m.stats.LastDeepStageSaved))
+			}
 		}
 	}
 
@@ -410,6 +419,16 @@ func (m model) View() string {
 	}
 	return fmt.Sprintf("\n%s\n\n%s\n\n%s\n\n%s\n\n%s\n\n%s\n\n%s\n%s\n%s\n",
 		title, row, row2, seriesBlock, cloudTitle, cloudBlock, status, footer, hint)
+}
+
+// chromeTokenPair formats before/after using synced LOCAL_LAST_REQUEST_VALUE_FMT only.
+// Empty fmt → fail-closed empty (no invent "%d -> %d").
+func chromeTokenPair(valueFmt string, before, after int) string {
+	valueFmt = strings.TrimSpace(valueFmt)
+	if valueFmt != "" && strings.Count(valueFmt, "%d") >= 2 {
+		return fmt.Sprintf(valueFmt, before, after)
+	}
+	return ""
 }
 
 func muted(s string) string {

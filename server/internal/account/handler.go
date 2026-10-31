@@ -424,6 +424,9 @@ type PreferencesResponse struct {
 	DeepV2Model              string                            `json:"deep_v2_model"`
 	DeepLongModel            string                            `json:"deep_long_model"`
 	DeepV2ForceTokens        []string                          `json:"deep_v2_force_tokens"`
+	DeepForceReserveDigit    bool                              `json:"deep_force_reserve_digit"`
+	DeepDropConsecutive      bool                              `json:"deep_drop_consecutive"`
+	DeepUseSentenceLevelFilter bool                            `json:"deep_use_sentence_level_filter"`
 	DeepV2Backbone           string                            `json:"deep_v2_backbone"`
 	DefaultDeepV2Backbone    string                            `json:"default_deep_v2_backbone"`
 	DeepV2BackboneOptions    []DeepV2BackboneOption            `json:"deep_v2_backbone_options"`
@@ -816,7 +819,7 @@ func (h *Handler) GetPreferences(w http.ResponseWriter, r *http.Request) {
 
 	var deepMin, deepMax, deepDefault, deepStep float64
 	var oomPolicy, deepV1, deepLong, defaultBackbone string
-	var warmup bool
+	var warmup, forceReserveDigit, dropConsecutive, useSentenceLevelFilter bool
 	var forceRaw, optionsRaw []byte
 	err = db.QueryRow(r.Context(), `
 		select coalesce(deep_compression_rate_min, 0), coalesce(deep_compression_rate_max, 0),
@@ -826,9 +829,12 @@ func (h *Handler) GetPreferences(w http.ResponseWriter, r *http.Request) {
 		       coalesce(deep_v1_model, ''), coalesce(deep_long_model, ''),
 		       coalesce(deep_v2_force_tokens, 'null'::jsonb),
 		       coalesce(default_deep_v2_backbone, ''),
-		       coalesce(deep_v2_backbone_options, 'null'::jsonb)
+		       coalesce(deep_v2_backbone_options, 'null'::jsonb),
+		       coalesce(deep_force_reserve_digit, false),
+		       coalesce(deep_drop_consecutive, false),
+		       coalesce(deep_use_sentence_level_filter, false)
 		from public.billing_settings where id = 'default'
-	`).Scan(&deepMin, &deepMax, &deepDefault, &deepStep, &oomPolicy, &warmup, &deepV1, &deepLong, &forceRaw, &defaultBackbone, &optionsRaw)
+	`).Scan(&deepMin, &deepMax, &deepDefault, &deepStep, &oomPolicy, &warmup, &deepV1, &deepLong, &forceRaw, &defaultBackbone, &optionsRaw, &forceReserveDigit, &dropConsecutive, &useSentenceLevelFilter)
 	if err != nil || deepMin <= 0 || deepMax < deepMin || deepMax > 1 ||
 		deepDefault < deepMin || deepDefault > deepMax ||
 		deepStep <= 0 || deepStep > 1 {
@@ -877,6 +883,9 @@ func (h *Handler) GetPreferences(w http.ResponseWriter, r *http.Request) {
 	resp.DeepV2Model = deepV2
 	resp.DeepLongModel = deepLong
 	resp.DeepV2ForceTokens = forceTokens
+	resp.DeepForceReserveDigit = forceReserveDigit
+	resp.DeepDropConsecutive = dropConsecutive
+	resp.DeepUseSentenceLevelFilter = useSentenceLevelFilter
 	resp.DefaultDeepV2Backbone = strings.TrimSpace(defaultBackbone)
 	resp.DeepV2BackboneOptions = options
 	adapters, aerr := loadProviderAdaptersFromDB(r.Context(), db)
@@ -1047,7 +1056,7 @@ func (h *Handler) PatchPreferences(w http.ResponseWriter, r *http.Request) {
 	resp.AutoStartWithIDE = autoStart
 	var deepMin, deepMax, deepDefault, deepStep float64
 	var oomPolicy, deepV1, deepLong, defaultBackbone string
-	var warmup bool
+	var warmup, forceReserveDigit, dropConsecutive, useSentenceLevelFilter bool
 	var forceRaw, optionsRaw []byte
 	if err := h.DB.QueryRow(r.Context(), `
 		select coalesce(deep_compression_rate_min, 0), coalesce(deep_compression_rate_max, 0),
@@ -1057,9 +1066,12 @@ func (h *Handler) PatchPreferences(w http.ResponseWriter, r *http.Request) {
 		       coalesce(deep_v1_model, ''), coalesce(deep_long_model, ''),
 		       coalesce(deep_v2_force_tokens, 'null'::jsonb),
 		       coalesce(default_deep_v2_backbone, ''),
-		       coalesce(deep_v2_backbone_options, 'null'::jsonb)
+		       coalesce(deep_v2_backbone_options, 'null'::jsonb),
+		       coalesce(deep_force_reserve_digit, false),
+		       coalesce(deep_drop_consecutive, false),
+		       coalesce(deep_use_sentence_level_filter, false)
 		from public.billing_settings where id = 'default'
-	`).Scan(&deepMin, &deepMax, &deepDefault, &deepStep, &oomPolicy, &warmup, &deepV1, &deepLong, &forceRaw, &defaultBackbone, &optionsRaw); err != nil ||
+	`).Scan(&deepMin, &deepMax, &deepDefault, &deepStep, &oomPolicy, &warmup, &deepV1, &deepLong, &forceRaw, &defaultBackbone, &optionsRaw, &forceReserveDigit, &dropConsecutive, &useSentenceLevelFilter); err != nil ||
 		deepMin <= 0 || deepMax < deepMin || deepMax > 1 ||
 		deepDefault < deepMin || deepDefault > deepMax ||
 		deepStep <= 0 || deepStep > 1 {
@@ -1097,6 +1109,9 @@ func (h *Handler) PatchPreferences(w http.ResponseWriter, r *http.Request) {
 	resp.DeepV2Model = deepV2
 	resp.DeepLongModel = deepLong
 	resp.DeepV2ForceTokens = forceTokens
+	resp.DeepForceReserveDigit = forceReserveDigit
+	resp.DeepDropConsecutive = dropConsecutive
+	resp.DeepUseSentenceLevelFilter = useSentenceLevelFilter
 	resp.DefaultDeepV2Backbone = strings.TrimSpace(defaultBackbone)
 	resp.DeepV2BackboneOptions = options
 	adapters, aerr := loadProviderAdaptersFromDB(r.Context(), h.DB)

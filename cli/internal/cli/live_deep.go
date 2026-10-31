@@ -151,14 +151,24 @@ func prepareLiveDeep(cfg config.Local, chrome cliChrome) (liveModeLabel string, 
 			// (Claude Code / Cursor / GPT / Gemini / DeepSeek). Fail closed to Fast-only.
 			// Surface the reason (fail-closed chrome) so 0% Saved is not a silent black hole.
 			if chrome.ProxyDeepFailedFmt != "" {
-				fmt.Printf(chrome.ProxyDeepFailedFmt+"\n", deepErr)
+				display := deepErr
+				if deepopt.IsDeepRuntimeConfigError(deepErr) && strings.TrimSpace(chrome.ProxyDeepRuntimeRequired) != "" {
+					display = fmt.Errorf("%s", chrome.ProxyDeepRuntimeRequired)
+				}
+				fmt.Printf(chrome.ProxyDeepFailedFmt+"\n", display)
 			}
 			return deepFastOnly(optimized, proxy.DeepStatusFailClosedError), nil
 		}
 		// Fail-closed: never forward Deep expansion (agent chrome regression on any door).
 		if deepopt.DeepExpanded(optimized, out, deepOrigin, deepCompressed) {
 			if chrome.ProxyDeepFailedFmt != "" {
-				fmt.Printf(chrome.ProxyDeepFailedFmt+"\n", fmt.Errorf("expansion fail-closed (%d->%d stage tokens; kept Fast)", deepOrigin, deepCompressed))
+				detail := ""
+				if fmtStr := strings.TrimSpace(chrome.ProxyDeepExpansionFailClosedFmt); fmtStr != "" {
+					detail = fmt.Sprintf(fmtStr, deepOrigin, deepCompressed)
+				}
+				if detail != "" {
+					fmt.Printf(chrome.ProxyDeepFailedFmt+"\n", detail)
+				}
 			}
 			return proxy.DeepResult{
 				Body:       optimized,

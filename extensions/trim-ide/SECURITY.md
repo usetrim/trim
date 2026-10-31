@@ -27,7 +27,7 @@ We aim to acknowledge within **3 business days**.
 - API keys use editor **Secret Storage** (not workspace settings)
 - HTTP(S) only for `trim.apiUrl`; `redirect: "error"` on fetches (no Bearer leak on redirects)
 - Request timeouts; UI labels come from Trim Cloud (extension stays inactive until sync succeeds)
-- Spawns `trim start` only (never Deep Mode compress on IDE open)
+- Spawns `trim start` only (no separate Deep/compress subprocess on IDE open; when Preferences Deep is on, Segmented Allowlist Deep runs inside the proxy on eligible last-user prose)
 
 ## Scope
 

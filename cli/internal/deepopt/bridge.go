@@ -3,6 +3,7 @@ package deepopt
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -14,79 +15,93 @@ import (
 	"github.com/usetrim/trim/cli/internal/clierr"
 )
 
+// Machine-stable Deep runtime config errors (no invent English). Callers map via
+// synced site_messages (e.g. CLI_PROXY_DEEP_RUNTIME_REQUIRED) when surfacing UX.
+var (
+	ErrDeepRequestNil         = errors.New("DEEP_REQUEST_NIL")
+	ErrDeepDeviceMapRequired  = errors.New("DEEP_DEVICE_MAP_REQUIRED")
+	ErrDeepModelRequired      = errors.New("DEEP_MODEL_REQUIRED")
+	ErrDeepEngineInvalid      = errors.New("DEEP_ENGINE_INVALID")
+)
+
+// IsDeepRuntimeConfigError reports ApplyEngine / billing-sync precondition failures.
+func IsDeepRuntimeConfigError(err error) bool {
+	return errors.Is(err, ErrDeepRequestNil) ||
+		errors.Is(err, ErrDeepDeviceMapRequired) ||
+		errors.Is(err, ErrDeepModelRequired) ||
+		errors.Is(err, ErrDeepEngineInvalid)
+}
+
 // Request is the JSON stdin payload for optimizer.py.
 // Rate is Microsoft keep-rate (after/before), same as LLMLingua-2 Space.
 type Request struct {
-	Text          string   `json:"text"`
-	Question      string   `json:"question,omitempty"`
-	Rate          float64  `json:"rate"`
-	Engine        string   `json:"engine"`
-	ModelName     string   `json:"model_name,omitempty"`
-	DeviceMap     string   `json:"device_map,omitempty"`
-	ForceTokens   []string `json:"force_tokens,omitempty"`
-	UseLLMLingua2 bool     `json:"use_llmlingua2,omitempty"`
+	Text              string   `json:"text"`
+	Question          string   `json:"question,omitempty"`
+	Rate              float64  `json:"rate"`
+	Engine            string   `json:"engine"`
+	ModelName         string   `json:"model_name,omitempty"`
+	DeviceMap         string   `json:"device_map,omitempty"`
+	ForceTokens       []string `json:"force_tokens,omitempty"`
+	UseLLMLingua2     bool     `json:"use_llmlingua2,omitempty"`
+	ForceReserveDigit          *bool `json:"force_reserve_digit,omitempty"`
+	DropConsecutive            *bool `json:"drop_consecutive,omitempty"`
+	UseSentenceLevelFilter     *bool `json:"use_sentence_level_filter,omitempty"`
 }
 
 // Runtime holds fail-closed Deep engine knobs from CLI env (no invent model ids).
 type Runtime struct {
-	DeviceMap     string
-	V1Model       string
-	V2Model       string
-	LongModel     string
-	V2ForceTokens []string
-}
-
-// codingAgentForceTokens are always merged into Deep force_tokens so LLMLingua
-// is less likely to drop path/punctuation characters when Deep does run.
-// Official LLMLingua-2 examples force \n . ! ? and related punctuation.
-var codingAgentForceTokens = []string{"\n", "/", "\\", ".", "-", "_", ":", "?", "!", ",", "=", "+", "#", "@"}
-
-func mergeForceTokens(base, extra []string) []string {
-	seen := make(map[string]bool, len(base)+len(extra))
-	out := make([]string, 0, len(base)+len(extra))
-	for _, s := range append(append([]string{}, base...), extra...) {
-		if s == "" || seen[s] {
-			continue
-		}
-		seen[s] = true
-		out = append(out, s)
-	}
-	return out
+	DeviceMap              string
+	V1Model                string
+	V2Model                string
+	LongModel              string
+	V2ForceTokens          []string
+	ForceReserveDigit      bool
+	DropConsecutive        bool
+	UseSentenceLevelFilter bool
+	LLMLinguaCodingDials   bool // true when billing dials synced (emit JSON keys; no invent)
 }
 
 func (rt Runtime) ApplyEngine(req *Request, engine Engine) error {
 	if req == nil {
-		return fmt.Errorf("deep request nil")
+		return ErrDeepRequestNil
 	}
 	dm := strings.TrimSpace(rt.DeviceMap)
 	if dm == "" {
-		return fmt.Errorf("TRIM_DEEP_DEVICE_MAP required")
+		return ErrDeepDeviceMapRequired
 	}
 	req.DeviceMap = dm
-	// Path/punctuation keepers for every engine (v1/long/v2) when Deep runs.
-	req.ForceTokens = mergeForceTokens(rt.V2ForceTokens, codingAgentForceTokens)
+	// force_tokens + coding dials come only from billing_settings via trim config sync.
+	req.ForceTokens = append([]string(nil), rt.V2ForceTokens...)
+	if rt.LLMLinguaCodingDials {
+		fr := rt.ForceReserveDigit
+		dc := rt.DropConsecutive
+		sf := rt.UseSentenceLevelFilter
+		req.ForceReserveDigit = &fr
+		req.DropConsecutive = &dc
+		req.UseSentenceLevelFilter = &sf
+	}
 	switch engine {
 	case EngineV2:
 		m := strings.TrimSpace(rt.V2Model)
 		if m == "" {
-			return fmt.Errorf("deep_v2_model required (trim config sync from billing_settings)")
+			return ErrDeepModelRequired
 		}
 		req.ModelName = m
 		req.UseLLMLingua2 = true
 	case EngineLong:
 		m := strings.TrimSpace(rt.LongModel)
 		if m == "" {
-			return fmt.Errorf("deep_long_model required (trim config sync from billing_settings)")
+			return ErrDeepModelRequired
 		}
 		req.ModelName = m
 	case EngineV1:
 		m := strings.TrimSpace(rt.V1Model)
 		if m == "" {
-			return fmt.Errorf("deep_v1_model required (trim config sync from billing_settings)")
+			return ErrDeepModelRequired
 		}
 		req.ModelName = m
 	default:
-		return fmt.Errorf("deep_engine must be v1, long, or v2")
+		return ErrDeepEngineInvalid
 	}
 	return nil
 }
@@ -304,8 +319,11 @@ func Compress(req Request, ux UXChrome, timeoutSec int) (*Response, error) {
 	if strings.TrimSpace(req.Engine) == "" {
 		return nil, ux.err(ux.EngineRequired)
 	}
-	if strings.TrimSpace(req.ModelName) == "" || strings.TrimSpace(req.DeviceMap) == "" {
-		return nil, ux.errFmt(ux.OptimizeFmt, "model_name and device_map required (sync billing deep_*_model; set TRIM_DEEP_DEVICE_MAP)")
+	if strings.TrimSpace(req.ModelName) == "" {
+		return nil, ErrDeepModelRequired
+	}
+	if strings.TrimSpace(req.DeviceMap) == "" {
+		return nil, ErrDeepDeviceMapRequired
 	}
 	if strings.EqualFold(strings.TrimSpace(req.Engine), string(EngineLong)) &&
 		strings.TrimSpace(req.Question) == "" {

@@ -5,6 +5,7 @@ package cli
 import (
 	"fmt"
 	"os/exec"
+	"strings"
 	"syscall"
 )
 
@@ -18,13 +19,19 @@ func configureDetachedStartProc(cmd *exec.Cmd) {
 
 func installWindowsTask(exe string, chrome cliChrome) error {
 	_ = exe
-	_ = chrome
-	return fmt.Errorf("windows autostart is only available on Windows")
+	msg := strings.TrimSpace(chrome.DaemonWindowsOnly)
+	if msg == "" {
+		return chrome.fail("")
+	}
+	return fmt.Errorf("%s", msg)
 }
 
 func uninstallWindowsTask(chrome cliChrome) error {
-	_ = chrome
-	return fmt.Errorf("windows autostart is only available on Windows")
+	msg := strings.TrimSpace(chrome.DaemonWindowsOnly)
+	if msg == "" {
+		return chrome.fail("")
+	}
+	return fmt.Errorf("%s", msg)
 }
 
 func printWindowsAutostartStatus(chrome cliChrome) {
