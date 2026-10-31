@@ -64,6 +64,15 @@ go run ./cmd/trim start --port 8888
 
 Proxy listens on `http://localhost:8888`. Use `trim stats --tui` (or `trim tui`) for the live Bubble Tea dashboard.
 
+Deep Mode (Microsoft LLMLingua) is local only. After any install channel, once per machine:
+
+```bash
+trim compress --bootstrap
+# green success banner = llmlingua ready; package managers do not pip-install it
+```
+
+Docs: [Installation → Deep Mode runtime](https://use-trim.com/docs/installation#deep-runtime). Maintainer packaging notes: `packaging/README.md`.
+
 ## Web dashboard
 
 ```bash

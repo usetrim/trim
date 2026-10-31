@@ -41,10 +41,14 @@ brew untap usetrim/tap
 ```bash
 trim version
 trim login
+# One-time Deep deps (local llmlingua - brew does not pip-install it)
+trim compress --bootstrap
+# Expect a green success banner when ready
 trim start
 ```
 
 No environment variables required for Trim Cloud. Self-host overrides: see the Trim repo `cli/.env.example`.
+Deep Mode runtime: https://use-trim.com/docs/installation#deep-runtime
 
 ## Requirements
 

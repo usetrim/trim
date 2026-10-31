@@ -128,6 +128,12 @@ async function install() {
     }
 
     console.log(`@usetrim/trim: binary ready at ${destBin}`);
+    console.log(
+      "@usetrim/trim: Deep once (local LLMLingua, not Trim cloud): trim compress --bootstrap",
+    );
+    console.log(
+      "@usetrim/trim: Success prints a green banner when Python packages are ready.",
+    );
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }

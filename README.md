@@ -69,21 +69,26 @@ Package-manager ops (tokens, taps): [packaging/README.md](./packaging/README.md)
 No environment variables required for Trim Cloud (official npm / Homebrew / installers).
 
 1. Install the CLI (above).
-2. Sign in and create an API key:
+2. One-time Deep deps on this PC (local Microsoft LLMLingua - not Trim cloud; package managers never pip-install it):
+   ```bash
+   trim compress --bootstrap
+   # Expect a green success banner (same polish as trim start) when ready
+   ```
+3. Sign in and create an API key:
    ```bash
    trim login
    ```
-3. Start the local proxy (one-shot), or enable Always-on:
+4. Start the local proxy (one-shot), or enable Always-on:
    ```bash
    trim start
    # everyday: preference + best-effort OS logon (no admin on normal Windows)
    trim autostart enable
    ```
-4. In your IDE, set the OpenAI-compatible Base URL to:
+5. In your IDE, set the OpenAI-compatible Base URL to:
    ```text
    http://127.0.0.1:8888/v1
    ```
-5. Optional: install **Trim IDE** (publisher `usetrim`) from the VS Code Marketplace or Open VSX for Always-on proxy + dashboard metrics. See [extensions/trim-ide/README.md](./extensions/trim-ide/README.md).
+6. Optional: install **Trim IDE** (publisher `usetrim`) from the VS Code Marketplace or Open VSX for Always-on proxy + dashboard metrics. See [extensions/trim-ide/README.md](./extensions/trim-ide/README.md).
 
 Always-on: leave **Start Trim with your IDE** checked in the dashboard (or `trim autostart enable`). OS logon uses launchd / systemd user / Windows Startup Run → `%LOCALAPPDATA%\Trim\bin` - preference stays on even if OS registration is blocked; then use `trim start` or the IDE extension. Docs: [Always-on](https://use-trim.com/docs/concepts/always-on), [`trim autostart`](https://use-trim.com/docs/cli/autostart).
 
@@ -152,7 +157,7 @@ Full contributor setup: [CONTRIBUTING.md](./CONTRIBUTING.md).
 trim start                          # local OpenAI-compatible proxy
 trim compress path/to/file.go --mode fast
 trim compress docs.txt --deep --engine v2
-trim compress --bootstrap           # first-time Deep dependencies
+trim compress --bootstrap           # first-time Deep deps (green success banner)
 trim config sync                    # pull cloud preferences
 trim setup                          # print IDE / shell wiring
 trim tui                            # local stats (+ cloud quota when logged in)

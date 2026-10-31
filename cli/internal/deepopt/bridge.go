@@ -123,10 +123,13 @@ type Response struct {
 }
 
 // UXChrome holds API-driven copy for Deep Mode. Empty strings mean fail-closed (no invent English).
+// Optional Notify* hooks let the CLI print start-grade colored chrome without deepopt importing cliout.
 type UXChrome struct {
 	Unavailable         string
 	BootstrapReqs       string
 	BootstrapPip        string
+	BootstrapOk         string
+	BootstrapOkDetail   string
 	RequirementsMissing string
 	AutoInstall         string
 	BinEnvMissingFmt    string
@@ -141,6 +144,12 @@ type UXChrome struct {
 	OptimizeFmt         string
 	Timeout             string
 	ParseFmt            string
+	// NotifyInfo prints progress (e.g. cliout.Info). Nil → fmt.Println.
+	NotifyInfo func(string)
+	// NotifySuccess prints the green ● success line (e.g. cliout.Success). Nil → "● "+msg.
+	NotifySuccess func(string)
+	// NotifyMuted prints secondary detail (e.g. cliout.Muted). Nil → fmt.Println.
+	NotifyMuted func(string)
 }
 
 func (ux UXChrome) err(msg string) error {
@@ -321,6 +330,7 @@ func requirementsPath(ux UXChrome) string {
 }
 
 // Bootstrap installs Deep Mode deps from requirements-deep.txt beside optimizer.py (local only).
+// Callers own progress/success chrome (cliout for `trim compress --bootstrap`; AutoInstall for live Deep).
 func Bootstrap(ux UXChrome) error {
 	if _, err := ScriptPath(ux); err != nil {
 		return err
@@ -330,11 +340,6 @@ func Bootstrap(ux UXChrome) error {
 		return ux.err(ux.RequirementsMissing)
 	}
 	args := []string{"-m", "pip", "install", "-r", req, "--user", "--quiet"}
-	if ux.BootstrapReqs != "" {
-		fmt.Println(ux.BootstrapReqs)
-	} else if ux.BootstrapPip != "" {
-		fmt.Println(ux.BootstrapPip)
-	}
 	if runtime.GOOS == "windows" && pythonBin() == "py" {
 		args = append([]string{"-3"}, args...)
 	}
@@ -385,10 +390,29 @@ func Compress(req Request, ux UXChrome, timeoutSec int) (*Response, error) {
 		// Do not require the chrome string to contain "llmlingua" (that gate hid installs).
 		if IsLLMLinguaMissing(err) {
 			if ux.AutoInstall != "" {
-				fmt.Println(ux.AutoInstall)
+				if ux.NotifyInfo != nil {
+					ux.NotifyInfo(ux.AutoInstall)
+				} else {
+					fmt.Println(ux.AutoInstall)
+				}
 			}
 			if bootErr := Bootstrap(ux); bootErr != nil {
 				return nil, bootErr
+			}
+			// Same green ● success path as trim compress --bootstrap / trim start (via Notify* or plain ●).
+			if ux.BootstrapOk != "" {
+				if ux.NotifySuccess != nil {
+					ux.NotifySuccess(ux.BootstrapOk)
+				} else {
+					fmt.Println("● " + ux.BootstrapOk)
+				}
+				if ux.BootstrapOkDetail != "" {
+					if ux.NotifyMuted != nil {
+						ux.NotifyMuted(ux.BootstrapOkDetail)
+					} else {
+						fmt.Println(ux.BootstrapOkDetail)
+					}
+				}
 			}
 		} else {
 			return nil, err

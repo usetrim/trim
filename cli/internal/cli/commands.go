@@ -579,6 +579,8 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 			QuotaUpgradeURLMissing             string `json:"quota_upgrade_url_missing"`
 			DeepBootstrapReqs                  string `json:"deep_bootstrap_reqs"`
 			DeepBootstrapPip                   string `json:"deep_bootstrap_pip"`
+			DeepBootstrapOk                    string `json:"deep_bootstrap_ok"`
+			DeepBootstrapOkDetail              string `json:"deep_bootstrap_ok_detail"`
 			DeepRequirementsMissing            string `json:"deep_requirements_missing"`
 			DeepAutoInstall                    string `json:"deep_auto_install"`
 			DeepBinEnvMissingFmt               string `json:"deep_bin_env_missing_fmt"`
@@ -1000,6 +1002,8 @@ func fetchCLIChromeRemote(cfg config.Local) cliChrome {
 		QuotaUpgradeURLMissing:             body.CLI.QuotaUpgradeURLMissing,
 		DeepBootstrapReqs:                  body.CLI.DeepBootstrapReqs,
 		DeepBootstrapPip:                   body.CLI.DeepBootstrapPip,
+		DeepBootstrapOk:                    body.CLI.DeepBootstrapOk,
+		DeepBootstrapOkDetail:              body.CLI.DeepBootstrapOkDetail,
 		DeepRequirementsMissing:            body.CLI.DeepRequirementsMissing,
 		DeepAutoInstall:                    body.CLI.DeepAutoInstall,
 		DeepBinEnvMissingFmt:               body.CLI.DeepBinEnvMissingFmt,
@@ -1456,6 +1460,8 @@ type cliChrome struct {
 	QuotaUpgradeURLMissing             string
 	DeepBootstrapReqs                  string
 	DeepBootstrapPip                   string
+	DeepBootstrapOk                    string
+	DeepBootstrapOkDetail              string
 	DeepRequirementsMissing            string
 	DeepAutoInstall                    string
 	DeepBinEnvMissingFmt               string

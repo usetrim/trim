@@ -22,6 +22,7 @@ Canonical user-facing README (copy into the tap repo): `packaging/taps/homebrew-
 ```bash
 brew install usetrim/tap/trim
 trim version
+trim compress --bootstrap   # local llmlingua once; green success banner
 # Hosted path (zero env): trim login && trim start
 ```
 

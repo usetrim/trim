@@ -20,7 +20,7 @@ Installers:
     NestedInstallerFiles:
       # Winget portable aliases executables only. Deep helpers must still ship as
       # flat siblings inside the zip (optimizer.py, requirements-deep.txt, requirements.txt).
-      # After install: trim compress --bootstrap (local llmlingua).
+      # After install (once): trim compress --bootstrap - local llmlingua; green success banner.
       - RelativeFilePath: trim.exe
         PortableCommandAlias: trim
 ManifestType: singleton

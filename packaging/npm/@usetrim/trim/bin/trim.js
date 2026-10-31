@@ -55,6 +55,7 @@ async function main() {
   if (!fs.existsSync(optimizerPath)) {
     console.error("@usetrim/trim: optimizer.py still missing after install - Deep Mode will fail.");
     console.error("Try: curl -fsSL https://use-trim.com/install.sh | sh");
+    console.error("Then once: trim compress --bootstrap (green success banner when llmlingua is ready).");
   }
 
   if (process.platform !== "win32") {

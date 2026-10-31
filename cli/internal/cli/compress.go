@@ -9,6 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/tidwall/gjson"
+	"github.com/usetrim/trim/cli/internal/cliout"
 	"github.com/usetrim/trim/cli/internal/config"
 	"github.com/usetrim/trim/cli/internal/deepopt"
 	"github.com/usetrim/trim/cli/internal/projectconfig"
@@ -34,30 +35,20 @@ var compressCmd = &cobra.Command{
 	Long:  "",
 	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// Bootstrap is local pip only - do not fail-closed on missing Trim Cloud HMAC bake
+		// (dev builds / self-host without HostedCLIHMACSecret still need Deep deps).
+		if compressBootstrap {
+			if len(args) > 0 {
+				cliout.Muted("note: --bootstrap ignores the file argument; it only installs local Deep deps")
+			}
+			return runCompressBootstrapCmd()
+		}
 		cfg, err := config.LoadLocal()
 		if err != nil {
 			return err
 		}
 		chrome := fetchCLIChrome(cfg)
-		ux := deepopt.UXChrome{
-			Unavailable:         chrome.ChromeUnavailable,
-			BootstrapReqs:       chrome.DeepBootstrapReqs,
-			BootstrapPip:        chrome.DeepBootstrapPip,
-			RequirementsMissing: chrome.DeepRequirementsMissing,
-			AutoInstall:         chrome.DeepAutoInstall,
-			BinEnvMissingFmt:    chrome.DeepBinEnvMissingFmt,
-			BinMissing:          chrome.DeepBinMissing,
-			PyEnvMissingFmt:     chrome.DeepPyEnvMissingFmt,
-			PyMissing:           chrome.DeepPyMissing,
-			LLMMissingFmt:       chrome.DeepLLMMissingFmt,
-			PipFailed:           chrome.DeepPipFailed,
-			RateRequired:        chrome.DeepRateRequired,
-			EngineRequired:      chrome.DeepEngineRequired,
-			QuestionRequired:    chrome.DeepQuestionRequired,
-			OptimizeFmt:         chrome.DeepOptimizeFmt,
-			Timeout:             chrome.DeepTimeout,
-			ParseFmt:            chrome.DeepParseFmt,
-		}
+		ux := deepUXFrom(chrome)
 		prefsChrome := deepopt.PrefsChrome{
 			Unavailable:    chrome.ChromeUnavailable,
 			EngineInvalid:  chrome.PrefsEngineInvalid,
@@ -65,9 +56,6 @@ var compressCmd = &cobra.Command{
 			TierRequired:   chrome.PrefsTierRequired,
 			EngineRequired: chrome.PrefsEngineRequired,
 			RateRequired:   chrome.PrefsRateRequired,
-		}
-		if compressBootstrap {
-			return deepopt.Bootstrap(ux)
 		}
 		if len(args) == 0 {
 			if chrome.CompressFileRequired != "" {
@@ -416,6 +404,59 @@ func compressFastAST(filePath, text string) (string, int, int, error) {
 		out = unwrapped
 	}
 	return out, before, after, nil
+}
+
+// runCompressBootstrapCmd loads optional cloud chrome, then installs Deep deps locally.
+func runCompressBootstrapCmd() error {
+	// Match trim start / daemon: heal Windows Always-on sidecars before pip so
+	// %LOCALAPPDATA%\Trim\bin has optimizer.py + requirements-deep.txt.
+	healWindowsDeepSidecarsForRunningExe()
+	chrome := cliChrome{}
+	if cfg, err := config.LoadLocal(); err == nil {
+		chrome = fetchCLIChrome(cfg)
+	} else {
+		applyHumanChromeFallbacks(&chrome)
+	}
+	return runCompressBootstrap(chrome, deepUXFrom(chrome))
+}
+
+// runCompressBootstrap installs Deep deps locally and prints start-style success chrome.
+func runCompressBootstrap(chrome cliChrome, ux deepopt.UXChrome) error {
+	progress := strings.TrimSpace(chrome.DeepBootstrapReqs)
+	if progress == "" {
+		progress = strings.TrimSpace(chrome.DeepBootstrapPip)
+	}
+	if progress == "" {
+		progress = "Installing Deep Mode dependencies on this machine (not in Trim cloud)…"
+	}
+	cliout.Info(progress)
+	spin := strings.TrimSpace(chrome.DeepBootstrapPip)
+	if spin == "" {
+		spin = "pip install (llmlingua + Deep requirements)…"
+	}
+	stop := cliout.Spinner(spin)
+	err := deepopt.Bootstrap(ux)
+	stop()
+	if err != nil {
+		return err
+	}
+	ok := strings.TrimSpace(chrome.DeepBootstrapOk)
+	if ok == "" {
+		ok = "Deep Mode dependencies installed on this machine"
+	}
+	cliout.Success(ok)
+	detail := strings.TrimSpace(chrome.DeepBootstrapOkDetail)
+	if detail == "" {
+		detail = "Microsoft LLMLingua (llmlingua) and requirements are ready for trim compress --deep and live Deep. Not installed in Trim cloud."
+	}
+	cliout.Muted(detail)
+	cliout.Table([]cliout.Row{
+		{Label: "Runtime", Value: "local Python (pip --user)", Kind: "ok"},
+		{Label: "Packages", Value: "llmlingua + requirements-deep.txt", Kind: "ok"},
+		{Label: "Helpers", Value: "optimizer.py beside the trim binary", Kind: "ok"},
+		{Label: "Next", Value: "trim compress <file> --deep   or   trim start", Kind: "accent"},
+	})
+	return nil
 }
 
 func writeCompressResult(out string, before, after int, tier, engine string, chrome cliChrome) error {

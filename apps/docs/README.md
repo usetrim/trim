@@ -22,7 +22,7 @@ Product documentation is served by the web app at [use-trim.com/docs](https://us
    - [Cursor](https://use-trim.com/docs/ide/cursor) + [Trim Cursor Link](https://use-trim.com/docs/cli/cursor-link) (Agent; not localhost)
    - [Continue](https://use-trim.com/docs/ide/continue)
    - [VS Code Chat](https://use-trim.com/docs/ide/vscode)
-4. Optional: [Custom models](https://use-trim.com/docs/ide/custom-models), [Always-on](https://use-trim.com/docs/concepts/always-on)
+4. Optional: [Installation → Deep Mode runtime](https://use-trim.com/docs/installation#deep-runtime) (`trim compress --bootstrap`, green success banner), [Custom models](https://use-trim.com/docs/ide/custom-models), [Always-on](https://use-trim.com/docs/concepts/always-on)
 
 ## Popular entry points
 
@@ -31,6 +31,8 @@ Product documentation is served by the web app at [use-trim.com/docs](https://us
 | Introduction (choose your tool) | `/docs` |
 | Quickstart | `/docs/quickstart` |
 | Installation | `/docs/installation` |
+| Deep Mode runtime (local bootstrap) | `/docs/installation#deep-runtime` |
+| `trim compress` (incl. `--bootstrap`) | `/docs/cli/compress` |
 | Claude Code CLI only | `/docs/cli/claude-code` |
 | Trim Cursor Link (Cursor Agent) | `/docs/cli/cursor-link` |
 | Cursor setup | `/docs/ide/cursor` |

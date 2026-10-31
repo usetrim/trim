@@ -63,12 +63,15 @@ winget install Trim.CLI
 Release archives must ship **flat** files beside the binary: `optimizer.py`, `requirements-deep.txt`, `requirements.txt` (not nested `optimizer.py/optimizer.py`).
 
 - npm postinstall copies those into `vendor/` next to `trim.exe`
+- curl/irm, Homebrew, Scoop, winget, and deb/rpm place the same helpers beside the CLI
 - Windows Always-on also copies them into `%LOCALAPPDATA%\Trim\bin`
-- `llmlingua` is **not** installed by the package manager; users run once:
+- `llmlingua` is **not** installed by any package manager; users run **once per machine**:
 
 ```bash
 trim compress --bootstrap
 ```
+
+Success prints a green banner (same style as `trim start`) confirming local Python packages are ready. Docs: https://use-trim.com/docs/installation#deep-runtime · `trim help compress`
 
 ### Go developers (from a clone)
 

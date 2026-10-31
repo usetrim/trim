@@ -270,8 +270,10 @@ trim_install_beacon() {
 }
 trim_install_beacon "/install.sh"
 
-echo "Trim installed. Run: trim start"
-echo "Then: trim login"
+echo "Trim installed. Next (same order as Quickstart):"
+echo "  1) trim compress --bootstrap   # green success banner; local llmlingua (not Trim cloud)"
+echo "  2) trim login"
+echo "  3) trim start   # or: trim autostart enable"
 if [ "$WITH_ZIG" = "1" ] || [ "$WITH_ZIG" = "true" ] || [ "$WITH_ZIG" = "yes" ]; then
   echo "Enhanced grammar build installed (includes Zig)."
 elif [ "$WITH_TS" = "1" ] || [ "$WITH_TS" = "true" ] || [ "$WITH_TS" = "yes" ]; then
@@ -280,6 +282,4 @@ else
   echo "Default build installed. For the enhanced grammar build: TRIM_WITH_TREESITTER=1 curl -fsSL ... | sh"
   echo "For Zig grammar: TRIM_WITH_ZIG_TREESITTER=1 curl -fsSL ... | sh"
 fi
-echo "Deep Mode (on-machine file compress): trim compress file.txt --deep"
-echo "  First Deep run may install local dependencies on this machine."
-echo "  Optional frozen binary: TRIM_WITH_DEEP=1 (requires trim-deep-* on the release)."
+echo "Optional frozen Deep binary: TRIM_WITH_DEEP=1 (requires trim-deep-* on the release)."
