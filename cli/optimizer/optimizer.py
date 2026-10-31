@@ -15,7 +15,9 @@ Compression control matches Microsoft HF demos:
 
 Model ids and device_map MUST come from the Go CLI request (env-backed). No invent.
 
-Requires: pip install llmlingua  (auto-bootstrapped by `trim compress --deep` on first use)
+Requires: pip install llmlingua
+  Prefer: trim compress --bootstrap (green success banner when ready)
+  Also auto-bootstrapped on first Deep use / live Deep when missing
 """
 
 from __future__ import annotations

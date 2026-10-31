@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/usetrim/trim/cli/internal/cliout"
 	"github.com/usetrim/trim/cli/internal/config"
 	"github.com/usetrim/trim/cli/internal/deepopt"
 	"github.com/usetrim/trim/server/pkg/proxy"
@@ -25,6 +26,8 @@ func deepUXFrom(chrome cliChrome) deepopt.UXChrome {
 		Unavailable:         chrome.ChromeUnavailable,
 		BootstrapReqs:       chrome.DeepBootstrapReqs,
 		BootstrapPip:        chrome.DeepBootstrapPip,
+		BootstrapOk:         chrome.DeepBootstrapOk,
+		BootstrapOkDetail:   chrome.DeepBootstrapOkDetail,
 		RequirementsMissing: chrome.DeepRequirementsMissing,
 		AutoInstall:         chrome.DeepAutoInstall,
 		BinEnvMissingFmt:    chrome.DeepBinEnvMissingFmt,
@@ -39,6 +42,10 @@ func deepUXFrom(chrome cliChrome) deepopt.UXChrome {
 		OptimizeFmt:         chrome.DeepOptimizeFmt,
 		Timeout:             chrome.DeepTimeout,
 		ParseFmt:            chrome.DeepParseFmt,
+		// Live Deep auto-bootstrap uses the same colored chrome as trim start / compress --bootstrap.
+		NotifyInfo:    cliout.Info,
+		NotifySuccess: cliout.Success,
+		NotifyMuted:   cliout.Muted,
 	}
 }
 
@@ -121,8 +128,12 @@ func prepareLiveDeep(cfg config.Local, chrome cliChrome) (liveModeLabel string, 
 
 		est := deepopt.EstimateLiveDeepInputTokens(optimized, path)
 		if est == 0 {
-			// Nothing compressible (empty/non-chat / chrome-only) - Fast-only, no Deep spam.
+			// Nothing compressible (empty/non-chat / IDE chrome-only) - Fast-only.
 			return deepFastOnly(optimized, proxy.DeepStatusSkippedEmpty), nil
+		}
+		if est < deepopt.LiveDeepMinProseTokens {
+			// Tiny turns (Cursor "hi") - skip LLMLingua warmup; Fast Mode is enough.
+			return deepFastOnly(optimized, proxy.DeepStatusSkippedMin), nil
 		}
 
 		rt := deepopt.RuntimeFromPreferences(p, deviceMap)

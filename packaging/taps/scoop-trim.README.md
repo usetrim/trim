@@ -11,6 +11,12 @@ Public Scoop bucket. GoReleaser pushes the scoop manifest when `SCOOP_BUCKET_TOK
 ```text
 scoop bucket add trim https://github.com/usetrim/scoop-trim
 scoop install trim
+trim version
+# One-time Deep deps (local llmlingua - Scoop does not pip-install it)
+trim compress --bootstrap
+# Expect a green success banner when ready
 ```
+
+Deep Mode runtime: https://use-trim.com/docs/installation#deep-runtime
 
 Until the token exists, release still succeeds (`skip_upload` when unset).

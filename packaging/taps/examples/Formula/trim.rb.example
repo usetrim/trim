@@ -20,9 +20,13 @@ class Trim < Formula
 
   def caveats
     <<~EOS
-      Deep Mode uses Microsoft LLMLingua locally (not on Render).
-      First time: trim compress --bootstrap
-      Then: trim compress <file> --deep
+      Deep Mode uses Microsoft LLMLingua on this Mac only (not Trim cloud).
+      Package install does not pip-install llmlingua.
+      Once per machine:
+        trim compress --bootstrap
+      Success prints a green banner; then:
+        trim compress <file> --deep
+        trim start
     EOS
   end
 

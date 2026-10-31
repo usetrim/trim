@@ -984,7 +984,7 @@ func builtinMessageForCode(code string) string {
 	case "LANDING_SOURCE_URL":
 		return "https://github.com/usetrim/trim"
 	case "LANDING_INSTALL_SNIPPET":
-		return "curl -fsSL https://use-trim.com/install.sh | sh\ntrim start\n# Cursor -> Override Base URL -> http://localhost:8888/v1"
+		return "curl -fsSL https://use-trim.com/install.sh | sh\ntrim compress --bootstrap\ntrim login\ntrim start\n# Cursor Agent: trim cursor-link url -> Override Base URL (HTTPS .../v1)\n# On-device: http://127.0.0.1:8888/v1"
 	case "LANDING_NAV_PRICING":
 		return "Pricing"
 	case "LANDING_DEMO_TITLE":
@@ -1012,9 +1012,9 @@ func builtinMessageForCode(code string) string {
 	case "LANDING_HOW_TITLE":
 		return "How Trim works"
 	case "LANDING_HOW_1_TITLE":
-		return "Install and start the local proxy"
+		return "Install, bootstrap Deep, start the local proxy"
 	case "LANDING_HOW_1_BODY":
-		return "trim start binds an OpenAI-compatible proxy on localhost. Compression runs locally, then the slim prompt goes to your model provider."
+		return "After install, run trim compress --bootstrap once (package managers do not pip-install llmlingua). Then trim start binds an OpenAI-compatible proxy on localhost. Compression runs locally, then the slim prompt goes to your model provider."
 	case "LANDING_HOW_2_TITLE":
 		return "Wire Cursor (or any compatible IDE)"
 	case "LANDING_HOW_2_BODY":
@@ -1074,9 +1074,9 @@ func builtinMessageForCode(code string) string {
 	case "LANDING_FLOW_SUBTITLE":
 		return "End to end: from install on your machine to a smaller bill on every chat."
 	case "LANDING_FLOW_1_TITLE":
-		return "Install Trim and start the local proxy"
+		return "Install, bootstrap Deep, then start Trim"
 	case "LANDING_FLOW_1_BODY":
-		return "Run the one-line installer, then trim start. Trim listens on TRIM_PORT (example http://127.0.0.1:8888/v1) as an OpenAI-compatible endpoint. Your code stays on this machine."
+		return "Run the one-line installer, then trim compress --bootstrap once (green success banner; local llmlingua, not Trim cloud), trim login, and trim start. Trim listens on TRIM_PORT (example http://127.0.0.1:8888/v1) as an OpenAI-compatible endpoint. Your code stays on this machine."
 	case "LANDING_FLOW_2_TITLE":
 		return "Point your IDE at Trim"
 	case "LANDING_FLOW_2_BODY":
@@ -1094,9 +1094,9 @@ func builtinMessageForCode(code string) string {
 	case "LANDING_USE_SUBTITLE":
 		return "Same path as above - short version."
 	case "LANDING_USE_1_TITLE":
-		return "Install and run trim start"
+		return "Install, bootstrap, then trim start"
 	case "LANDING_USE_1_BODY":
-		return "curl the install script (or use your package manager), then start the local proxy."
+		return "curl the install script (or use your package manager), run trim compress --bootstrap once, then start the local proxy."
 	case "LANDING_USE_2_TITLE":
 		return "Set Override Base URL"
 	case "LANDING_USE_2_BODY":
@@ -1362,7 +1362,7 @@ func builtinMessageForCode(code string) string {
 	case "PREFERENCES_CLI_HELP_2":
 		return "trim compress docs.txt --deep --engine v2   |   Base Models: trim config models"
 	case "PREFERENCES_CLI_HELP_3":
-		return "trim compress --bootstrap installs Deep Mode dependencies on your machine (may download packages)."
+		return "trim compress --bootstrap installs Deep Mode deps on this machine (local pip / llmlingua). Success prints a green banner; not Trim cloud."
 	case "PREFERENCES_CLI_HELP_4":
 		return "trim config set default-tier fast"
 	case "PREFERENCES_CLI_HELP_5":
@@ -2269,13 +2269,17 @@ func builtinMessageForCode(code string) string {
 	case "CLI_STATUS_API_FMT":
 		return "API status: %s" // verbose / --verbose only
 	case "CLI_DEEP_BOOTSTRAP_REQS":
-		return "Installing Deep Mode dependencies on this machine (not in Trim cloud)."
+		return "Installing Deep Mode dependencies on this machine (not in Trim cloud)…"
 	case "CLI_DEEP_BOOTSTRAP_PIP":
-		return "Installing Deep Mode dependencies on this machine (not in Trim cloud)."
+		return "Installing Deep Mode dependencies on this machine (not in Trim cloud)…"
+	case "CLI_DEEP_BOOTSTRAP_OK":
+		return "Deep Mode dependencies installed on this machine"
+	case "CLI_DEEP_BOOTSTRAP_OK_DETAIL":
+		return "Microsoft LLMLingua (llmlingua) and requirements are ready for trim compress --deep and live Deep. Not installed in Trim cloud."
 	case "CLI_DEEP_REQUIREMENTS_MISSING":
 		return "Deep Mode requirements file not found beside the CLI. Pack it with the release or set TRIM_OPTIMIZER_PY to a tree that includes the requirements file."
 	case "CLI_DEEP_AUTO_INSTALL":
-		return "Deep Mode runtime not found. Installing locally once..."
+		return "Deep Mode runtime not found. Installing locally once…"
 	case "CLI_DEEP_BIN_ENV_MISSING_FMT":
 		return "TRIM_OPTIMIZER_BIN not found: %s"
 	case "CLI_DEEP_BIN_MISSING":
@@ -2545,7 +2549,7 @@ func builtinMessageForCode(code string) string {
 	case "CLI_HELP_ROOT_SHORT":
 		return "Local Fast Mode proxy for AI coding tools"
 	case "CLI_HELP_ROOT_LONG":
-		return "Trim keeps a local Fast Mode proxy on your machine so IDE traffic uses less noisy context.\n\nEveryday: start, stop, status, stats, upgrade, autostart, cursor-link, login, logout, uninstall, setup, version\nAdvanced: tui, compress, daemon, telemetry, config (get | set | sync | rates | models)\n\nFast vs Deep (new accounts default to Deep = Fast then Segmented Allowlist Deep on each last-user prose island in place, order preserved beside paths):\n  trim config get default-tier\n  trim config set default-tier deep\n  trim config set default-tier fast\n  trim config rates\n  trim config set compression-rate 0.7\n  trim config models\n  trim config set deep-v2-backbone mbert-base\n  trim config sync\n\nDeep keep-rate (after/before, Microsoft LLMLingua): Dashboard slider or trim config rates / set compression-rate (billing min/max/step).\nDeep Base Model (Microsoft LLMLingua-2): Dashboard picker or trim config models / set deep-v2-backbone (billing catalog; default mbert-base, optional xlm-roberta-large).\n\nCursor Agent: trim cursor-link enable → trim start → trim cursor-link url (paste HTTPS …/v1; not 127.0.0.1).\n\nSimple savings check after trim start:\n  trim stats\n  open http://127.0.0.1:<port>/dashboard → Show savings detail\n\ntrim status = cloud quota. trim stats = local Deep status / savings meter.\n\nFull remove: trim uninstall (then brew/scoop/winget/npm uninstall if you installed that way).\n\nRun \"trim help <command>\" for details. Prefer trim start / autostart for daily use (new accounts default Deep = Fast then Segmented Allowlist Deep on the live proxy). Use trim compress --deep for file/batch."
+		return "Trim keeps a local Fast Mode proxy on your machine so IDE traffic uses less noisy context.\n\nEveryday: start, stop, status, stats, upgrade, autostart, cursor-link, login, logout, uninstall, setup, version\nAdvanced: tui, compress, daemon, telemetry, config (get | set | sync | rates | models)\n\nFast vs Deep (new accounts default to Deep = Fast then Segmented Allowlist Deep on each last-user prose island in place, order preserved beside paths):\n  trim config get default-tier\n  trim config set default-tier deep\n  trim config set default-tier fast\n  trim config rates\n  trim config set compression-rate 0.7\n  trim config models\n  trim config set deep-v2-backbone mbert-base\n  trim config sync\n\nDeep keep-rate (after/before, Microsoft LLMLingua): Dashboard slider or trim config rates / set compression-rate (billing min/max/step).\nDeep Base Model (Microsoft LLMLingua-2): Dashboard picker or trim config models / set deep-v2-backbone (billing catalog; default mbert-base, optional xlm-roberta-large).\n\nOne-time Deep deps on this PC (not Trim cloud):\n  trim compress --bootstrap\n\nCursor Agent: trim cursor-link enable → trim start → trim cursor-link url (paste HTTPS …/v1; not 127.0.0.1).\n\nSimple savings check after trim start:\n  trim stats\n  open http://127.0.0.1:<port>/dashboard → Show savings detail\n\ntrim status = cloud quota. trim stats = local Deep status / savings meter.\n\nFull remove: trim uninstall (then brew/scoop/winget/npm uninstall if you installed that way).\n\nRun \"trim help <command>\" for details. Prefer trim start / autostart for daily use (new accounts default Deep = Fast then Segmented Allowlist Deep on the live proxy). Use trim compress --bootstrap once, then trim compress --deep for file/batch."
 	case "CLI_HELP_GROUP_EVERYDAY":
 		return "Everyday Commands:"
 	case "CLI_HELP_GROUP_ADVANCED":
@@ -2779,7 +2783,7 @@ func builtinMessageForCode(code string) string {
 	case "CLI_HELP_COMPRESS_SHORT":
 		return "Compress a file (Fast or Deep). Live IDE proxy also runs Segmented Allowlist Deep when Preferences Deep is on (v2 uses synced Base Model)."
 	case "CLI_HELP_COMPRESS_LONG":
-		return "Fast Mode is low-latency local compression (live proxy and files). Deep Mode is stronger on-machine LLMLingua: live proxy runs Segmented Allowlist Deep when Preferences Deep is on (each last-user prose island in place, order preserved beside paths; tools/paths/schemas frozen), and trim compress --deep for file/batch. Engines are not loaded in Trim cloud.\n\nDeep engines (pick one): v2 LLMLingua-2 (recommended; uses synced Base Model from trim config models), long LongLLMLingua (question-aware; requires --question), v1 LLMLingua (classic).\n\nKeep-rate: --rate or synced compression-rate (Dashboard / trim config rates).\nBase Model (v2 only): Dashboard picker or trim config models / set deep-v2-backbone (billing catalog; default mbert-base, optional xlm-roberta-large). No free-text Hugging Face box.\n\nLicensed use still requires Trim login and network."
+		return "Fast Mode is low-latency local compression (live proxy and files). Deep Mode is stronger on-machine LLMLingua: live proxy runs Segmented Allowlist Deep when Preferences Deep is on (each last-user prose island in place, order preserved beside paths; tools/paths/schemas frozen), and trim compress --deep for file/batch. Engines are not loaded in Trim cloud.\n\nOne-time local Deep deps (every install channel - npm, Homebrew, curl/irm, deb/rpm, Scoop, winget):\n  trim compress --bootstrap\nThat runs Python pip on this PC only (llmlingua + requirements-deep.txt beside optimizer.py). Success prints a green banner like trim start. Package managers do not pip-install LLMLingua.\n\nDeep engines (pick one): v2 LLMLingua-2 (recommended; uses synced Base Model from trim config models), long LongLLMLingua (question-aware; requires --question), v1 LLMLingua (classic).\n\nKeep-rate: --rate or synced compression-rate (Dashboard / trim config rates).\nBase Model (v2 only): Dashboard picker or trim config models / set deep-v2-backbone (billing catalog; default mbert-base, optional xlm-roberta-large). No free-text Hugging Face box.\n\nLicensed use still requires Trim login and network.\nDocs: https://use-trim.com/docs/installation#deep-runtime"
 	case "CLI_HELP_COMPRESS_FLAG_MODE":
 		return "fast | deep (required unless prefs default-tier or --deep)"
 	case "CLI_HELP_COMPRESS_FLAG_DEEP":
@@ -2793,7 +2797,7 @@ func builtinMessageForCode(code string) string {
 	case "CLI_HELP_COMPRESS_FLAG_TARGET":
 		return "Deep keep-rate after/before (Microsoft LLMLingua); omit to use synced preferences"
 	case "CLI_HELP_COMPRESS_FLAG_BOOTSTRAP":
-		return "install Deep Mode dependencies on this machine"
+		return "One-time local install of Deep Mode deps (Microsoft LLMLingua / llmlingua via pip). Prints a green success banner when complete. Same step after npm, brew, curl/irm, Scoop, or winget."
 	case "CLI_HELP_COMPRESS_FLAG_OUT":
 		return "write result to file instead of stdout"
 	case "CLI_HELP_CONFIG_SHORT":

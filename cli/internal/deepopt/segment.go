@@ -82,6 +82,8 @@ func segmentUserTextForDeep(blob string) []deepTextSpan {
 func markProtectedRanges(blob string) []bool {
 	n := len(blob)
 	prot := make([]bool, n)
+	// IDE/agent XML chrome first (Cursor/Claude Code): never feed into LLMLingua.
+	markIDEChromeXMLBlocks(blob, prot)
 	markCodeFences(blob, prot)
 	markURLs(blob, prot)
 	markUNCPaths(blob, prot)
@@ -90,6 +92,51 @@ func markProtectedRanges(blob string) []bool {
 	markRelativeCodePathTokens(blob, prot)
 	markDenseJSONObjects(blob, prot)
 	return prot
+}
+
+// ideChromeXMLTags are Cursor / Claude Code / Trim-injected blocks that must stay
+// verbatim. Feeding them into LLMLingua-2 is slow (first model load tens of seconds)
+// and mangles control chrome - same freeze class as <system-reminder>.
+var ideChromeXMLTags = []string{
+	"system-reminder",
+	"user_info",
+	"agent_transcripts",
+	"open_and_recently_viewed_files",
+	"agent_skills",
+	"available_skills",
+	"mcp_file_system",
+	"git_status",
+	"terminal_files_information",
+	"communication",
+	"citing_code",
+	"user_rules",
+	"always_applied_workspace_rules",
+	"agent_transcripts_context",
+}
+
+func markIDEChromeXMLBlocks(blob string, prot []bool) {
+	for _, tag := range ideChromeXMLTags {
+		open := "<" + tag + ">"
+		closeTag := "</" + tag + ">"
+		startSearch := 0
+		for {
+			i := strings.Index(blob[startSearch:], open)
+			if i < 0 {
+				break
+			}
+			i += startSearch
+			rest := blob[i+len(open):]
+			j := strings.Index(rest, closeTag)
+			if j < 0 {
+				// Unclosed chrome: freeze from open to end (fail-closed).
+				markRange(prot, i, len(blob))
+				return
+			}
+			end := i + len(open) + j + len(closeTag)
+			markRange(prot, i, end)
+			startSearch = end
+		}
+	}
 }
 
 func markRange(prot []bool, start, end int) {

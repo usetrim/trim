@@ -11,6 +11,11 @@ trim login
 trim start
 # everyday Always-on (preference + best-effort OS logon; no admin on normal Windows)
 trim autostart enable
+# one-time Deep deps on this PC (Microsoft LLMLingua via pip - not Trim cloud)
+trim compress --bootstrap
+# success prints a green banner; then optional:
+# trim compress README.md --deep
+trim help compress
 trim help autostart
 trim help daemon
 ```
@@ -32,7 +37,7 @@ npx @usetrim/trim version
 3. Places `trim` / `trim.exe` **and** Deep helpers (`optimizer.py`, `requirements-deep.txt`, `requirements.txt`) under `vendor/`
 4. `bin/trim.js` execs that binary (self-heals binary **and** Deep sidecars if `npm install --ignore-scripts` was used)
 5. On Windows Always-on (`trim autostart enable`), Trim copies those Deep helpers into `%LOCALAPPDATA%\Trim\bin` beside the stable `trim.exe`
-6. First Deep use: `trim compress --bootstrap` (local `pip install` of Microsoft LLMLingua; not done at npm install time)
+6. First Deep use: `trim compress --bootstrap` (local `pip install` of Microsoft LLMLingua; **not** done at npm install time). Success prints a green banner like `trim start`. Same step after brew / curl / Scoop / winget.
 
 Same assets as `https://use-trim.com/install.sh` (default CGO-free build).
 

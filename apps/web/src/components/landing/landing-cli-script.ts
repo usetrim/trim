@@ -1,6 +1,6 @@
 /**
  * Shared live-CLI narrative for all landing terminal surfaces.
- * Keep product story identical: install → proxy → trim request → status meter.
+ * Keep product story identical: install → Deep bootstrap → proxy → trim request → status meter.
  */
 
 export type CliTone = "dim" | "ok" | "warn" | "saved" | "label";
@@ -16,6 +16,19 @@ export const CLI_SCRIPT_UNIX: CliScriptLine[] = [
   { kind: "out", text: "→ verifying sha256… ok", tone: "dim" },
   { kind: "out", text: "→ installing to /usr/local/bin/trim", tone: "dim" },
   { kind: "out", text: "✓ trim 0.9.2 ready", tone: "ok" },
+  { kind: "blank" },
+  { kind: "in", text: "trim compress --bootstrap", delay: 320 },
+  { kind: "out", text: "ℹ Installing Deep Mode dependencies on this machine…", tone: "dim" },
+  { kind: "out", text: "● Deep Mode dependencies installed on this machine", tone: "ok" },
+  {
+    kind: "out",
+    text: "  Microsoft LLMLingua ready - not installed in Trim cloud",
+    tone: "dim",
+  },
+  { kind: "out", text: "  Runtime   local Python (pip --user)", tone: "dim" },
+  { kind: "out", text: "  Packages  llmlingua + requirements-deep.txt", tone: "ok" },
+  { kind: "out", text: "  Helpers   optimizer.py beside the trim binary", tone: "ok" },
+  { kind: "out", text: "  Next      trim compress <file> --deep  or  trim start", tone: "dim" },
   { kind: "blank" },
   { kind: "in", text: "trim login", delay: 380 },
   { kind: "out", text: "→ open browser · device code TRM-7K2Q", tone: "dim" },
@@ -73,6 +86,19 @@ export const CLI_SCRIPT_POWERSHELL: CliScriptLine[] = [
   { kind: "out", text: "→ verifying sha256… ok", tone: "dim" },
   { kind: "out", text: "→ installing to %LOCALAPPDATA%\\trim", tone: "dim" },
   { kind: "out", text: "✓ trim 0.9.2 ready", tone: "ok" },
+  { kind: "blank" },
+  { kind: "in", text: "trim compress --bootstrap", delay: 320 },
+  { kind: "out", text: "ℹ Installing Deep Mode dependencies on this machine…", tone: "dim" },
+  { kind: "out", text: "● Deep Mode dependencies installed on this machine", tone: "ok" },
+  {
+    kind: "out",
+    text: "  Microsoft LLMLingua ready - not installed in Trim cloud",
+    tone: "dim",
+  },
+  { kind: "out", text: "  Runtime   local Python (pip --user)", tone: "dim" },
+  { kind: "out", text: "  Packages  llmlingua + requirements-deep.txt", tone: "ok" },
+  { kind: "out", text: "  Helpers   optimizer.py beside the trim binary", tone: "ok" },
+  { kind: "out", text: "  Next      trim compress <file> --deep  or  trim start", tone: "dim" },
   { kind: "blank" },
   { kind: "in", text: "trim login", delay: 380 },
   { kind: "out", text: "→ open browser · device code TRM-7K2Q", tone: "dim" },

@@ -145,8 +145,10 @@ try {
   Invoke-TrimInstallBeacon -PathQuery "/install.ps1"
 
   Write-Host "Trim installed to $dest"
-  Write-Host "Run: trim start"
-  Write-Host "Then: trim login"
+  Write-Host "Next (same order as Quickstart):"
+  Write-Host "  1) trim compress --bootstrap   # green success banner; local llmlingua (not Trim cloud)"
+  Write-Host "  2) trim login"
+  Write-Host "  3) trim start   # or: trim autostart enable"
   Write-Host "Uninstall via Settings → Apps, or: trim uninstall"
   Write-Host "Open a new terminal if 'trim' is not on PATH yet."
 } finally {

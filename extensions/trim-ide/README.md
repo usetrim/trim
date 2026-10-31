@@ -43,12 +43,13 @@ Install **Trim IDE** (`usetrim.trim-ide`) from [Open VSX](https://open-vsx.org/e
 Build or download a `.vsix`, then **Extensions: Install from VSIX**.  
 (From a clone of this repo: `cd extensions/trim-ide && npm ci && npm test && npm run package`.)
 
-Also install the **`trim` CLI** on the machine and keep it on `PATH` ([installation](https://use-trim.com/docs/installation)) so Always-on can start the local proxy.
+Also install the **`trim` CLI** on the machine and keep it on `PATH` ([installation](https://use-trim.com/docs/installation)) so Always-on can start the local proxy. Once per machine after any install channel: `trim compress --bootstrap` (green success banner; package managers do not pip-install Microsoft LLMLingua). See [Deep Mode runtime](https://use-trim.com/docs/installation#deep-runtime).
 
 ## First-run checklist
 
 | Step | Where | Action |
 | --- | --- | --- |
+| 0 | Terminal | `trim compress --bootstrap` (wait for green success banner) |
 | 1 | Dashboard → Settings | Leave **Start Trim with your IDE** checked |
 | 2 | Dashboard → Settings → API keys | Create a **Trim** API key (not OpenAI / Anthropic / Google) |
 | 3 | Editor | **Trim: Copy Hardware ID** |

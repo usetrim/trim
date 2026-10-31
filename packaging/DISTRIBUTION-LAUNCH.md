@@ -21,6 +21,9 @@ CI: `.github/workflows/publish-npm.yml` (OIDC; no long-lived publish token)
 ```bash
 npm install -g @usetrim/trim
 trim version
+# Deep once (local pip / llmlingua - npm does not install it):
+trim compress --bootstrap
+# Expect green success banner + status table (same polish as trim start)
 # Hosted path (zero env): trim login && trim start
 # Release CI must set Actions secret TRIM_CLI_HMAC_SECRET (= production server)
 ```
@@ -38,6 +41,7 @@ trim version
 ```bash
 brew install usetrim/tap/trim
 trim version
+trim compress --bootstrap   # green success banner; brew does not pip-install llmlingua
 ```
 
 ## 4) Go (from clone)
@@ -56,7 +60,14 @@ Remote `go install github.com/usetrim/trim/cli/cmd/trim@v…` stays unsupported 
 ```bash
 curl -fsSL https://use-trim.com/install.sh | sh
 irm https://use-trim.com/install.ps1 | iex
+# After any channel (once per machine):
+trim compress --bootstrap
+# green banner = Deep Mode Python packages ready locally (not Trim cloud)
 ```
+
+## Deep Mode runtime (every channel)
+
+Package managers and installers ship `optimizer.py` + `requirements-deep.txt` beside the CLI. They never pip-install Microsoft LLMLingua. Users run `trim compress --bootstrap` once; success prints a green banner like `trim start`. Docs: https://use-trim.com/docs/installation#deep-runtime · `trim help compress` · `packaging/README.md`.
 
 ## IDE extension (`usetrim.trim-ide`)
 

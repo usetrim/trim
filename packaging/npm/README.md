@@ -42,6 +42,7 @@ npm pack
 # In a temp dir:
 #   npm install -g ./usetrim-trim-0.1.0.tgz
 #   trim version
+#   trim compress --bootstrap   # green success banner; npm does not pip-install llmlingua
 ```
 
 ## Why not optionalDependencies platform packages (yet)?

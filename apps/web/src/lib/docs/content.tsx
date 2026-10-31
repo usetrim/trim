@@ -64,7 +64,7 @@ export const DOC_PAGES: Record<string, DocPage> = {
             "~/.continue/config.yaml",
           ],
           ["VS Code built-in Chat", "Quickstart → VS Code setup", "Chat: Manage Language Models"],
-          ["Not sure yet", "Quickstart", "Shared install + login first, then pick a path"],
+          ["Not sure yet", "Quickstart", "Shared install + bootstrap + login first, then pick a path"],
         ],
       },
       {
@@ -76,6 +76,7 @@ export const DOC_PAGES: Record<string, DocPage> = {
         type: "ol",
         items: [
           "Install the Trim CLI on your PC (puts the trim command on PATH)",
+          "One-time Deep deps: trim compress --bootstrap (green success banner; package managers do not pip-install llmlingua)",
           "Sign in once: trim login (browser opens; cloud account for quotas/billing)",
           "Start Trim on this PC: trim start (or trim autostart enable so it comes back after reboot)",
           "Point your coding tool at Trim’s address (different tools use a slightly different address - see the table above)",
@@ -92,8 +93,8 @@ export const DOC_PAGES: Record<string, DocPage> = {
         headers: ["What", "Where"],
         rows: [
           [
-            "Install / start / stop Trim",
-            "Terminal: trim version, trim start, trim stop, trim status",
+            "Install / Deep bootstrap / start / stop Trim",
+            "Terminal: trim version, trim compress --bootstrap, trim start, trim stop, trim status",
           ],
           [
             "Always-on preference",
@@ -114,7 +115,7 @@ export const DOC_PAGES: Record<string, DocPage> = {
       {
         type: "callout",
         title: "Start here",
-        text: "Go to Quickstart now. If you only use Claude Code, jump straight to Claude Code (CLI only) after install + login.",
+        text: "Go to Quickstart now. If you only use Claude Code, jump straight to Claude Code (CLI only) after install + trim compress --bootstrap + login.",
       },
       { type: "h2", id: "open-core", text: "Open core" },
       {
@@ -136,7 +137,12 @@ export const DOC_PAGES: Record<string, DocPage> = {
         type: "table",
         headers: ["Step", "What you do", "Where you do it", "What you should see"],
         rows: [
-          ["1", "Install Trim", "Terminal", "trim version prints a version number"],
+          [
+            "1",
+            "Install Trim + Deep bootstrap",
+            "Terminal",
+            "trim version works; trim compress --bootstrap shows a green success banner",
+          ],
           ["2", "Sign in", "Terminal → browser", "Browser login completes; terminal confirms"],
           [
             "3",
@@ -162,6 +168,7 @@ export const DOC_PAGES: Record<string, DocPage> = {
         type: "ul",
         items: [
           "You need a terminal (macOS Terminal, Windows PowerShell, or Linux shell)",
+          "For Deep Mode: Python 3 on PATH (used once by trim compress --bootstrap; package managers do not pip-install llmlingua)",
           "You need your AI provider key later (Anthropic for Claude Code / Claude models; OpenAI for GPT; Google for Gemini)",
           "You do not paste Trim HMAC secrets or internal API URLs for normal use",
         ],
@@ -188,11 +195,14 @@ trim version
 
 # Homebrew (macOS)
 brew install usetrim/tap/trim
-trim version`,
+trim version
+
+# One-time Deep deps on this PC (all channels; not Trim cloud)
+trim compress --bootstrap`,
       },
       {
         type: "p",
-        text: "After this: if trim version fails, close and reopen the terminal (PATH refresh), then retry. Platform detail: Installation.",
+        text: "After this: if trim version fails, close and reopen the terminal (PATH refresh), then retry. trim compress --bootstrap prints a green success banner when Microsoft LLMLingua is ready locally. Platform detail: Installation → Deep Mode runtime.",
       },
       {
         type: "h2",
@@ -367,6 +377,11 @@ trim stats`,
           ["PowerShell installer", "Windows", "irm https://use-trim.com/install.ps1 | iex"],
           ["npm", "Any OS with Node", "npm install -g @usetrim/trim"],
           ["Homebrew", "macOS", "brew install usetrim/tap/trim"],
+          [
+            "Deep bootstrap (all channels)",
+            "Once per machine after any install",
+            "trim compress --bootstrap  (green success banner)",
+          ],
         ],
       },
       { type: "h2", id: "unix", text: "macOS and Linux" },
@@ -374,14 +389,16 @@ trim stats`,
         type: "code",
         language: "bash",
         code: `curl -fsSL https://use-trim.com/install.sh | sh
-trim version`,
+trim version
+trim compress --bootstrap`,
       },
       { type: "h2", id: "windows", text: "Windows" },
       {
         type: "code",
         language: "powershell",
         code: `irm https://use-trim.com/install.ps1 | iex
-trim version`,
+trim version
+trim compress --bootstrap`,
       },
       {
         type: "p",
@@ -400,25 +417,38 @@ brew install usetrim/tap/trim
 # Optional later: Scoop / winget
 scoop bucket add trim https://github.com/usetrim/scoop-trim
 scoop install trim
-winget install Trim.CLI`,
+winget install Trim.CLI
+
+# Optional Linux packages from GitHub Releases (.deb / .rpm via nfpm)
+# After install, postinstall echoes the same Deep bootstrap step:
+#   trim compress --bootstrap
+
+# Same one-time Deep step after ANY channel (local pip - not Trim cloud)
+trim compress --bootstrap
+# Expect a green success banner when llmlingua is ready`,
       },
       {
         type: "p",
-        text: "npm (@usetrim/trim) and Homebrew (usetrim/tap/trim) are live. curl/irm installers remain supported. Scoop/winget are optional. Maintainer ops: packaging/README.md.",
+        text: "npm (@usetrim/trim) and Homebrew (usetrim/tap/trim) are live. curl/irm installers remain supported. Scoop/winget/deb/rpm are optional. None of these pip-install Microsoft LLMLingua - always run trim compress --bootstrap once per machine (green banner = ready). Maintainer ops: packaging/README.md.",
       },
       { type: "h2", id: "deep-runtime", text: "Deep Mode runtime (local)" },
       {
         type: "p",
-        text: "Deep Mode (LLMLingua) runs on your PC, not in Trim cloud. Installers place optimizer.py and requirements-deep.txt beside the CLI. The first Deep run may pip-install llmlingua once (or run trim compress --bootstrap). On Windows Always-on, Trim also copies those Deep helpers into %LOCALAPPDATA%\\Trim\\bin next to the stable trim.exe.",
+        text: "Deep Mode (Microsoft LLMLingua) runs on your PC, not in Trim cloud. Every install channel (npm, Homebrew, curl/irm, Scoop, winget, deb/rpm) places optimizer.py and requirements-deep.txt beside the CLI - but none of them pip-install llmlingua. Run one local bootstrap once per machine. On Windows Always-on, Trim also copies those Deep helpers into %LOCALAPPDATA%\\Trim\\bin next to the stable trim.exe.",
       },
       {
         type: "code",
         language: "bash",
-        code: `# One-time Deep deps (Python on PATH)
+        code: `# One-time Deep deps (Python on PATH) - same after npm / brew / curl / Scoop / winget
 trim compress --bootstrap
+# Expect: blue progress → green “Deep Mode dependencies installed on this machine”
+# plus a short table (packages / local Python / next steps). Quiet exit with no banner = older CLI.
 
 # Smoke Deep (Microsoft keep-rate)
-trim compress README.md --deep --engine v2 --rate 0.7`,
+trim compress README.md --deep --engine v2 --rate 0.7
+
+# Help
+trim help compress`,
       },
       {
         type: "code",
@@ -443,10 +473,10 @@ Test-Path \"$env:LOCALAPPDATA\\Trim\\bin\\requirements-deep.txt\"
         type: "ol",
         items: [
           "Confirm install: trim version",
+          "Deep once: trim compress --bootstrap (wait for the green success banner; package managers do not pip-install llmlingua)",
           "Sign in: trim login",
           "Enable Always-on: trim autostart enable",
           "Confirm: trim autostart status",
-          "Deep once: trim compress --bootstrap (then optional trim compress file --deep)",
           "Optional smoke: trim start (ready UI, then your shell returns; proxy stays listening)",
           "Sync adapters + model aliases: trim config sync",
         ],
@@ -455,10 +485,11 @@ Test-Path \"$env:LOCALAPPDATA\\Trim\\bin\\requirements-deep.txt\"
         type: "code",
         language: "bash",
         code: `trim version
+trim compress --bootstrap
+# green banner = llmlingua ready on this PC
 trim login
 trim autostart enable
 trim autostart status
-trim compress --bootstrap
 trim config sync
 
 # Optional advanced OS logon check
@@ -488,7 +519,7 @@ Test-Path \"$env:LOCALAPPDATA\\Trim\\bin\\optimizer.py\"`,
       },
       {
         type: "p",
-        text: "Installing the CLI alone does not compress chat. Next: trim login → trim start → connect exactly one tool. Open Quickstart Step 4, or jump straight to your guide below.",
+        text: "Installing the CLI alone does not compress chat. Next: trim compress --bootstrap (green success banner) → trim login → trim start → connect exactly one tool. Open Quickstart Step 4, or jump straight to your guide below.",
       },
       {
         type: "table",
@@ -535,11 +566,14 @@ http://127.0.0.1:8888`,
         code: `git clone https://github.com/usetrim/trim.git
 cd trim/cli
 go install ./cmd/trim
+# Deep helpers live under cli/optimizer/ in the repo; for a release-like layout
+# prefer npm / brew / curl so optimizer.py sits beside the binary, then:
+trim compress --bootstrap
 # or: go run ./cmd/trim start`,
       },
       {
         type: "p",
-        text: "Remote go install …@vX.Y.Z is not supported while cli/go.mod uses a local replace for the server module. Clone the repo (above) or use Release / npm / Homebrew installers.",
+        text: "Remote go install …@vX.Y.Z is not supported while cli/go.mod uses a local replace for the server module. Clone the repo (above) or use Release / npm / Homebrew installers. Local go install does not flatten release sidecars the way npm/brew/curl do - point TRIM_OPTIMIZER_PY at cli/optimizer/optimizer.py when needed, then run trim compress --bootstrap (green success banner).",
       },
       {
         type: "p",
@@ -670,15 +704,15 @@ irm https://use-trim.com/uninstall.ps1 | iex`,
         type: "ol",
         items: [
           "Install again (npm / install.ps1 / install.sh / Homebrew / Scoop / winget)",
+          "trim compress --bootstrap (wait for green success banner; package managers do not pip-install llmlingua)",
           "trim login",
           "trim autostart enable (Windows: copies Deep helpers into %LOCALAPPDATA%\\Trim\\bin)",
-          "trim compress --bootstrap (local llmlingua; package managers do not pip-install it)",
           "trim config sync && trim start",
         ],
       },
       {
         type: "p",
-        text: "Plain npm uninstall -g is not the same as trim uninstall. After either path, Deep needs bootstrap again. See Installation → Deep Mode runtime.",
+        text: "Plain npm uninstall -g is not the same as trim uninstall. After either path, Deep needs bootstrap again until you see the green success banner. See Installation → Deep Mode runtime.",
       },
     ],
   ),
@@ -795,6 +829,7 @@ irm https://use-trim.com/uninstall.ps1 | iex`,
         type: "ol",
         items: [
           "Install the CLI (and optionally the Trim IDE extension)",
+          "Once per machine: trim compress --bootstrap (wait for the green success banner; not done by package managers)",
           "Sign in when you need quotas and the dashboard",
           "Point on-device IDEs at the Local Base URL trim start printed (example http://127.0.0.1:8888/v1). Cursor Agent: trim cursor-link url (HTTPS …/v1; not 127.0.0.1)",
           "Leave Start Trim with your IDE checked (or run trim autostart enable)",
@@ -846,7 +881,7 @@ irm https://use-trim.com/uninstall.ps1 | iex`,
       { type: "h2", id: "deep", text: "Deep Mode" },
       {
         type: "p",
-        text: "Deep Mode runs stronger compression on your machine (LLMLingua). With Deep Mode on in Preferences, the live IDE proxy runs Segmented Allowlist Deep after Fast: freeze agent control, tools, paths, code fences, URLs, and dense JSON; compress each last-user prose island in place (order preserved beside paths); validate or fail-closed Fast. New accounts default to engine v2 (LLMLingua-2); choose Base model in Settings (see Base Model). trim compress --deep remains available for file/batch jobs. First run may download local dependencies (mbert-base is smaller; xlm-roberta-large is larger). Trim cloud never loads Deep Mode engines.",
+        text: "Deep Mode runs stronger compression on your machine (LLMLingua). With Deep Mode on in Preferences, the live IDE proxy runs Segmented Allowlist Deep after Fast: freeze agent control, tools, paths, code fences, URLs, and dense JSON; compress each last-user prose island in place (order preserved beside paths); validate or fail-closed Fast. New accounts default to engine v2 (LLMLingua-2); choose Base model in Settings (see Base Model). trim compress --deep remains available for file/batch jobs. First time on a machine: trim compress --bootstrap (green success banner when llmlingua is ready; first Deep run may still download model weights - mbert-base is smaller; xlm-roberta-large is larger). Trim cloud never loads Deep Mode engines.",
       },
       { type: "h2", id: "compression-rate", text: "Compression rate" },
       {
@@ -922,7 +957,7 @@ trim compress --bootstrap`,
       {
         type: "callout",
         title: "Deep helpers are local files",
-        text: "Installers place optimizer.py and requirements-deep.txt beside the CLI. First Deep use: trim compress --bootstrap (pip-installs Microsoft LLMLingua on this PC). On Windows Always-on those helpers must also exist as files under %LOCALAPPDATA%\\Trim\\bin. Full steps: Installation → Deep Mode runtime.",
+        text: "Installers place optimizer.py and requirements-deep.txt beside the CLI. First Deep use: trim compress --bootstrap (pip-installs Microsoft LLMLingua on this PC; green success banner when ready). On Windows Always-on those helpers must also exist as files under %LOCALAPPDATA%\\Trim\\bin. Full steps: Installation → Deep Mode runtime.",
       },
       { type: "h2", id: "history-window", text: "Optional history window" },
       {
@@ -1054,6 +1089,7 @@ trim compress --bootstrap`,
         language: "bash",
         code: `trim help
 trim version
+trim compress --bootstrap
 trim login
 trim start
 trim setup
@@ -1065,6 +1101,11 @@ trim stats
 trim config sync
 trim stop
 trim uninstall`,
+      },
+      {
+        type: "callout",
+        title: "Deep once after install",
+        text: "trim compress --bootstrap installs Microsoft LLMLingua on this PC only (green success banner like trim start). npm / brew / curl / Scoop / winget never pip-install it. See Installation → Deep Mode runtime and trim help compress.",
       },
       {
         type: "callout",
@@ -1108,7 +1149,7 @@ trim uninstall`,
     [
       {
         type: "p",
-        text: "This guide is only for people who use Anthropic’s Claude Code (the claude command in a terminal). You never open Cursor Settings → Models. You never open VS Code Chat. You never paste a …/v1 Base URL into an IDE. Full path: install Claude Code → get Anthropic API key → install Trim → trim login → trim start → set ANTHROPIC_BASE_URL + ANTHROPIC_API_KEY (shell and/or ~/.claude/settings.json) → run claude → verify on the local meter. Every code block below has a Copy icon - use it, then paste into your terminal.",
+        text: "This guide is only for people who use Anthropic’s Claude Code (the claude command in a terminal). You never open Cursor Settings → Models. You never open VS Code Chat. You never paste a …/v1 Base URL into an IDE. Full path: install Claude Code → get Anthropic API key → install Trim → trim compress --bootstrap (green success banner) → trim login → trim start → set ANTHROPIC_BASE_URL + ANTHROPIC_API_KEY (shell and/or ~/.claude/settings.json) → run claude → verify on the local meter. Every code block below has a Copy icon - use it, then paste into your terminal.",
       },
       {
         type: "callout",
@@ -1213,6 +1254,12 @@ Reply back → Trim → Claude Code → your terminal`,
             "Terminal (PowerShell / Terminal.app / Linux / WSL)",
             "curl … | sh  or  irm … | iex",
             "Puts the trim command on PATH",
+          ],
+          [
+            "Deep Mode deps (once)",
+            "Terminal: trim compress --bootstrap",
+            "green success banner + status table",
+            "Local llmlingua; package managers do not pip-install it",
           ],
           [
             "Trim Cloud account",
@@ -1387,28 +1434,34 @@ claude --version`,
       },
       {
         type: "p",
-        text: "Where: Terminal on this PC. What: install the trim command onto your PATH. How: Copy the block for your OS → paste → Enter. What happens: the installer downloads Trim and registers the trim command. Why: Claude Code talks to Trim’s local helper - without the trim CLI you cannot start or meter that helper. What next: trim version must print a version number. If the command is not found, close the terminal, open a new one, and try again (PATH refresh).",
+        text: "Where: Terminal on this PC. What: install the trim command onto your PATH, then one-time Deep deps (Microsoft LLMLingua via local pip - not Trim cloud). How: Copy the block for your OS → paste → Enter. What happens: the installer downloads Trim and registers the trim command; then trim compress --bootstrap prints a green success banner when Python packages are ready (same polish as trim start). Why: Claude Code talks to Trim’s local helper - without the trim CLI you cannot start or meter that helper; without bootstrap, live Deep stays Fast until deps exist. What next: trim version must print a version number, and bootstrap must show the green banner. If trim is not found, close the terminal, open a new one, and try again (PATH refresh). Full detail: Installation → Deep Mode runtime.",
       },
       {
         type: "code",
         language: "powershell",
         code: `# Windows (PowerShell) - Copy this block
 irm https://use-trim.com/install.ps1 | iex
-trim version`,
+trim version
+trim compress --bootstrap
+# green success banner = llmlingua ready on this PC`,
       },
       {
         type: "code",
         language: "bash",
         code: `# macOS (Terminal / iTerm / Warp) - Copy this block
 curl -fsSL https://use-trim.com/install.sh | sh
-trim version`,
+trim version
+trim compress --bootstrap
+# green success banner = llmlingua ready on this PC`,
       },
       {
         type: "code",
         language: "bash",
         code: `# Linux / WSL (bash / zsh) - Copy this block
 curl -fsSL https://use-trim.com/install.sh | sh
-trim version`,
+trim version
+trim compress --bootstrap
+# green success banner = llmlingua ready on this PC`,
       },
       {
         type: "h3",
@@ -2392,12 +2445,12 @@ trim compress --bootstrap`,
       },
       {
         type: "p",
-        text: "Use Fast Mode for interactive IDE chat when Deep is off (Fast-only path). With Preferences Deep on, live proxy runs Fast then Segmented Allowlist Deep on each request (each last-user prose island in place, order preserved beside paths; tools/paths frozen) using your compression rate (keep after/before; default 0.7) and, for engine v2, your synced Base Model. Use trim compress --deep --rate 0.7 for file/batch. Bootstrap may download local Deep dependencies (mbert-base is smaller; xlm-roberta-large is larger and slower). Deep Mode engines are not loaded in Trim cloud.",
+        text: "Use Fast Mode for interactive IDE chat when Deep is off (Fast-only path). With Preferences Deep on, live proxy runs Fast then Segmented Allowlist Deep on each request (each last-user prose island in place, order preserved beside paths; tools/paths frozen) using your compression rate (keep after/before; default 0.7) and, for engine v2, your synced Base Model. Use trim compress --deep --rate 0.7 for file/batch. First machine setup: trim compress --bootstrap (green success banner when llmlingua is ready; first Deep run may still download model weights - mbert-base is smaller; xlm-roberta-large is larger and slower). Deep Mode engines are not loaded in Trim cloud.",
       },
       {
         type: "callout",
         title: "Bootstrap needs files beside the CLI",
-        text: "trim compress --bootstrap runs pip install -r requirements-deep.txt next to optimizer.py (same folder as trim / trim.exe, or %LOCALAPPDATA%\\Trim\\bin on Windows Always-on). If optimizer.py or requirements-deep.txt is missing, reinstall or run trim start / trim autostart enable so Trim can heal sidecars from npm vendor. See Installation → Deep Mode runtime.",
+        text: "trim compress --bootstrap runs pip install -r requirements-deep.txt next to optimizer.py (same folder as trim / trim.exe, or %LOCALAPPDATA%\\Trim\\bin on Windows Always-on). It prints a colored progress line, then a green success banner and a short status table when Python packages are ready - same polish as trim start. If optimizer.py or requirements-deep.txt is missing, reinstall or run trim start / trim autostart enable so Trim can heal sidecars from npm vendor. See Installation → Deep Mode runtime. Flag help: trim help compress.",
       },
       { type: "h2", id: "engines", text: "Deep engines (pick one)" },
       {
@@ -2672,7 +2725,7 @@ export TRIM_HISTORY_KEEP_TURNS=8
       {
         type: "ol",
         items: [
-          "Install and sign in: trim version → trim login (see Quickstart / Installation)",
+          "Install, Deep bootstrap, sign in: trim version → trim compress --bootstrap → trim login (see Quickstart / Installation)",
           "Keep Trim ready: Dashboard → Preferences → Start Trim with your IDE, then trim autostart enable (or trim start)",
           "Sync adapters + aliases: trim config sync",
           "Pick the correct address: Cursor Agent = trim cursor-link url; on-device IDEs = local …/v1 from the blocks below",
@@ -6070,7 +6123,7 @@ Optional build features: follow README flags for native parsers`,
           "Confirm active files and stacks you need are kept (check Fast Mode activity)",
           "Raise Compression rate toward 1.0 (less drop) in Dashboard → Settings, Save, then trim config sync",
           "If Deep engine is v2, try Base model mbert-base first (faster) or xlm-roberta-large when quality needs the heavier backbone (more RAM/slower); list with trim config models",
-          "Try Deep Mode: turn Preferences Deep on (live proxy) and/or trim compress --deep for file/batch jobs",
+          "Try Deep Mode: turn Preferences Deep on (live proxy) and/or trim compress --deep for file/batch jobs; if Deep kept Fast / engine error, run trim compress --bootstrap first (see Deep bootstrap troubleshooting)",
           "If history_keep_turns is set, try 0 temporarily - stubbing old turns can hide details the model still needs",
           "Compare tokens in vs out on trim status or the usage table",
         ],
@@ -6083,6 +6136,21 @@ Optional build features: follow README flags for native parsers`,
           "Check Deep status: applied, chrome frozen / no prose islands, or fail-closed kept Fast",
           "Compare Deep stage tokens to whole-request Saved - Segmented Allowlist Deep meters prose islands only (order preserved beside paths); agent chrome stays frozen on purpose",
           "0% whole-request Saved with a correct Claude Code / Cursor answer is often normal, not a broken install",
+        ],
+      },
+      {
+        type: "h2",
+        id: "deep-bootstrap",
+        text: "Deep kept Fast / missing llmlingua / no green bootstrap banner",
+      },
+      {
+        type: "ol",
+        items: [
+          "Confirm Python is on PATH (python --version or py -3 --version on Windows)",
+          "Run trim compress --bootstrap and wait for the green success banner plus the short status table (same polish as trim start). Quiet exit with no banner usually means an older CLI - upgrade, then retry",
+          "Confirm optimizer.py is a real file beside the trim binary you run (npm vendor/, brew prefix, or %LOCALAPPDATA%\\Trim\\bin on Windows Always-on)",
+          "trim stop && trim start (or trim autostart enable) so live Deep picks up the new deps",
+          "Package managers never pip-install Microsoft LLMLingua - see Installation → Deep Mode runtime and trim help compress",
         ],
       },
       { type: "h2", id: "uninstall-leftovers", text: "Uninstall left files or models behind" },
@@ -6130,7 +6198,16 @@ Optional build features: follow README flags for native parsers`,
       { type: "h2", id: "fast-vs-deep", text: "When should I use Deep Mode?" },
       {
         type: "p",
-        text: "Use Fast Mode for interactive IDE chat when Deep Mode is off. When Deep Mode is on in Preferences, trim start runs Fast then Segmented Allowlist Deep (each last-user prose island in place, order preserved beside paths; tools/paths/schemas frozen) at your compression rate (default 0.7) and, for LLMLingua-2 (v2), your Base Model (default mbert-base; optional xlm-roberta-large). Set rate and Base model in Dashboard → Settings, or with trim config rates / models and trim config set compression-rate / deep-v2-backbone, then trim config sync. File/batch: trim compress --deep --rate. Engines are not loaded in Trim cloud.",
+        text: "Use Fast Mode for interactive IDE chat when Deep Mode is off. When Deep Mode is on in Preferences, trim start runs Fast then Segmented Allowlist Deep (each last-user prose island in place, order preserved beside paths; tools/paths/schemas frozen) at your compression rate (default 0.7) and, for LLMLingua-2 (v2), your Base Model (default mbert-base; optional xlm-roberta-large). Set rate and Base model in Dashboard → Settings, or with trim config rates / models and trim config set compression-rate / deep-v2-backbone, then trim config sync. First machine setup: trim compress --bootstrap (green success banner when local llmlingua is ready). File/batch: trim compress --deep --rate. Engines are not loaded in Trim cloud.",
+      },
+      {
+        type: "h2",
+        id: "bootstrap-vs-packages",
+        text: "Do npm / Homebrew / curl / Scoop / winget install LLMLingua?",
+      },
+      {
+        type: "p",
+        text: "No. Every channel places optimizer.py and requirements-deep.txt beside the CLI, but none run pip. Once per machine: trim compress --bootstrap. Expect a green success banner and a short status table when Microsoft LLMLingua is ready locally - not in Trim cloud. See Installation → Deep Mode runtime.",
       },
       {
         type: "h2",
@@ -6171,7 +6248,7 @@ Optional build features: follow README flags for native parsers`,
       },
       {
         type: "p",
-        text: "Follow Claude Code (CLI only): install Trim → trim login → trim start → set ANTHROPIC_BASE_URL=http://127.0.0.1:8888 (no /v1) and ANTHROPIC_API_KEY → run claude. Do not open Cursor Settings → Models. That page has separate Windows / macOS / Linux copy blocks (Copy button on each), permanent profile steps, verify, and troubleshooting. Optional: trim setup prints the copy/paste block for your listen port. You do not need Cursor Link for Claude Code.",
+        text: "Follow Claude Code (CLI only): install Trim → trim compress --bootstrap (green success banner) → trim login → trim start → set ANTHROPIC_BASE_URL=http://127.0.0.1:8888 (no /v1) and ANTHROPIC_API_KEY → run claude. Do not open Cursor Settings → Models. That page has separate Windows / macOS / Linux copy blocks (Copy button on each), permanent profile steps, verify, and troubleshooting. Optional: trim setup prints the copy/paste block for your listen port. You do not need Cursor Link for Claude Code.",
       },
       {
         type: "h2",

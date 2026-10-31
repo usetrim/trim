@@ -675,10 +675,16 @@ func SkipLiveDeepForRequestPath(path string) bool {
 	return strings.Contains(pl, "count_tokens")
 }
 
+// LiveDeepMinProseTokens is the floor for invoking on-machine LLMLingua on the live
+// IDE proxy only. Below this, Fast Mode alone is enough (e.g. Cursor "hi") - avoids
+// multi-second Python/model warmup for tiny turns. File `trim compress --deep` is unaffected.
+const LiveDeepMinProseTokens = 32
+
 // EstimateLiveDeepInputTokens estimates compressible chat text tokens for live when-to-invoke.
 // Uses trailing-user prose islands only (not system/assistant/developer/tool, not
-// <system-reminder>, not path/URL/fence/JSON spans). Matches Compress* Segmented
+// <system-reminder>/<user_info>/paths/URL/fence/JSON spans). Matches Compress* Segmented
 // Allowlist Deep so Cursor/Claude mixed turns still invoke Deep on eligible prose.
+// Callers apply LiveDeepMinProseTokens themselves (see live_deep.go).
 func EstimateLiveDeepInputTokens(body []byte, path string) int {
 	_ = path
 	if !gjson.ValidBytes(body) {
