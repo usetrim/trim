@@ -185,6 +185,27 @@ if [ ! -f "$BINARY_NAME" ]; then
   exit 1
 fi
 
+# Flatten Deep sidecars. Older GoReleaser tags nested as optimizer.py/optimizer.py.
+flatten_sidecar() {
+  name="$1"
+  if [ -f "./$name" ]; then
+    return 0
+  fi
+  if [ -f "./$name/$name" ]; then
+    mv "./$name/$name" "./${name}.flat"
+    rm -rf "./$name"
+    mv "./${name}.flat" "./$name"
+    return 0
+  fi
+  FOUND=$(find . -type f -name "$name" 2>/dev/null | head -n1)
+  if [ -n "$FOUND" ]; then
+    mv "$FOUND" "./$name"
+  fi
+}
+flatten_sidecar optimizer.py
+flatten_sidecar requirements-deep.txt
+flatten_sidecar requirements.txt
+
 INSTALL_DIR="${TRIM_INSTALL_DIR:-/usr/local/bin}"
 install_file() {
   src="$1"

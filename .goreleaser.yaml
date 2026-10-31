@@ -63,14 +63,13 @@ archives:
     files:
       - LICENSE*
       - README.md
+      # strip_parent without dst → flat archive root (optimizer.py beside trim).
+      # dst: optimizer.py wrongly nested as optimizer.py/optimizer.py on v0.1.23.
       - src: cli/optimizer/optimizer.py
-        dst: optimizer.py
         strip_parent: true
       - src: cli/optimizer/requirements-deep.txt
-        dst: requirements-deep.txt
         strip_parent: true
       - src: cli/optimizer/requirements.txt
-        dst: requirements.txt
         strip_parent: true
 
   - id: treesitter
@@ -83,13 +82,10 @@ archives:
       - LICENSE*
       - README.md
       - src: cli/optimizer/optimizer.py
-        dst: optimizer.py
         strip_parent: true
       - src: cli/optimizer/requirements-deep.txt
-        dst: requirements-deep.txt
         strip_parent: true
       - src: cli/optimizer/requirements.txt
-        dst: requirements.txt
         strip_parent: true
 
 checksum:
@@ -120,12 +116,14 @@ brews:
     install: |
       bin.install "trim"
       bin.install "optimizer.py" if File.exist?("optimizer.py")
-      doc.install "requirements-deep.txt" if File.exist?("requirements-deep.txt")
-      doc.install "requirements.txt" if File.exist?("requirements.txt")
+      # Keep requirements beside optimizer.py so `trim compress --bootstrap` finds them
+      # (Bootstrap looks next to ScriptPath; doc/ would break Deep pip install).
+      bin.install "requirements-deep.txt" if File.exist?("requirements-deep.txt")
+      bin.install "requirements.txt" if File.exist?("requirements.txt")
     caveats: |
       Deep Mode uses Microsoft LLMLingua locally (not on Render).
       Preferred: place trim-deep next to trim, or set TRIM_OPTIMIZER_BIN.
-      Fallback: trim compress --bootstrap then trim compress file.txt --mode deep
+      Fallback: trim compress --bootstrap then trim compress file.txt --deep
       Set TRIM_OPTIMIZER_PY if optimizer.py is not next to the trim binary.
       Optional freeze: scripts/build-deep-optimizer.sh (PyInstaller).
     test: |

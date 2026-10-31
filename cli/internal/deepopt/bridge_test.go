@@ -1,9 +1,59 @@
 package deepopt
 
 import (
+	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
 	"slices"
 	"testing"
 )
+
+func TestResolveDeepSidecarFileNestedArchive(t *testing.T) {
+	dir := t.TempDir()
+	nestedDir := filepath.Join(dir, "optimizer.py")
+	if err := os.MkdirAll(nestedDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	nested := filepath.Join(nestedDir, "optimizer.py")
+	if err := os.WriteFile(nested, []byte("py"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	got := resolveDeepSidecarFile(dir, "optimizer.py")
+	if got != nested {
+		t.Fatalf("got %q want %q", got, nested)
+	}
+	reqDir := filepath.Join(dir, "requirements-deep.txt")
+	if err := os.MkdirAll(reqDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	req := filepath.Join(reqDir, "requirements-deep.txt")
+	if err := os.WriteFile(req, []byte("llmlingua\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if got := resolveDeepSidecarFile(dir, "requirements-deep.txt"); got != req {
+		t.Fatalf("requirements got %q want %q", got, req)
+	}
+}
+
+func TestIsLLMLinguaMissingTyped(t *testing.T) {
+	if IsLLMLinguaMissing(nil) {
+		t.Fatal("nil")
+	}
+	if !IsLLMLinguaMissing(ErrLLMLinguaMissing) {
+		t.Fatal("sentinel")
+	}
+	wrapped := fmt.Errorf("%w: Deep Mode dependencies missing", ErrLLMLinguaMissing)
+	if !IsLLMLinguaMissing(wrapped) {
+		t.Fatal("wrapped")
+	}
+	if IsLLMLinguaMissing(errors.New("DEEP_OPT_LLMLINGUA_MISSING")) {
+		t.Fatal("plain string must not match typed sentinel")
+	}
+	if IsLLMLinguaMissing(ErrDeepModelRequired) {
+		t.Fatal("other deep err")
+	}
+}
 
 func TestApplyEngineUsesBillingForceTokensOnly(t *testing.T) {
 	rt := Runtime{

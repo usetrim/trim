@@ -9,7 +9,7 @@ const { spawnSync } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
 const os = require("node:os");
-const { install } = require("../scripts/install");
+const { install, vendorDeepReady } = require("../scripts/install");
 const { resolvePlatform } = require("../scripts/platform");
 
 async function main() {
@@ -39,8 +39,10 @@ async function main() {
     process.exit(1);
   }
 
-  if (!fs.existsSync(binPath)) {
-    console.error("@usetrim/trim: binary missing - downloading from GitHub Releases…");
+  // Heal binary AND Deep sidecars (optimizer.py). Older installs / --ignore-scripts
+  // left vendor/trim.exe alone; Always-on LocalAppData copy then had nothing to heal from.
+  if (!vendorDeepReady(pkgRoot, binaryName)) {
+    console.error("@usetrim/trim: binary or Deep sidecars missing - downloading from GitHub Releases…");
     await install();
   }
 
@@ -48,6 +50,11 @@ async function main() {
     console.error("@usetrim/trim: binary still missing after install.");
     console.error("Try: curl -fsSL https://use-trim.com/install.sh | sh");
     process.exit(1);
+  }
+  const optimizerPath = path.join(pkgRoot, "vendor", "optimizer.py");
+  if (!fs.existsSync(optimizerPath)) {
+    console.error("@usetrim/trim: optimizer.py still missing after install - Deep Mode will fail.");
+    console.error("Try: curl -fsSL https://use-trim.com/install.sh | sh");
   }
 
   if (process.platform !== "win32") {

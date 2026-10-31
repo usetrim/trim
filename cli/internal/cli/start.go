@@ -64,6 +64,8 @@ var startCmd = &cobra.Command{
 				return err
 			}
 			if proxyHealthOK(healthURL, to) {
+				// Heal Deep sidecars even on attach (IDE / enforcer / second trim start).
+				healWindowsDeepSidecarsForRunningExe()
 				// Extension/daemon enforcer path: stay as sidecar so dashboard uncheck still stops.
 				// Manual `trim start` exits 0 (user-owned process already up) with clear UX.
 				if os.Getenv("TRIM_AUTOSTART_ENFORCER") == "1" {
@@ -119,6 +121,7 @@ var startCmd = &cobra.Command{
 
 		// Pull account preferences (compression_tier / deep_* / adapters) before binding Deep.
 		_ = refreshLocalPreferencesFromCloud(cfg, chrome)
+		healWindowsDeepSidecarsForRunningExe()
 		liveMode, deepOptimize, errDeepFmt, liveErr := prepareLiveDeep(cfg, chrome)
 		if liveErr != nil {
 			return liveErr

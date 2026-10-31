@@ -58,6 +58,18 @@ scoop install trim
 winget install Trim.CLI
 ```
 
+### Deep Mode runtime (every channel)
+
+Release archives must ship **flat** files beside the binary: `optimizer.py`, `requirements-deep.txt`, `requirements.txt` (not nested `optimizer.py/optimizer.py`).
+
+- npm postinstall copies those into `vendor/` next to `trim.exe`
+- Windows Always-on also copies them into `%LOCALAPPDATA%\Trim\bin`
+- `llmlingua` is **not** installed by the package manager; users run once:
+
+```bash
+trim compress --bootstrap
+```
+
 ### Go developers (from a clone)
 
 `go install github.com/usetrim/trim/cli/cmd/trim@…` is **not** supported yet:

@@ -96,6 +96,14 @@ try {
   $dest = Join-Path $installDir "trim.exe"
   Copy-Item -Path $bin.FullName -Destination $dest -Force
 
+  # Deep Mode sidecars (same as install.sh). Live Deep resolves optimizer.py beside trim.exe.
+  foreach ($sidecar in @("optimizer.py", "requirements-deep.txt", "requirements.txt")) {
+    $side = Get-ChildItem -Path $tmp -Recurse -Filter $sidecar -File -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($side) {
+      Copy-Item -Path $side.FullName -Destination (Join-Path $installDir $sidecar) -Force
+    }
+  }
+
   $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
   if (-not $userPath) { $userPath = "" }
   $parts = $userPath -split ";" | Where-Object { $_ -and $_.Trim() -ne "" }

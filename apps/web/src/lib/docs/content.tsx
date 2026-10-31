@@ -406,6 +406,34 @@ winget install Trim.CLI`,
         type: "p",
         text: "npm (@usetrim/trim) and Homebrew (usetrim/tap/trim) are live. curl/irm installers remain supported. Scoop/winget are optional. Maintainer ops: packaging/README.md.",
       },
+      { type: "h2", id: "deep-runtime", text: "Deep Mode runtime (local)" },
+      {
+        type: "p",
+        text: "Deep Mode (LLMLingua) runs on your PC, not in Trim cloud. Installers place optimizer.py and requirements-deep.txt beside the CLI. The first Deep run may pip-install llmlingua once (or run trim compress --bootstrap). On Windows Always-on, Trim also copies those Deep helpers into %LOCALAPPDATA%\\Trim\\bin next to the stable trim.exe.",
+      },
+      {
+        type: "code",
+        language: "bash",
+        code: `# One-time Deep deps (Python on PATH)
+trim compress --bootstrap
+
+# Smoke Deep (Microsoft keep-rate)
+trim compress README.md --deep --engine v2 --rate 0.7`,
+      },
+      {
+        type: "code",
+        language: "powershell",
+        code: `# Windows: Deep helpers must be FILES beside the running binary
+Test-Path \"$env:LOCALAPPDATA\\Trim\\bin\\optimizer.py\"
+Test-Path \"$env:LOCALAPPDATA\\Trim\\bin\\requirements-deep.txt\"
+# npm vendor (if you installed via npm)
+# Get-ChildItem (Join-Path (npm root -g) \"@usetrim\\trim\\vendor\")`,
+      },
+      {
+        type: "callout",
+        title: "If dashboard shows Deep kept Fast (engine error)",
+        text: "Deep helpers or llmlingua are missing. Run trim compress --bootstrap, then trim stop and trim start (or trim autostart enable). Check that optimizer.py is a file next to the trim.exe you actually run (LocalAppData on Windows Always-on, or npm vendor/).",
+      },
       { type: "h2", id: "after-install", text: "After install: Always-on (required)" },
       {
         type: "p",
@@ -418,6 +446,7 @@ winget install Trim.CLI`,
           "Sign in: trim login",
           "Enable Always-on: trim autostart enable",
           "Confirm: trim autostart status",
+          "Deep once: trim compress --bootstrap (then optional trim compress file --deep)",
           "Optional smoke: trim start (ready UI, then your shell returns; proxy stays listening)",
           "Sync adapters + model aliases: trim config sync",
         ],
@@ -429,6 +458,7 @@ winget install Trim.CLI`,
 trim login
 trim autostart enable
 trim autostart status
+trim compress --bootstrap
 trim config sync
 
 # Optional advanced OS logon check
@@ -440,7 +470,7 @@ trim start`,
       {
         type: "callout",
         title: "Windows: no Administrator",
-        text: "trim autostart enable registers a per-user Startup Run key (HKCU) pointing at a stable copy under %LOCALAPPDATA%\\Trim\\bin\\trim.exe - the same industry pattern as browsers and editors (never locks npm’s vendor\\trim.exe). No admin Scheduled Task. If OS registration is blocked by policy, your preference stays on - use trim start or the Trim IDE extension. See trim autostart.",
+        text: "trim autostart enable registers a per-user Startup Run key (HKCU) pointing at a stable copy under %LOCALAPPDATA%\\Trim\\bin\\trim.exe - the same industry pattern as browsers and editors (never locks npm’s vendor\\trim.exe). That stable folder must also contain optimizer.py and requirements-deep.txt for live Deep. No admin Scheduled Task. If OS registration is blocked by policy, your preference stays on - use trim start or the Trim IDE extension. See trim autostart.",
       },
       {
         type: "code",
@@ -448,7 +478,8 @@ trim start`,
         code: `# Confirm Windows Startup Run → LocalAppData after enable (optional)
 Get-ItemProperty HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run |
   Select-Object TrimProxy
-Test-Path \"$env:LOCALAPPDATA\\Trim\\bin\\trim.exe\"`,
+Test-Path \"$env:LOCALAPPDATA\\Trim\\bin\\trim.exe\"
+Test-Path \"$env:LOCALAPPDATA\\Trim\\bin\\optimizer.py\"`,
       },
       {
         type: "h2",
@@ -634,6 +665,21 @@ irm https://use-trim.com/uninstall.ps1 | iex`,
         type: "p",
         text: "After uninstall, only optional leftover items are the IDE extension (remove in the editor) and a cloud account (delete in the dashboard if you want hosted data gone too).",
       },
+      { type: "h2", id: "reinstall", text: "Reinstall after a full purge" },
+      {
+        type: "ol",
+        items: [
+          "Install again (npm / install.ps1 / install.sh / Homebrew / Scoop / winget)",
+          "trim login",
+          "trim autostart enable (Windows: copies Deep helpers into %LOCALAPPDATA%\\Trim\\bin)",
+          "trim compress --bootstrap (local llmlingua; package managers do not pip-install it)",
+          "trim config sync && trim start",
+        ],
+      },
+      {
+        type: "p",
+        text: "Plain npm uninstall -g is not the same as trim uninstall. After either path, Deep needs bootstrap again. See Installation → Deep Mode runtime.",
+      },
     ],
   ),
 
@@ -687,6 +733,11 @@ irm https://use-trim.com/uninstall.ps1 | iex`,
       {
         type: "p",
         text: "Always-on means: Trim should already be listening on this computer when you start working. You should not need to remember a new ritual every morning. Live chat always runs Fast; Deep also runs when Preferences Deep is on.",
+      },
+      {
+        type: "callout",
+        title: "Windows Always-on needs Deep helpers beside the stable exe",
+        text: "trim autostart enable copies trim.exe into %LOCALAPPDATA%\\Trim\\bin and also copies optimizer.py + requirements-deep.txt there for live Deep. After install, run trim compress --bootstrap once (local llmlingua). If the dashboard shows Deep kept Fast (engine error), see Installation → Deep Mode runtime.",
       },
       {
         type: "table",
@@ -867,6 +918,11 @@ trim compress --bootstrap`,
       {
         type: "note",
         text: "New accounts default to Deep Mode (live proxy runs Fast then Segmented Allowlist Deep). Switch to Fast anytime in Dashboard → Settings or with trim config set default-tier fast. Deep engine defaults to LLMLingua-2 (v2) with Base Model mbert-base. Run trim config sync on each machine after saving. List keep-rates with trim config rates; list Base Models with trim config models.",
+      },
+      {
+        type: "callout",
+        title: "Deep helpers are local files",
+        text: "Installers place optimizer.py and requirements-deep.txt beside the CLI. First Deep use: trim compress --bootstrap (pip-installs Microsoft LLMLingua on this PC). On Windows Always-on those helpers must also exist as files under %LOCALAPPDATA%\\Trim\\bin. Full steps: Installation → Deep Mode runtime.",
       },
       { type: "h2", id: "history-window", text: "Optional history window" },
       {
@@ -2163,6 +2219,8 @@ trim daemon status
 Get-ItemProperty HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run |
   Select-Object TrimProxy
 Test-Path \"$env:LOCALAPPDATA\\Trim\\bin\\trim.exe\"
+Test-Path \"$env:LOCALAPPDATA\\Trim\\bin\\optimizer.py\"
+Test-Path \"$env:LOCALAPPDATA\\Trim\\bin\\requirements-deep.txt\"
 trim daemon uninstall`,
       },
       {
@@ -2335,6 +2393,11 @@ trim compress --bootstrap`,
       {
         type: "p",
         text: "Use Fast Mode for interactive IDE chat when Deep is off (Fast-only path). With Preferences Deep on, live proxy runs Fast then Segmented Allowlist Deep on each request (each last-user prose island in place, order preserved beside paths; tools/paths frozen) using your compression rate (keep after/before; default 0.7) and, for engine v2, your synced Base Model. Use trim compress --deep --rate 0.7 for file/batch. Bootstrap may download local Deep dependencies (mbert-base is smaller; xlm-roberta-large is larger and slower). Deep Mode engines are not loaded in Trim cloud.",
+      },
+      {
+        type: "callout",
+        title: "Bootstrap needs files beside the CLI",
+        text: "trim compress --bootstrap runs pip install -r requirements-deep.txt next to optimizer.py (same folder as trim / trim.exe, or %LOCALAPPDATA%\\Trim\\bin on Windows Always-on). If optimizer.py or requirements-deep.txt is missing, reinstall or run trim start / trim autostart enable so Trim can heal sidecars from npm vendor. See Installation → Deep Mode runtime.",
       },
       { type: "h2", id: "engines", text: "Deep engines (pick one)" },
       {
