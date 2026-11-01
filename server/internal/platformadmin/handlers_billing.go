@@ -573,6 +573,19 @@ func (h *Handler) patchBillingSettings(w http.ResponseWriter, r *http.Request) {
 		if k == "apply_paddle_discount_on_annual" {
 			val = false
 		}
+		// jsonb columns: QueryExecModeExec (PgBouncer) cannot encode []any from
+		// json.Unmarshal - same fail mode as plan features without ::jsonb.
+		// Bind raw JSON text + cast (see patchPlan features = $n::jsonb).
+		if k == "deep_v2_force_tokens" || k == "deep_v2_backbone_options" {
+			if _, ok := val.([]any); !ok {
+				h.writeErr(w, http.StatusBadRequest, "WS_INVALID_JSON")
+				return
+			}
+			sets = append(sets, fmt.Sprintf("%s = $%d::jsonb", k, n))
+			args = append(args, string(raw))
+			n++
+			continue
+		}
 		sets = append(sets, fmt.Sprintf("%s = $%d", k, n))
 		args = append(args, val)
 		n++
