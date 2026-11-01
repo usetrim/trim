@@ -1034,7 +1034,7 @@ trim compress --bootstrap`,
     [
       {
         type: "p",
-        text: "When you are logged in, Trim meters usage against your workspace plan. Exhausted quotas return payment-required style errors until you upgrade or buy top-ups.",
+        text: "When you are logged in, Trim meters each cloud proxy request against your personal credit pool, or against the shared workspace pool when the request includes X-Workspace-Id. Only authenticated POST /v1/chat/completions and POST /v1/messages burn credits; dashboard and billing routes never meter. Exhausted personal pools return HTTP 402 with code QUOTA_EXHAUSTED; exhausted shared pools return HTTP 402 with code WORKSPACE_QUOTA_EXHAUSTED until you upgrade or buy top-ups. Plans with Unlimited metering enabled in the catalog are not debited.",
       },
       { type: "h2", id: "ranks", text: "Plan ranks" },
       {
@@ -1044,21 +1044,26 @@ trim compress --bootstrap`,
       { type: "h2", id: "credits", text: "Cloud credits" },
       {
         type: "p",
-        text: "One cloud credit is one metered proxy request against your personal pool or a shared workspace pool when you send X-Workspace-Id. Monthly grants come from plan_catalog.credits_monthly; top-up packs add purchased capacity without changing your tier.",
+        text: "One cloud credit is one metered proxy request against your personal pool or a shared workspace pool when you send X-Workspace-Id. Remaining personal credits are (monthly_credit_limit − monthly_credit_used) + purchased_topup_credits. Monthly grants come from plan_catalog.credits_monthly; top-up packs add purchased capacity to the personal pool only, without changing your tier.",
       },
       { type: "h2", id: "unlimited", text: "Unlimited metering" },
       {
         type: "p",
-        text: "Operators can enable Unlimited metering on any plan in the admin catalog (including Free). When your active plan has that flag on, cloud requests are not debited, the dashboard and CLI show the Unlimited label from the Service, and pricing cards show an Unlimited cloud metering badge only for plans where the flag is on. When the flag is off, normal credit metering applies. This is an operator growth dial, not a permanent promise that every plan is free forever.",
+        text: "Operators can enable Unlimited metering on any plan in the admin catalog (including Free). When your active plan has that flag on, cloud requests are not debited, the dashboard and CLI show the Unlimited label from the Service, and pricing cards show an Unlimited cloud metering badge only for plans where the flag is on. When the flag is off, normal credit metering applies. Catalog changes invalidate cached quota hashes and Free exhaustion short-circuits re-check plan_catalog so a newly Unlimited Free plan is not stuck returning HTTP 402. This is an operator growth dial, not a permanent promise that every plan is free forever.",
       },
       { type: "h2", id: "topups", text: "Top-ups" },
       {
         type: "p",
-        text: "Credit packs are always a new checkout and do not change your tier. They extend capacity inside the current plan.",
+        text: "Credit packs are always a new checkout and do not change your tier. They extend capacity inside the personal pool only (not the shared workspace pool). Webhooks invalidate cached quota hashes after a grant or clawback so metering and /me/quota stay aligned.",
       },
       {
         type: "note",
         text: "Clearing local CLI state does not reset server-side quotas.",
+      },
+      { type: "h2", id: "seats", text: "Seats vs credits" },
+      {
+        type: "p",
+        text: "Workspace allocated_seats caps how many members can join; that gate is separate from cloud credits. Shared workspace metering uses the workspace pool when X-Workspace-Id is set. Personal purchased top-ups are not applied to that shared pool. When the workspace plan has Unlimited metering on, shared credits are not consumed.",
       },
     ],
   ),
@@ -5758,7 +5763,8 @@ Authenticated product routes under /api/v1/...`,
       {
         type: "ul",
         items: [
-          "Payment required when quotas are exhausted - upgrade or buy capacity",
+          "HTTP 402 with code QUOTA_EXHAUSTED when the personal credit pool is empty - upgrade or buy capacity",
+          "HTTP 402 with code WORKSPACE_QUOTA_EXHAUSTED when the shared workspace pool is empty (X-Workspace-Id)",
           "No payment-required debit path when your plan has Unlimited metering enabled by the operator",
           "Forbidden on blocked downgrade attempts while a paid period is active",
           "Unauthorized when keys are missing, revoked, or not device-bound",
@@ -6118,7 +6124,7 @@ Optional build features: follow README flags for native parsers`,
       { type: "h2", id: "quota-errors", text: "Payment required or quota errors" },
       {
         type: "p",
-        text: "Hosted metering returns payment-required style errors when free or plan quotas are exhausted and Unlimited metering is not enabled on your plan. Open Dashboard home (usage) or plan CTAs, review usage, upgrade the plan, or buy a top-up. If the dashboard shows Unlimited, cloud requests are not debited until an operator turns that plan dial off. Reinstalling the CLI does not reset cloud quotas.",
+        text: "Hosted metering returns HTTP 402 (QUOTA_EXHAUSTED or WORKSPACE_QUOTA_EXHAUSTED) when free or plan quotas are exhausted and Unlimited metering is not enabled on your plan. Open Dashboard home (usage) or plan CTAs, review usage, upgrade the plan, or buy a top-up. If the dashboard shows Unlimited, cloud requests are not debited until an operator turns that plan dial off. Reinstalling the CLI does not reset cloud quotas.",
       },
       { type: "h2", id: "quality-regressions", text: "Model quality looks worse after trim" },
       {

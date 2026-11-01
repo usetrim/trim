@@ -522,31 +522,53 @@ func handleQuota(db *pgxpool.Pool, rdb *redis.Client, appPublicURL string) http.
 		if rdb != nil {
 			val, err := rdb.HGetAll(r.Context(), "user_quota:"+userID).Result()
 			if err == nil && len(val) > 0 {
-				if v, ok := val["used"]; ok {
-					if n, e := strconv.Atoi(v); e == nil {
-						q.Used = n
+				// Partial hashes (e.g. only tier/unlimited) or empty/garbage ints are poison.
+				parseOK := func(key string) bool {
+					raw, ok := val[key]
+					if !ok {
+						return false
 					}
-				}
-				if v, ok := val["topup"]; ok {
-					if n, e := strconv.Atoi(v); e == nil {
-						q.Topup = n
+					raw = strings.TrimSpace(raw)
+					if raw == "" {
+						return false
 					}
+					_, err := strconv.Atoi(raw)
+					return err == nil
 				}
-				if v, ok := val["limit"]; ok {
-					if n, e := strconv.Atoi(v); e == nil {
-						q.Limit = n
+				if !parseOK("limit") || !parseOK("used") || !parseOK("topup") {
+					_ = rdb.Del(r.Context(), "user_quota:"+userID).Err()
+				} else {
+					if v, ok := val["used"]; ok {
+						if n, e := strconv.Atoi(v); e == nil {
+							q.Used = n
+						}
 					}
-				}
-				// Never trust Redis for unlimited: plan_catalog is source of truth.
-				// Stale unlimited=0 after webhook entitlement / catalog repair caused false "exhausted".
-				if v, ok := val["unlimited"]; ok && (v == "0" || v == "1") && (v == "1") != catalogUnlimited {
-					_ = rdb.HSet(r.Context(), "user_quota:"+userID, "unlimited", map[bool]string{true: "1", false: "0"}[catalogUnlimited]).Err()
+					if v, ok := val["topup"]; ok {
+						if n, e := strconv.Atoi(v); e == nil {
+							// Prefer Redis when the hash is complete (same source debit uses).
+							// Grants/clawbacks Del the hash; max(db, redis) would oversell after clawback.
+							q.Topup = n
+						}
+					}
+					if v, ok := val["limit"]; ok {
+						if n, e := strconv.Atoi(v); e == nil {
+							q.Limit = n
+						}
+					}
+					// Never trust Redis for unlimited: plan_catalog is source of truth.
+					// Stale unlimited=0 after webhook entitlement / catalog repair caused false "exhausted".
+					if v, ok := val["unlimited"]; ok && (v == "0" || v == "1") && (v == "1") != catalogUnlimited {
+						_ = rdb.HSet(r.Context(), "user_quota:"+userID, "unlimited", map[bool]string{true: "1", false: "0"}[catalogUnlimited]).Err()
+					}
 				}
 			}
 		}
 		q.Unlimited = catalogUnlimited
 
 		q.Remaining = (q.Limit - q.Used) + q.Topup
+		if q.Remaining < 0 {
+			q.Remaining = 0
+		}
 		upgradePath := strings.TrimSpace(subscriptions.MessageForCode("APP_PATH_UPGRADE"))
 		appPublic := strings.TrimRight(strings.TrimSpace(appPublicURL), "/")
 		if appPublic != "" && upgradePath != "" {
