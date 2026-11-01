@@ -215,6 +215,24 @@ func (m *AuthQuota) Secure(next http.Handler) http.Handler {
 			m.fail(w, http.StatusForbidden, siteMsg("AUTH_ACCOUNT_DISABLED"))
 			return
 		}
+
+		// Fast-path: complete Redis personal hash already exhausted → 402 before
+		// ExpireIfNeeded / last-login / free-tier fraud DB work (remote Postgres RTTs).
+		// Incomplete hashes fall through so consumeCredit can reload from Postgres.
+		if shouldMeterPath(r.URL.Path, r.Method) && workspaceID == "" && m.redisPersonalQuotaExhausted(ctx, userID) {
+			if m.effRateLimitUser() > 0 && m.Redis != nil {
+				if !m.allowVelocity(ctx, "rl:user:"+userID, m.effRateLimitUser()) {
+					m.fail(w, http.StatusTooManyRequests, siteMsg("RATE_LIMIT_USER"))
+					return
+				}
+			}
+			if m.Metrics != nil {
+				m.Metrics.IncQuotaExhausted()
+			}
+			m.writeQuotaExhausted(w, "QUOTA_EXHAUSTED", "APP_PATH_UPGRADE")
+			return
+		}
+
 		// Best-effort last login country (CF only; never invent).
 		if cc := strings.TrimSpace(r.Header.Get("CF-IPCountry")); cc != "" && len(cc) <= 8 {
 			_, _ = m.DB.Exec(ctx, `
@@ -669,17 +687,178 @@ func (m *AuthQuota) countJA4Accounts(ctx context.Context, ja4Hash string) (int64
 	return count, err
 }
 
+// redisPersonalQuotaExhausted is a read-only Redis peek used to short-circuit
+// exhausted Free meter requests before expensive fraud gates. Incomplete hashes
+// and unlimited/missing keys return false (caller continues to full path).
+//
+// Never short-circuit non-free tiers on unlimited=0: a stale bit must fall through
+// so cachedOrLoadUnlimited can refresh plan_catalog (Team/Pro/Enterprise).
+func (m *AuthQuota) redisPersonalQuotaExhausted(ctx context.Context, userID string) bool {
+	if m.Redis == nil || userID == "" {
+		return false
+	}
+	val, err := m.Redis.HGetAll(ctx, "user_quota:"+userID).Result()
+	if err != nil || !userQuotaHashComplete(val) {
+		return false
+	}
+	if strings.TrimSpace(val["unlimited"]) == "1" {
+		return false
+	}
+	tier := strings.ToLower(strings.TrimSpace(val["tier"]))
+	// Only an explicit Free tier may short-circuit. Empty/unknown/paid tiers fall through so
+	// consumeCredit can load plan_tier and catalog.unlimited (avoids false 402 on Team/Pro).
+	if tier != "free" {
+		return false
+	}
+	var limit, used, topup int
+	fmt.Sscanf(val["limit"], "%d", &limit)
+	fmt.Sscanf(val["used"], "%d", &used)
+	fmt.Sscanf(val["topup"], "%d", &topup)
+	if (limit-used)+topup > 0 {
+		return false
+	}
+	// Growth dial: Free may be Unlimited in plan_catalog while Redis still has unlimited=0.
+	// Re-check catalog (short Redis memo) before short-circuit 402.
+	if unlim, err := m.planUnlimitedMemo(ctx, "free"); err == nil && unlim {
+		_ = m.Redis.HSet(ctx, "user_quota:"+userID, "unlimited", "1").Err()
+		return false
+	}
+	// Top-up grant race: DB may already have purchased credits while Redis topup is still 0
+	// (webhook invalidate missed). Drop the hash so consumeCredit cold-loads from Postgres.
+	// Do NOT HSET topup from DB here: after a top-up debit, async sync may still show the
+	// pre-debit DB value and would re-credit the just-spent pack (double spend).
+	if m.DB != nil {
+		var dbTopup int
+		if err := m.DB.QueryRow(ctx, `
+			select coalesce(purchased_topup_credits, 0) from public.user_quotas where user_id = $1
+		`, userID).Scan(&dbTopup); err == nil && dbTopup > topup {
+			_ = m.Redis.Del(ctx, "user_quota:"+userID).Err()
+			return false
+		}
+	}
+	return true
+}
+
+// redisQuotaIntFieldOK requires a present, non-empty, parseable int field.
+// Missing/empty/garbage values must not be trusted (fmt.Sscanf on "" leaves 0).
+func redisQuotaIntFieldOK(val map[string]string, key string) bool {
+	raw, ok := val[key]
+	if !ok {
+		return false
+	}
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return false
+	}
+	_, err := strconv.Atoi(raw)
+	return err == nil
+}
+
+// userQuotaHashComplete reports whether Redis user_quota:{id} has every field
+// consumeCredit needs. Partial hashes (e.g. only "tier" from an old planTier write)
+// must be treated as a miss - missing keys Sscanf to 0 and false-exhaust Free users.
+func userQuotaHashComplete(val map[string]string) bool {
+	if len(val) == 0 {
+		return false
+	}
+	for _, k := range []string{"limit", "used", "topup"} {
+		if !redisQuotaIntFieldOK(val, k) {
+			return false
+		}
+	}
+	return true
+}
+
+// workspaceQuotaHashComplete reports whether Redis workspace_quota:{id} has debit fields.
+func workspaceQuotaHashComplete(val map[string]string) bool {
+	if len(val) == 0 {
+		return false
+	}
+	return redisQuotaIntFieldOK(val, "limit") && redisQuotaIntFieldOK(val, "used")
+}
+
+// luaDebitUserQuota atomically seeds (HSETNX) missing fields then checks/debits one credit.
+// ARGV: limit, used, topup, tier, unlimited - pass "" for limit to skip seeding (warm hash).
+// HSETNX prevents concurrent cold loads from overwriting a newer used and overshooting the limit.
+// Returns: 1 = debited used, 2 = debited topup, 0 = exhausted, 3 = unlimited, -1 = still incomplete.
+var luaDebitUserQuota = redis.NewScript(`
+if ARGV[1] ~= '' then
+  redis.call('HSETNX', KEYS[1], 'limit', ARGV[1])
+  redis.call('HSETNX', KEYS[1], 'used', ARGV[2])
+  redis.call('HSETNX', KEYS[1], 'topup', ARGV[3])
+  if ARGV[4] ~= '' then
+    redis.call('HSETNX', KEYS[1], 'tier', ARGV[4])
+  end
+  redis.call('HSET', KEYS[1], 'unlimited', ARGV[5])
+end
+local limit = tonumber(redis.call('HGET', KEYS[1], 'limit'))
+local used = tonumber(redis.call('HGET', KEYS[1], 'used'))
+local topup = tonumber(redis.call('HGET', KEYS[1], 'topup'))
+if limit == nil or used == nil or topup == nil then
+  return -1
+end
+if redis.call('HGET', KEYS[1], 'unlimited') == '1' then
+  return 3
+end
+local available = (limit - used) + topup
+if available <= 0 then
+  return 0
+end
+if used < limit then
+  redis.call('HINCRBY', KEYS[1], 'used', 1)
+  return 1
+end
+local nt = redis.call('HINCRBY', KEYS[1], 'topup', -1)
+if nt < 0 then
+  redis.call('HINCRBY', KEYS[1], 'topup', 1)
+  return 0
+end
+return 2
+`)
+
+// luaDebitWorkspaceQuota atomically seeds missing fields then checks/debits one shared credit.
+// ARGV: limit, used, tier, unlimited - pass "" for limit to skip seeding.
+var luaDebitWorkspaceQuota = redis.NewScript(`
+if ARGV[1] ~= '' then
+  redis.call('HSETNX', KEYS[1], 'limit', ARGV[1])
+  redis.call('HSETNX', KEYS[1], 'used', ARGV[2])
+  if ARGV[3] ~= '' then
+    redis.call('HSETNX', KEYS[1], 'tier', ARGV[3])
+  end
+  redis.call('HSET', KEYS[1], 'unlimited', ARGV[4])
+end
+local limit = tonumber(redis.call('HGET', KEYS[1], 'limit'))
+local used = tonumber(redis.call('HGET', KEYS[1], 'used'))
+if limit == nil or used == nil then
+  return -1
+end
+if redis.call('HGET', KEYS[1], 'unlimited') == '1' then
+  return 3
+end
+if used >= limit then
+  return 0
+end
+redis.call('HINCRBY', KEYS[1], 'used', 1)
+return 1
+`)
+
 func (m *AuthQuota) consumeCredit(ctx context.Context, w http.ResponseWriter, userID string) error {
+	if m.Redis == nil {
+		m.fail(w, http.StatusServiceUnavailable, siteMsg("DATABASE_UNAVAILABLE"))
+		return fmt.Errorf("redis")
+	}
 	quotaKey := "user_quota:" + userID
 	val, _ := m.Redis.HGetAll(ctx, quotaKey).Result()
-	var limit, used, topup int
-	if len(val) == 0 {
+
+	seedLimit, seedUsed, seedTopup, seedTier, seedUnlimited := "", "", "", "", ""
+	if !userQuotaHashComplete(val) {
 		if m.DB == nil {
 			m.fail(w, http.StatusServiceUnavailable, siteMsg("DATABASE_UNAVAILABLE"))
 			return fmt.Errorf("db")
 		}
-		q := `select monthly_credit_limit, monthly_credit_used, purchased_topup_credits, plan_tier from public.user_quotas where user_id = $1`
+		var limit, used, topup int
 		var tier string
+		q := `select monthly_credit_limit, monthly_credit_used, purchased_topup_credits, plan_tier from public.user_quotas where user_id = $1`
 		if err := m.DB.QueryRow(ctx, q, userID).Scan(&limit, &used, &topup, &tier); err != nil {
 			m.fail(w, http.StatusInternalServerError, siteMsg("QUOTA_LOAD_FAILED"))
 			return err
@@ -689,21 +868,23 @@ func (m *AuthQuota) consumeCredit(ctx context.Context, w http.ResponseWriter, us
 			m.fail(w, http.StatusInternalServerError, siteMsg("QUOTA_LOAD_FAILED"))
 			return err
 		}
-		_ = m.Redis.HSet(ctx, quotaKey, map[string]interface{}{
-			"limit":     limit,
-			"used":      used,
-			"topup":     topup,
-			"tier":      strings.ToLower(strings.TrimSpace(tier)),
-			"unlimited": boolToRedis(unlimited),
-		}).Err()
-		m.expireRedis(ctx, quotaKey, m.Config.RedisQuotaCacheTTLSec)
 		if unlimited {
+			_ = m.Redis.HSet(ctx, quotaKey, map[string]interface{}{
+				"limit":     limit,
+				"used":      used,
+				"topup":     topup,
+				"tier":      strings.ToLower(strings.TrimSpace(tier)),
+				"unlimited": boolToRedis(true),
+			}).Err()
+			m.expireRedis(ctx, quotaKey, m.Config.RedisQuotaCacheTTLSec)
 			return nil
 		}
+		seedLimit = strconv.Itoa(limit)
+		seedUsed = strconv.Itoa(used)
+		seedTopup = strconv.Itoa(topup)
+		seedTier = strings.ToLower(strings.TrimSpace(tier))
+		seedUnlimited = boolToRedis(false)
 	} else {
-		fmt.Sscanf(val["limit"], "%d", &limit)
-		fmt.Sscanf(val["used"], "%d", &used)
-		fmt.Sscanf(val["topup"], "%d", &topup)
 		unlimited, err := m.cachedOrLoadUnlimited(ctx, w, quotaKey, val, userID, "")
 		if err != nil {
 			return err
@@ -713,32 +894,42 @@ func (m *AuthQuota) consumeCredit(ctx context.Context, w http.ResponseWriter, us
 		}
 	}
 
-	available := (limit - used) + topup
-	if available <= 0 {
+	code, err := luaDebitUserQuota.Run(ctx, m.Redis, []string{quotaKey},
+		seedLimit, seedUsed, seedTopup, seedTier, seedUnlimited,
+	).Int()
+	if err != nil {
+		m.fail(w, http.StatusServiceUnavailable, siteMsg("DATABASE_UNAVAILABLE"))
+		return err
+	}
+	if seedLimit != "" {
+		m.expireRedis(ctx, quotaKey, m.Config.RedisQuotaCacheTTLSec)
+	}
+	switch code {
+	case 3:
+		return nil
+	case 1:
+		go m.syncQuota(userID)
+		return nil
+	case 2:
+		// Top-up debits must hit Postgres before the next request. Otherwise an exhausted
+		// peek can Del+cold-load the pre-debit DB topup and allow a double spend.
+		if err := m.syncQuotaAfterTopupDebit(userID); err != nil {
+			// Roll back the Redis top-up debit so a retry cannot stack on a failed sync.
+			_, _ = m.Redis.HIncrBy(ctx, quotaKey, "topup", 1).Result()
+			m.fail(w, http.StatusServiceUnavailable, siteMsg("DATABASE_UNAVAILABLE"))
+			return err
+		}
+		return nil
+	case 0:
 		if m.Metrics != nil {
 			m.Metrics.IncQuotaExhausted()
 		}
 		m.writeQuotaExhausted(w, "QUOTA_EXHAUSTED", "APP_PATH_UPGRADE")
 		return fmt.Errorf("exhausted")
+	default:
+		m.fail(w, http.StatusServiceUnavailable, siteMsg("QUOTA_LOAD_FAILED"))
+		return fmt.Errorf("incomplete quota hash")
 	}
-
-	if used < limit {
-		_ = m.Redis.HIncrBy(ctx, quotaKey, "used", 1).Err()
-	} else {
-		newTopup, err := m.Redis.HIncrBy(ctx, quotaKey, "topup", -1).Result()
-		if err != nil || newTopup < 0 {
-			if newTopup < 0 {
-				_ = m.Redis.HIncrBy(ctx, quotaKey, "topup", 1).Err()
-			}
-			if m.Metrics != nil {
-				m.Metrics.IncQuotaExhausted()
-			}
-			m.writeQuotaExhausted(w, "QUOTA_EXHAUSTED", "APP_PATH_UPGRADE")
-			return fmt.Errorf("exhausted")
-		}
-	}
-	go m.syncQuota(userID)
-	return nil
 }
 
 // consumeWorkspaceCredit debits the shared workspace pool when X-Workspace-Id is set.
@@ -747,6 +938,10 @@ func (m *AuthQuota) consumeWorkspaceCredit(ctx context.Context, w http.ResponseW
 	if m.DB == nil {
 		m.fail(w, http.StatusServiceUnavailable, siteMsg("DATABASE_UNAVAILABLE"))
 		return fmt.Errorf("db")
+	}
+	if m.Redis == nil {
+		m.fail(w, http.StatusServiceUnavailable, siteMsg("DATABASE_UNAVAILABLE"))
+		return fmt.Errorf("redis")
 	}
 
 	var role string
@@ -761,14 +956,15 @@ func (m *AuthQuota) consumeWorkspaceCredit(ctx context.Context, w http.ResponseW
 
 	quotaKey := "workspace_quota:" + workspaceID
 	val, _ := m.Redis.HGetAll(ctx, quotaKey).Result()
-	var limit, used int
-	if len(val) == 0 {
+	seedLimit, seedUsed, seedTier, seedUnlimited := "", "", "", ""
+	if !workspaceQuotaHashComplete(val) {
 		q := `
 			select wq.monthly_shared_credits, wq.credits_consumed, coalesce(w.plan_tier, '')
 			from public.workspace_quotas wq
 			inner join public.workspaces w on w.id = wq.workspace_id
 			where wq.workspace_id = $1
 		`
+		var limit, used int
 		var planTier string
 		if err := m.DB.QueryRow(ctx, q, workspaceID).Scan(&limit, &used, &planTier); err != nil {
 			m.fail(w, http.StatusInternalServerError, siteMsg("WORKSPACE_QUOTA_LOAD_FAILED"))
@@ -779,19 +975,21 @@ func (m *AuthQuota) consumeWorkspaceCredit(ctx context.Context, w http.ResponseW
 			m.fail(w, http.StatusInternalServerError, siteMsg("WORKSPACE_QUOTA_LOAD_FAILED"))
 			return uerr
 		}
-		_ = m.Redis.HSet(ctx, quotaKey, map[string]interface{}{
-			"limit":     limit,
-			"used":      used,
-			"tier":      strings.ToLower(strings.TrimSpace(planTier)),
-			"unlimited": boolToRedis(unlimited),
-		}).Err()
-		m.expireRedis(ctx, quotaKey, m.Config.RedisQuotaCacheTTLSec)
 		if unlimited {
+			_ = m.Redis.HSet(ctx, quotaKey, map[string]interface{}{
+				"limit":     limit,
+				"used":      used,
+				"tier":      strings.ToLower(strings.TrimSpace(planTier)),
+				"unlimited": boolToRedis(true),
+			}).Err()
+			m.expireRedis(ctx, quotaKey, m.Config.RedisQuotaCacheTTLSec)
 			return nil
 		}
+		seedLimit = strconv.Itoa(limit)
+		seedUsed = strconv.Itoa(used)
+		seedTier = strings.ToLower(strings.TrimSpace(planTier))
+		seedUnlimited = boolToRedis(false)
 	} else {
-		fmt.Sscanf(val["limit"], "%d", &limit)
-		fmt.Sscanf(val["used"], "%d", &used)
 		unlimited, uerr := m.cachedOrLoadUnlimited(ctx, w, quotaKey, val, "", workspaceID)
 		if uerr != nil {
 			return uerr
@@ -801,14 +999,29 @@ func (m *AuthQuota) consumeWorkspaceCredit(ctx context.Context, w http.ResponseW
 		}
 	}
 
-	if used >= limit {
+	code, err := luaDebitWorkspaceQuota.Run(ctx, m.Redis, []string{quotaKey},
+		seedLimit, seedUsed, seedTier, seedUnlimited,
+	).Int()
+	if err != nil {
+		m.fail(w, http.StatusServiceUnavailable, siteMsg("DATABASE_UNAVAILABLE"))
+		return err
+	}
+	if seedLimit != "" {
+		m.expireRedis(ctx, quotaKey, m.Config.RedisQuotaCacheTTLSec)
+	}
+	switch code {
+	case 3:
+		return nil
+	case 1:
+		go m.syncWorkspaceQuota(workspaceID)
+		return nil
+	case 0:
 		m.writeQuotaExhausted(w, "WORKSPACE_QUOTA_EXHAUSTED", "APP_PATH_TEAM")
 		return fmt.Errorf("workspace exhausted")
+	default:
+		m.fail(w, http.StatusServiceUnavailable, siteMsg("WORKSPACE_QUOTA_LOAD_FAILED"))
+		return fmt.Errorf("incomplete workspace quota hash")
 	}
-
-	_ = m.Redis.HIncrBy(ctx, quotaKey, "used", 1).Err()
-	go m.syncWorkspaceQuota(workspaceID)
-	return nil
 }
 
 func boolToRedis(v bool) string {
@@ -831,6 +1044,30 @@ func (m *AuthQuota) planUnlimited(ctx context.Context, planTier string) (bool, e
 	`, planTier).Scan(&unlimited)
 	if err != nil {
 		return false, err
+	}
+	return unlimited, nil
+}
+
+// planUnlimitedMemo is planUnlimited with a short Redis memo so Free exhausted peeks
+// do not pay a remote Postgres RTT on every blocked request. Admin plan patches
+// delete plan_unlimited:{id} when the growth dial changes.
+func (m *AuthQuota) planUnlimitedMemo(ctx context.Context, planTier string) (bool, error) {
+	planTier = strings.ToLower(strings.TrimSpace(planTier))
+	if planTier == "" {
+		return false, fmt.Errorf("plan tier unavailable")
+	}
+	cacheKey := "plan_unlimited:" + planTier
+	if m.Redis != nil {
+		if v, err := m.Redis.Get(ctx, cacheKey).Result(); err == nil {
+			return v == "1", nil
+		}
+	}
+	unlimited, err := m.planUnlimited(ctx, planTier)
+	if err != nil {
+		return false, err
+	}
+	if m.Redis != nil {
+		_ = m.Redis.Set(ctx, cacheKey, boolToRedis(unlimited), 15*time.Second).Err()
 	}
 	return unlimited, nil
 }
@@ -878,42 +1115,113 @@ func WorkspaceIDFromContext(ctx context.Context) string {
 	return v
 }
 
-func (m *AuthQuota) syncQuota(userID string) {
-	if m.DB == nil {
-		return
+// syncQuota writes Redis used/topup into Postgres. Fire-and-forget callers may ignore the error.
+// Top-up is only applied when the Redis hash still exists (webhook grants Del first, then bump DB;
+// writing a stale lower topup after Del would wipe a grant).
+func (m *AuthQuota) syncQuota(userID string) error {
+	used, topup, ok, err := m.readUserQuotaSyncSnapshot(userID)
+	if err != nil || !ok {
+		return err
 	}
-	sec := m.Config.QuotaSyncTimeoutSec
-	if sec < 1 {
-		return
-	}
+	sec := m.quotaSyncTimeoutSec()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(sec)*time.Second)
 	defer cancel()
-	quotaKey := "user_quota:" + userID
-	used, err := m.Redis.HGet(ctx, quotaKey, "used").Int()
-	if err != nil {
-		return
-	}
-	topup, err := m.Redis.HGet(ctx, quotaKey, "topup").Int()
-	if err != nil {
-		return
-	}
-	_, _ = m.DB.Exec(ctx, `
+	_, err = m.DB.Exec(ctx, `
 		update public.user_quotas
-		set monthly_credit_used = $1,
+		set monthly_credit_used = greatest(monthly_credit_used, $1),
 		    purchased_topup_credits = $2,
 		    updated_at = now()
 		where user_id = $3
 	`, used, topup, userID)
+	return err
+}
+
+// syncQuotaAfterTopupDebit persists a personal top-up spend with compare-and-set semantics so
+// out-of-order syncs and concurrent top-up debits cannot leave Postgres behind Redis, while a
+// concurrent grant (DB jumped above expected) is left untouched.
+func (m *AuthQuota) syncQuotaAfterTopupDebit(userID string) error {
+	used, topup, ok, err := m.readUserQuotaSyncSnapshot(userID)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return fmt.Errorf("quota hash missing after topup debit")
+	}
+	sec := m.quotaSyncTimeoutSec()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(sec)*time.Second)
+	defer cancel()
+	_, err = m.DB.Exec(ctx, `
+		update public.user_quotas
+		set monthly_credit_used = greatest(monthly_credit_used, $1),
+		    purchased_topup_credits = case
+		      when purchased_topup_credits = ($2::int + 1) then $2
+		      when purchased_topup_credits > ($2::int + 1) then $2
+		      else purchased_topup_credits
+		    end,
+		    updated_at = now()
+		where user_id = $3
+	`, used, topup, userID)
+	return err
+}
+
+func (m *AuthQuota) quotaSyncTimeoutSec() int {
+	sec := m.Config.QuotaSyncTimeoutSec
+	if sec < 1 {
+		return 5
+	}
+	return sec
+}
+
+func (m *AuthQuota) readUserQuotaSyncSnapshot(userID string) (used, topup int, ok bool, err error) {
+	if m.DB == nil || m.Redis == nil {
+		return 0, 0, false, fmt.Errorf("quota sync unavailable")
+	}
+	sec := m.quotaSyncTimeoutSec()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(sec)*time.Second)
+	defer cancel()
+	quotaKey := "user_quota:" + userID
+	vals, err := m.Redis.HMGet(ctx, quotaKey, "used", "topup").Result()
+	if err != nil {
+		return 0, 0, false, err
+	}
+	if len(vals) != 2 || vals[0] == nil || vals[1] == nil {
+		return 0, 0, false, nil
+	}
+	used, err1 := strconv.Atoi(fmt.Sprint(vals[0]))
+	topup, err2 := strconv.Atoi(fmt.Sprint(vals[1]))
+	if err1 != nil || err2 != nil {
+		return 0, 0, false, fmt.Errorf("quota hash parse")
+	}
+	if n, err := m.Redis.Exists(ctx, quotaKey).Result(); err != nil {
+		return 0, 0, false, err
+	} else if n == 0 {
+		return 0, 0, false, nil
+	}
+	vals, err = m.Redis.HMGet(ctx, quotaKey, "used", "topup").Result()
+	if err != nil {
+		return 0, 0, false, err
+	}
+	if len(vals) != 2 || vals[0] == nil || vals[1] == nil {
+		return 0, 0, false, nil
+	}
+	if n, err := m.Redis.Exists(ctx, quotaKey).Result(); err != nil {
+		return 0, 0, false, err
+	} else if n == 0 {
+		return 0, 0, false, nil
+	}
+	used, err1 = strconv.Atoi(fmt.Sprint(vals[0]))
+	topup, err2 = strconv.Atoi(fmt.Sprint(vals[1]))
+	if err1 != nil || err2 != nil {
+		return 0, 0, false, fmt.Errorf("quota hash parse")
+	}
+	return used, topup, true, nil
 }
 
 func (m *AuthQuota) syncWorkspaceQuota(workspaceID string) {
-	if m.DB == nil {
+	if m.DB == nil || m.Redis == nil {
 		return
 	}
-	sec := m.Config.QuotaSyncTimeoutSec
-	if sec < 1 {
-		return
-	}
+	sec := m.quotaSyncTimeoutSec()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(sec)*time.Second)
 	defer cancel()
 	quotaKey := "workspace_quota:" + workspaceID
@@ -921,9 +1229,19 @@ func (m *AuthQuota) syncWorkspaceQuota(workspaceID string) {
 	if err != nil {
 		return
 	}
+	if n, err := m.Redis.Exists(ctx, quotaKey).Result(); err != nil || n == 0 {
+		return
+	}
+	used, err = m.Redis.HGet(ctx, quotaKey, "used").Int()
+	if err != nil {
+		return
+	}
+	if n, err := m.Redis.Exists(ctx, quotaKey).Result(); err != nil || n == 0 {
+		return
+	}
 	_, _ = m.DB.Exec(ctx, `
 		update public.workspace_quotas
-		set credits_consumed = $1, updated_at = now()
+		set credits_consumed = greatest(credits_consumed, $1), updated_at = now()
 		where workspace_id = $2
 	`, used, workspaceID)
 }
@@ -982,13 +1300,18 @@ func (m *AuthQuota) invalidateQuotaCaches(ctx context.Context, userID string) {
 	}
 }
 
-// planTier returns the user's current plan_tier from Redis quota cache or Postgres.
+// planTier returns the user's current plan_tier from a complete Redis quota hash or Postgres.
 // Empty string means unknown or unpaid; callers must use isFreePlan for free-tier gates.
+//
+// Never write tier alone into user_quota:{id}. A partial hash makes consumeCredit treat
+// missing limit/used/topup as 0 and return false QUOTA_EXHAUSTED for Free users.
 func (m *AuthQuota) planTier(ctx context.Context, userID string) string {
 	quotaKey := "user_quota:" + userID
 	if m.Redis != nil {
-		if t, err := m.Redis.HGet(ctx, quotaKey, "tier").Result(); err == nil && t != "" {
-			return strings.ToLower(t)
+		if val, err := m.Redis.HGetAll(ctx, quotaKey).Result(); err == nil && userQuotaHashComplete(val) {
+			if t := strings.ToLower(strings.TrimSpace(val["tier"])); t != "" {
+				return t
+			}
 		}
 	}
 	if m.DB == nil {
@@ -1001,11 +1324,7 @@ func (m *AuthQuota) planTier(ctx context.Context, userID string) string {
 	if err != nil || strings.TrimSpace(tier) == "" {
 		return ""
 	}
-	tier = strings.ToLower(strings.TrimSpace(tier))
-	if m.Redis != nil {
-		_ = m.Redis.HSet(ctx, quotaKey, "tier", tier).Err()
-	}
-	return tier
+	return strings.ToLower(strings.TrimSpace(tier))
 }
 
 // isFreePlan treats empty/unknown tiers and the configured default tier as free

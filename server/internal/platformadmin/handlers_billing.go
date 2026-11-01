@@ -788,6 +788,8 @@ func (h *Handler) invalidateQuotaCachesForPlan(ctx context.Context, planID strin
 	if h.Redis == nil || h.DB == nil || planID == "" {
 		return
 	}
+	// Drop short-lived plan_unlimited memo used by Free exhausted peek.
+	_ = h.Redis.Del(ctx, "plan_unlimited:"+planID).Err()
 	userRows, err := h.DB.Query(ctx, `select user_id::text from public.user_quotas where plan_tier = $1`, planID)
 	if err == nil {
 		defer userRows.Close()
